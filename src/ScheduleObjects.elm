@@ -28,7 +28,7 @@ type alias WeekTime =
 {-| A lecturer/teacher has an ID, a name and a abbreviation.
 -}
 type alias Lecturer =
-    { name : String, abbr : String }
+    { name : String, abbr : String, goodTime : List WeekTime, difficultTime : List WeekTime, unavailableTime : List WeekTime}
 
 
 type alias LecturerID =
