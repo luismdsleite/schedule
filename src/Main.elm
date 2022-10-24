@@ -9,7 +9,6 @@ import Time exposing (..)
 
 
 
----- MODEL ----
 -- TODO: Replace Lists with dictionaries (to search by id)
 -- TODO: Add missing data in renderEvent
 -- TODO: Remove data in init and read from a json file
@@ -26,6 +25,7 @@ import Time exposing (..)
 -- type alias weektime =
 --     { weekday : Time.Weekday, Time.Hour : Int, minute : Int }
 -- TODO: no bloco representar os events com um condição
+---- MODEL ----
 
 
 type alias Model =
@@ -39,7 +39,7 @@ type alias Model =
 init : ( Model, Cmd Msg )
 init =
     ( { rooms = fromList [ Room "DCC Lab. 2" "FC6_157 (Lab2)" 20, Room "DCC Lab. 3" "FC6_177 (Lab3)" 30, Room "CCC Lab. 6" "FC6_177 (Lab3)(LongName)" 30 ]
-      , lecturers = fromList [ Lecturer "N'Golo Kanté" "NGK", Lecturer "Alberto" "Al" ]
+      , lecturers = fromList [ Lecturer "N'Golo Kanté" "NGK" [] [] [], Lecturer "Alberto" "Al" [] [] [], Lecturer "Alberto" "Al" [] [] [], Lecturer "Alberto" "Al" [] [] [], Lecturer "Alberto" "Al" [] [] [], Lecturer "Alberto" "Al" [] [] [], Lecturer "Alberto" "Al" [] [] [], Lecturer "Alberto" "Al" [] [] [], Lecturer "Alberto" "Al" [] [] [], Lecturer "Alberto" "Al" [] [] [], Lecturer "Alberto" "Al" [] [] [], Lecturer "Alberto" "Al" [] [] [], Lecturer "Alberto" "Al" [] [] []]
       , events =
             [ Event "Algoritmos (CC4010)_TP.1" "Alga-TP3" (Just (ID 0)) (Just (WeekTime Time.Mon 9 30)) (Just (WeekTime Time.Mon 11 0)) (Just (ID 0))
             , Event "asdasd (CC4010)_TP.1" "Alga-TP2" (Just (ID 0)) (Just (WeekTime Time.Mon 9 30)) (Just (WeekTime Time.Mon 11 0)) (Just (ID 1))
@@ -73,7 +73,7 @@ view model =
         [ img [ src "/logo.svg" ] []
         , h1 [] [ text "Your Elm App is workng!" ]
         , div [ class "listbox-area" ]
-            [ renderList [ "hello", "how", "are", "you", "you", "you", "you", "you", "you", "you", "you", "you", "you", "you", "you", "you", "you", "you", "you", "you", "you", "you", "you" ]
+            [ renderLecturers model.lecturers
             , renderEvents model.events model.rooms model.lecturers
             , renderRooms model.rooms
             ]
@@ -120,11 +120,11 @@ renderEvent rooms lecturers event =
 
                         -- ERROR: RoomID is missing from the database!
                         Nothing ->
-                            Lecturer "----" "----"
+                            Lecturer "----" "----" [] [] []
 
                 -- Event still has no room assigned
                 Nothing ->
-                    Lecturer "----" "----"
+                    Lecturer "----" "----" [] [] []
     in
     li [ class "list-item" ]
         [ div [ style "width" "10%" ] [ text event.subjectAbbr ]
@@ -146,10 +146,20 @@ renderRooms rooms =
     ul [ class "list custom-scrollbar" ]
         (List.map renderRoom roomsList)
 
-
 renderRoom : ( Int, Room ) -> Html unknown
 renderRoom ( int, room ) =
     li [ class "list-item" ] [ div [] [ text room.abbr ] ]
+
+renderLecturers : Table Lecturer -> Html msg
+renderLecturers lecturers = 
+    let
+        renderLecturer ( int, lecturer ) =
+            li [ class "list-item" ] [ div [] [ text lecturer.abbr ] ]
+        lecturersList = 
+            Table.toList lecturers
+    in
+        ul [ class "list custom-scrollbar" ]
+            (List.map renderLecturer lecturersList)
 
 
 main : Program () Model Msg
