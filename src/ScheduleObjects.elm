@@ -1,7 +1,7 @@
 module ScheduleObjects exposing (..)
 
 import Table exposing (..)
-import Time
+import Time exposing (..)
 
 
 {-| A schedule here is designated as a block.
@@ -28,7 +28,7 @@ type alias WeekTime =
 {-| A lecturer/teacher has an ID, a name and a abbreviation.
 -}
 type alias Lecturer =
-    { name : String, abbr : String, goodTime : List WeekTime, difficultTime : List WeekTime, unavailableTime : List WeekTime}
+    { name : String, abbr : String, goodTime : List WeekTime, difficultTime : List WeekTime, unavailableTime : List WeekTime }
 
 
 type alias LecturerID =
@@ -56,32 +56,39 @@ type alias RoomID =
     convertWeekDay 5 == "Sexta"
 
 -}
-convertWeekDay : Int -> String
-convertWeekDay weekday =
+convertWeekDay : Maybe WeekTime -> String
+convertWeekDay weekTime =
+    case weekTime of
+        Nothing ->
+            "-----"
+
+        Just val ->
+            toPortugueseWeekday val.weekday
+
+
+toPortugueseWeekday : Time.Weekday -> String
+toPortugueseWeekday weekday =
     case weekday of
-        1 ->
-            "Segunda"
+        Mon ->
+            "Seg"
 
-        2 ->
-            "Terça"
+        Tue ->
+            "Terç"
 
-        3 ->
-            "Quarta"
+        Wed ->
+            "Qua"
 
-        4 ->
-            "Quinta"
+        Thu ->
+            "Qui"
 
-        5 ->
-            "Sexta"
+        Fri ->
+            "Sex"
 
-        6 ->
-            "Sabado"
+        Sat ->
+            "Sáb"
 
-        7 ->
-            "Domingo"
-
-        _ ->
-            "Invalid weekday!"
+        Sun ->
+            "Dom"
 
 
 {-| The Hours and Minutes are represented as an `Int` as part of the `WeekTime` record. This function converts them into a `String`
