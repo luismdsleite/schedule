@@ -128,7 +128,8 @@ renderEvent rooms lecturers event =
     in
     li [ class "list-item" ]
         [ div [ style "width" "10%" ] [ text event.subjectAbbr ]
-        , div [ style "width" "40%" ] [ text event.subject ]
+        , div [ style "width" "35%" ] [ text event.subject ]
+        , div [ style "width" "5%" ] [ text (convertWeekDay event.start_time) ]
         , div [ style "width" "10%" ] [ text (convertHourAndMinute event.start_time) ]
         , div [ style "width" "10%" ] [ text (convertHourAndMinute event.end_time) ]
         , div [ style "width" "10%" ] [ text room.abbr ]
