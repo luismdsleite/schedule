@@ -1,9 +1,11 @@
 module Main exposing (..)
 
 import Browser
-import Dict exposing (Dict)
 import Html exposing (..)
 import Html.Attributes exposing (..)
+import ScheduleObjects exposing (..)
+import Table exposing (..)
+import Time exposing (..)
 
 
 
@@ -12,124 +14,36 @@ import Html.Attributes exposing (..)
 -- TODO: Add missing data in renderEvent
 -- TODO: Remove data in init and read from a json file
 -- TODO: Fix names, comment css code
+---- PROF  ----
+-- TODO: Replace Int for RoomID as that we get a rooms: Dict RoomID Room
+-- type alias Model =
+--     { rooms : Dict RoomID Room
+--     , lecturers : Dict Lecturer
+--     , events : List Event
+--     , blocks : List Block
+--     }
+-- TODO: replace weekTime with {Time.Weekday, Time.Hour, Time.Minute}
+-- type alias weektime =
+--     { weekday : Time.Weekday, Time.Hour : Int, minute : Int }
+-- TODO: no bloco representar os events com um condição
 
 
 type alias Model =
-    { rooms : Dict Int SC_room
-    , lecturers : List SC_lecturer
-    , events : List SC_event
-    , blocks : List SC_block
+    { rooms : Table Room
+    , lecturers : Table Lecturer
+    , events : List Event
+    , blocks : List Block
     }
-
-
-{-| A schedule here is designated as a block.
-A block is composed of events. An event is comprised of a subject, given in a specific room by a lecturer during a given time.
--}
-type alias SC_block =
-    { name : String, abbr : String, events : List SC_event }
-
-
-type alias SC_event =
-    { subject : String
-    , subjectAbbr : String
-    , room : Maybe Int
-    , start_time : Maybe SC_time
-    , end_time : Maybe SC_time
-    , lecturer : Maybe Int
-    }
-
-
-type alias SC_time =
-    { weekday : Int, hour : Int, minute : Int }
-
-
-{-| The days of the week are represented as an `Int` and stored in a SC\_time.weekday. This function converts them into a `String`.
-
-    convertWeekDay 1 == "Segunda"
-
-    convertWeekDay 5 == "Sexta"
-
--}
-convertWeekDay : Int -> String
-convertWeekDay weekday =
-    case weekday of
-        1 ->
-            "Segunda"
-
-        2 ->
-            "Terça"
-
-        3 ->
-            "Quarta"
-
-        4 ->
-            "Quinta"
-
-        5 ->
-            "Sexta"
-
-        6 ->
-            "Sabado"
-
-        7 ->
-            "Domingo"
-
-        _ ->
-            "Invalid weekday!"
-
-
-{-| The Hours and Minutes are represented as an `Int` as part of the SC\_time record. This function converts them into a `String`
-
-    convertHourAndMinute 9 0 == "09:00"
-
-    convertHourAndMinute 10 30 == "10:30"
-
--}
-convertHourAndMinute : Maybe SC_time -> String
-convertHourAndMinute time =
-    case time of
-        Nothing ->
-            "----"
-
-        Just val ->
-            let
-                hourStr =
-                    if val.hour < 10 then
-                        "0" ++ String.fromInt val.hour
-
-                    else
-                        String.fromInt val.hour
-
-                minuteStr =
-                    if val.minute < 10 then
-                        String.fromInt val.minute ++ "0"
-
-                    else
-                        String.fromInt val.minute
-            in
-            hourStr ++ ":" ++ minuteStr
-
-
-{-| A room has an ID, a name and a abbreviation.
--}
-type alias SC_room =
-    { id : Int, name : String, abbr : String, capacity : Int }
-
-
-{-| A lecturer/teacher has an ID, a name and a abbreviation.
--}
-type alias SC_lecturer =
-    { id : Int, name : String, abbr : String }
-
-
 
 
 init : ( Model, Cmd Msg )
 init =
-    ( { rooms = Dict.fromList [ ( 1, SC_room 1 "DCC Lab. 2" "FC6_157 (Lab2)" 20 ) ]
-      , lecturers = [ SC_lecturer 1 "N'Golo Kanté" "NGK" ]
+    ( { rooms = fromList [ Room "DCC Lab. 2" "FC6_157 (Lab2)" 20, Room "DCC Lab. 3" "FC6_177 (Lab3)" 30, Room "CCC Lab. 6" "FC6_177 (Lab3)(LongName)" 30 ]
+      , lecturers = fromList [ Lecturer "N'Golo Kanté" "NGK", Lecturer "Alberto" "Al" ]
       , events =
-            [ SC_event "Algoritmos (CC4010)_TP.1" "Alga-TP3" (Just 1) (Just (SC_time 1 9 30)) (Just (SC_time 1 11 0)) (Just 1) ]
+            [ Event "Algoritmos (CC4010)_TP.1" "Alga-TP3" (Just (ID 0)) (Just (WeekTime Time.Mon 9 30)) (Just (WeekTime Time.Mon 11 0)) (Just (ID 0))
+            , Event "asdasd (CC4010)_TP.1" "Alga-TP2" (Just (ID 0)) (Just (WeekTime Time.Mon 9 30)) (Just (WeekTime Time.Mon 11 0)) (Just (ID 1))
+            ]
       , blocks = []
       }
     , Cmd.none
@@ -161,6 +75,7 @@ view model =
         , div [ class "listbox-area" ]
             [ renderList [ "hello", "how", "are", "you", "you", "you", "you", "you", "you", "you", "you", "you", "you", "you", "you", "you", "you", "you", "you", "you", "you", "you", "you" ]
             , renderEvents model.events model.rooms model.lecturers
+            , renderRooms model.rooms
             ]
         ]
 
@@ -170,22 +85,71 @@ renderList lst =
     ul [ class "list custom-scrollbar" ] (List.map (\l -> li [ class "list-item" ] [ text l ]) lst)
 
 
-renderEvents : List SC_event -> Dict Int SC_room -> List SC_lecturer -> Html msg
+renderEvents : List Event -> Table Room -> Table Lecturer -> Html msg
 renderEvents events rooms lecturers =
     ul [ class "list custom-scrollbar" ]
-        (List.map renderEvent events)
+        (List.map (renderEvent rooms lecturers) events)
 
 
 {-| Transforms an event into a list item
 -}
-renderEvent : SC_event -> Html msg
-renderEvent event =
+renderEvent : Table Room -> Table Lecturer -> Event -> Html msg
+renderEvent rooms lecturers event =
+    let
+        room =
+            case event.room of
+                Just id ->
+                    case Table.get id rooms of
+                        Just val ->
+                            val
+
+                        -- ERROR: RoomID is missing from the database!
+                        Nothing ->
+                            Room "----" "----" -1
+
+                -- Event still has no room assigned
+                Nothing ->
+                    Room "----" "----" -1
+
+        lecturer =
+            case event.lecturer of
+                Just id ->
+                    case Table.get id lecturers of
+                        Just val ->
+                            val
+
+                        -- ERROR: RoomID is missing from the database!
+                        Nothing ->
+                            Lecturer "----" "----"
+
+                -- Event still has no room assigned
+                Nothing ->
+                    Lecturer "----" "----"
+    in
     li [ class "list-item" ]
-        [ div [] [ text event.subjectAbbr ]
-        , div [] [ text event.subject ]
-        , div [] [ text (convertHourAndMinute event.start_time) ]
-        , div [] [ text (convertHourAndMinute event.end_time) ]
+        [ div [ style "width" "10%" ] [ text event.subjectAbbr ]
+        , div [ style "width" "40%" ] [ text event.subject ]
+        , div [ style "width" "10%" ] [ text (convertHourAndMinute event.start_time) ]
+        , div [ style "width" "10%" ] [ text (convertHourAndMinute event.end_time) ]
+        , div [ style "width" "10%" ] [ text room.abbr ]
+        , div [ style "width" "10%" ] [ text (String.fromInt room.capacity) ]
+        , div [ style "width" "10%" ] [ text lecturer.abbr ]
         ]
+
+
+renderRooms : Table Room -> Html msg
+renderRooms rooms =
+    let
+        roomsList =
+            Table.toList rooms
+    in
+    ul [ class "list custom-scrollbar" ]
+        (List.map renderRoom roomsList)
+
+
+renderRoom : ( Int, Room ) -> Html unknown
+renderRoom ( int, room ) =
+    li [ class "list-item" ] [ div [] [ text room.abbr ] ]
 
 
 main : Program () Model Msg
@@ -196,3 +160,8 @@ main =
         , update = update
         , subscriptions = always Sub.none
         }
+
+
+
+-- createRoomID : Int -> RoomID
+-- createRoomID int = RoomID(int)
