@@ -1,4 +1,4 @@
-module Table exposing (ID(..), Table, add, get, empty, fromList, toList)
+module Table exposing (ID(..), Table, add, get, empty, fromList, toList, values)
 
 import Dict exposing (Dict)
 
@@ -57,3 +57,6 @@ fillTablefromList table list =
 
 toList : Table info -> List (Int,info)
 toList (Table _ info) = Dict.toList info
+
+values : Table info -> List info
+values (Table _ info) = Dict.values info

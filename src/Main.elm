@@ -1,5 +1,6 @@
 module Main exposing (..)
 
+import Array exposing (Array)
 import Browser
 import Html exposing (..)
 import Html.Attributes exposing (..)
@@ -9,43 +10,62 @@ import Time exposing (..)
 
 
 
--- TODO: Replace Lists with dictionaries (to search by id)
--- TODO: Add missing data in renderEvent
 -- TODO: Remove data in init and read from a json file
--- TODO: Fix names, comment css code
----- PROF  ----
--- TODO: Replace Int for RoomID as that we get a rooms: Dict RoomID Room
--- type alias Model =
---     { rooms : Dict RoomID Room
---     , lecturers : Dict Lecturer
---     , events : List Event
---     , blocks : List Block
---     }
--- TODO: replace weekTime with {Time.Weekday, Time.Hour, Time.Minute}
--- type alias weektime =
---     { weekday : Time.Weekday, Time.Hour : Int, minute : Int }
--- TODO: no bloco representar os events com um condição
+-- TODO: Represent blocks by function that receives and event and outputs a bool
 ---- MODEL ----
+-- type alias Model =
+--     { data : Data
+--     , filters : Array ScheduleFilter
+--     }
 
 
-type alias Model =
+type Model
+    = Model Data (Array ScheduleFilter)
+
+
+type alias Data =
     { rooms : Table Room
     , lecturers : Table Lecturer
-    , events : List Event
+    , events : Table Event
     , blocks : List Block
+    }
+
+
+
+-- type ScheduleFilter
+--     = RoomFilter (List ( Int, Event ))
+--     | LecturerFilter (List ( Int, Event ))
+--     | BlockFilter (List ( Int, Event ))
+
+
+{-| Has the data required to represent a schedule
+-}
+type alias ScheduleFilter =
+    List ( Int, Event )
+
+
+{-| Array Indexes of where a certain ScheduleFilter is stored
+-}
+type alias FilterIndex =
+    { room : Int
+    , lecturer : Int
+    , block : Int
     }
 
 
 init : ( Model, Cmd Msg )
 init =
-    ( { rooms = fromList [ Room "DCC Lab. 2" "FC6_157 (Lab2)" 20, Room "DCC Lab. 3" "FC6_177 (Lab3)" 30, Room "CCC Lab. 6" "FC6_177 (Lab3)(LongName)" 30 ]
-      , lecturers = fromList [ Lecturer "N'Golo Kanté" "NGK" [] [] [], Lecturer "Alberto" "Al" [] [] [], Lecturer "Alberto" "Al" [] [] [], Lecturer "Alberto" "Al" [] [] [], Lecturer "Alberto" "Al" [] [] [], Lecturer "Alberto" "Al" [] [] [], Lecturer "Alberto" "Al" [] [] [], Lecturer "Alberto" "Al" [] [] [], Lecturer "Alberto" "Al" [] [] [], Lecturer "Alberto" "Al" [] [] [], Lecturer "Alberto" "Al" [] [] [], Lecturer "Alberto" "Al" [] [] [], Lecturer "Alberto" "Al" [] [] []]
-      , events =
-            [ Event "Algoritmos (CC4010)_TP.1" "Alga-TP3" (Just (ID 0)) (Just (WeekTime Time.Mon 9 30)) (Just (WeekTime Time.Mon 11 0)) (Just (ID 0))
-            , Event "asdasd (CC4010)_TP.1" "Alga-TP2" (Just (ID 0)) (Just (WeekTime Time.Mon 9 30)) (Just (WeekTime Time.Mon 11 0)) (Just (ID 1))
-            ]
-      , blocks = []
-      }
+    ( Model
+        { rooms = fromList [ Room "DCC Lab. 2" "FC6_157 (Lab2)" 20, Room "DCC Lab. 3" "FC6_177 (Lab3)" 30, Room "CCC Lab. 6" "FC6_177 (Lab3)(LongName)" 30 ]
+        , lecturers = fromList [ Lecturer "N'Golo Kanté" "NGK" [] [] [], Lecturer "Alberto" "Al" [] [] [], Lecturer "Alberto" "Al" [] [] [], Lecturer "Alberto" "Al" [] [] [], Lecturer "Alberto" "Al" [] [] [], Lecturer "Alberto" "Al" [] [] [], Lecturer "Alberto" "Al" [] [] [], Lecturer "Alberto" "Al" [] [] [], Lecturer "Alberto" "Al" [] [] [], Lecturer "Alberto" "Al" [] [] [], Lecturer "Alberto" "Al" [] [] [], Lecturer "Alberto" "Al" [] [] [], Lecturer "Alberto" "Al" [] [] [] ]
+        , events =
+            fromList
+                [ Event "Algoritmos (CC4010)_TP.1" "Alga-TP3" (Just (ID 0)) (Just (WeekTime Time.Mon 9 30)) (Just (WeekTime Time.Mon 11 0)) (Just (ID 0))
+                , Event "asdasd (CC4010)_TP.1" "Alga-TP2" (Just (ID 0)) (Just (WeekTime Time.Mon 9 30)) (Just (WeekTime Time.Mon 11 0)) (Just (ID 1))
+                ]
+        , blocks = []
+        }
+        (Array.repeat 3 [])
     , Cmd.none
     )
 
@@ -68,14 +88,12 @@ update msg model =
 
 
 view : Model -> Html Msg
-view model =
+view (Model data _) =
     div []
-        [ img [ src "/logo.svg" ] []
-        , h1 [] [ text "Your Elm App is workng!" ]
-        , div [ class "listbox-area" ]
-            [ renderLecturers model.lecturers
-            , renderEvents model.events model.rooms model.lecturers
-            , renderRooms model.rooms
+        [ div [ class "listbox-area" ]
+            [ renderLecturers data.lecturers
+            , renderRooms data.rooms
+            , renderEvents (values data.events) data.rooms data.lecturers
             ]
         ]
 
@@ -147,20 +165,23 @@ renderRooms rooms =
     ul [ class "list custom-scrollbar" ]
         (List.map renderRoom roomsList)
 
+
 renderRoom : ( Int, Room ) -> Html unknown
 renderRoom ( int, room ) =
     li [ class "list-item" ] [ div [] [ text room.abbr ] ]
 
+
 renderLecturers : Table Lecturer -> Html msg
-renderLecturers lecturers = 
+renderLecturers lecturers =
     let
         renderLecturer ( int, lecturer ) =
             li [ class "list-item" ] [ div [] [ text lecturer.abbr ] ]
-        lecturersList = 
+
+        lecturersList =
             Table.toList lecturers
     in
-        ul [ class "list custom-scrollbar" ]
-            (List.map renderLecturer lecturersList)
+    ul [ class "list custom-scrollbar" ]
+        (List.map renderLecturer lecturersList)
 
 
 main : Program () Model Msg
