@@ -4,6 +4,7 @@ import Array exposing (Array)
 import Browser
 import Html exposing (..)
 import Html.Attributes exposing (..)
+import Html.Events exposing (onClick)
 import ScheduleObjects exposing (..)
 import Table exposing (..)
 import Time exposing (..)
@@ -75,12 +76,23 @@ init =
 
 
 type Msg
-    = NoOp
+    = ClickedRoom Int -- Selected a specific Room
+    | ClickedLecturer Int -- Selected a specific Lecturer
+    | ClickedEvent Int -- Selected a specific Event
 
+
+-- Error: Compiler complains when I add Clicked to Msg
+-- type Clicked =
+--     -- | OnBlockClick BlockID -- Selected a specific Block
+--     ClickedRoom Int -- Selected a specific Room
+--     | ClickedLecturer Int -- Selected a specific Lecturer
+--     | ClickedEvent Int -- Selected a specific Event
 
 update : Msg -> Model -> ( Model, Cmd Msg )
-update msg model =
-    ( model, Cmd.none )
+update msg (Model data filters) =
+    case msg of
+        -- ClickedLecturer id -> ( (Model {data | rooms = fromList[]} filters), Cmd.none )
+        _ -> ( (Model data filters), Cmd.none )
 
 
 
@@ -93,17 +105,12 @@ view (Model data _) =
         [ div [ class "listbox-area" ]
             [ renderLecturers data.lecturers
             , renderRooms data.rooms
-            , renderEvents (values data.events) data.rooms data.lecturers
+            , renderEvents (toList data.events) data.rooms data.lecturers
             ]
         ]
 
 
-renderList : List String -> Html msg
-renderList lst =
-    ul [ class "list custom-scrollbar" ] (List.map (\l -> li [ class "list-item" ] [ text l ]) lst)
-
-
-renderEvents : List Event -> Table Room -> Table Lecturer -> Html msg
+renderEvents : List (Int,Event) -> Table Room -> Table Lecturer -> Html Msg
 renderEvents events rooms lecturers =
     ul [ class "list custom-scrollbar" ]
         (List.map (renderEvent rooms lecturers) events)
@@ -111,13 +118,13 @@ renderEvents events rooms lecturers =
 
 {-| Transforms an event into a list item
 -}
-renderEvent : Table Room -> Table Lecturer -> Event -> Html msg
-renderEvent rooms lecturers event =
+renderEvent : Table Room -> Table Lecturer -> (Int,Event) -> Html Msg
+renderEvent rooms lecturers (eventID, event) =
     let
         room =
             case event.room of
-                Just id ->
-                    case Table.get id rooms of
+                Just roomID ->
+                    case Table.get roomID rooms of
                         Just val ->
                             val
 
@@ -131,8 +138,8 @@ renderEvent rooms lecturers event =
 
         lecturer =
             case event.lecturer of
-                Just id ->
-                    case Table.get id lecturers of
+                Just lecturerID ->
+                    case Table.get lecturerID lecturers of
                         Just val ->
                             val
 
@@ -144,7 +151,7 @@ renderEvent rooms lecturers event =
                 Nothing ->
                     Lecturer "----" "----" [] [] []
     in
-    li [ class "list-item" ]
+    li [ class "list-item", onClick (ClickedEvent eventID)]
         [ div [ style "width" "10%" ] [ text event.subjectAbbr ]
         , div [ style "width" "35%" ] [ text event.subject ]
         , div [ style "width" "5%" ] [ text (convertWeekDay event.start_time) ]
@@ -156,7 +163,7 @@ renderEvent rooms lecturers event =
         ]
 
 
-renderRooms : Table Room -> Html msg
+renderRooms : Table Room -> Html Msg
 renderRooms rooms =
     let
         roomsList =
@@ -166,22 +173,24 @@ renderRooms rooms =
         (List.map renderRoom roomsList)
 
 
-renderRoom : ( Int, Room ) -> Html unknown
+renderRoom : ( Int, Room ) -> Html Msg
 renderRoom ( int, room ) =
-    li [ class "list-item" ] [ div [] [ text room.abbr ] ]
+    li [ class "list-item", onClick (ClickedRoom int)] [ div [] [ text room.abbr ] ]
 
 
-renderLecturers : Table Lecturer -> Html msg
+renderLecturers : Table Lecturer -> Html Msg
 renderLecturers lecturers =
     let
-        renderLecturer ( int, lecturer ) =
-            li [ class "list-item" ] [ div [] [ text lecturer.abbr ] ]
-
         lecturersList =
             Table.toList lecturers
     in
     ul [ class "list custom-scrollbar" ]
         (List.map renderLecturer lecturersList)
+
+
+renderLecturer : ( Int, Lecturer ) -> Html Msg
+renderLecturer ( int, lecturer ) =
+    li [ class "list-item", onClick (ClickedLecturer int) ] [ div [] [ text lecturer.abbr ] ]
 
 
 main : Program () Model Msg

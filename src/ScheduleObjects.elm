@@ -35,6 +35,10 @@ type alias LecturerID =
     ID
 
 
+type alias EventID =
+    ID
+
+
 {-| A room has an ID, a name, a abbreviation and a capacity.
 -}
 type alias Room =
