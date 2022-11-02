@@ -70,3 +70,9 @@ table.table-borderless > tbody > tr > td {
 .table tbody tr.hover th {
   background-color: whiteSmoke;
 }
+
+.table-container {
+  width: 100%;
+  display: inline-flex;
+  justify-content: space-between;
+}

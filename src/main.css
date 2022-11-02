@@ -52,6 +52,7 @@ img {
   overflow-y: hidden;
   overflow-x: clip;
   height: 10%;
+  cursor:pointer;
 }
 
 .listbox-area {
