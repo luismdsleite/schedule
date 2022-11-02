@@ -8,7 +8,7 @@ import Html.Events exposing (onClick)
 import ScheduleObjects exposing (..)
 import Table exposing (..)
 import Time exposing (..)
-
+import Html.Attributes.Aria exposing (ariaLabel)
 
 
 -- TODO: Remove data in init and read from a json file
@@ -112,7 +112,7 @@ view (Model data _) =
 
 renderEvents : List (Int,Event) -> Table Room -> Table Lecturer -> Html Msg
 renderEvents events rooms lecturers =
-    ul [ class "list custom-scrollbar" ]
+    ul [ ariaLabel "Cadeiras", class "list custom-scrollbar" ]
         (List.map (renderEvent rooms lecturers) events)
 
 
@@ -169,7 +169,7 @@ renderRooms rooms =
         roomsList =
             Table.toList rooms
     in
-    ul [ class "list custom-scrollbar" ]
+    ul [ ariaLabel "Salas", class "list custom-scrollbar" ]
         (List.map renderRoom roomsList)
 
 
@@ -184,7 +184,7 @@ renderLecturers lecturers =
         lecturersList =
             Table.toList lecturers
     in
-    ul [ class "list custom-scrollbar" ]
+    ul [ ariaLabel "Docentes", class "list custom-scrollbar" ]
         (List.map renderLecturer lecturersList)
 
 
