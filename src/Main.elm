@@ -152,14 +152,14 @@ renderEvent rooms lecturers (eventID, event) =
                     Lecturer "----" "----" [] [] []
     in
     li [ class "list-item", onClick (ClickedEvent eventID)]
-        [ div [ style "width" "10%" ] [ text event.subjectAbbr ]
-        , div [ style "width" "35%" ] [ text event.subject ]
-        , div [ style "width" "5%" ] [ text (convertWeekDay event.start_time) ]
-        , div [ style "width" "10%" ] [ text (convertHourAndMinute event.start_time) ]
-        , div [ style "width" "10%" ] [ text (convertHourAndMinute event.end_time) ]
-        , div [ style "width" "10%" ] [ text room.abbr ]
-        , div [ style "width" "10%" ] [ text (String.fromInt room.capacity) ]
-        , div [ style "width" "10%" ] [ text lecturer.abbr ]
+        [ div [ class "custom-scrollbar", class "list-text", style "width" "10%" ] [ text event.subjectAbbr ]
+        , div [ class "custom-scrollbar", class "list-text", style "width" "35%" ] [ text event.subject ]
+        , div [ class "custom-scrollbar", class "list-text", style "width" "5%" ] [ text (convertWeekDay event.start_time) ]
+        , div [ class "custom-scrollbar", class "list-text", style "width" "10%" ] [ text (convertHourAndMinute event.start_time) ]
+        , div [ class "custom-scrollbar", class "list-text", style "width" "10%" ] [ text (convertHourAndMinute event.end_time) ]
+        , div [ class "custom-scrollbar", class "list-text", style "width" "10%" ] [ text room.abbr ]
+        , div [ class "custom-scrollbar", class "list-text", style "width" "10%" ] [ text (String.fromInt room.capacity) ]
+        , div [ class "custom-scrollbar", class "list-text", style "width" "10%" ] [ text lecturer.abbr ]
         ]
 
 
@@ -175,7 +175,7 @@ renderRooms rooms =
 
 renderRoom : ( Int, Room ) -> Html Msg
 renderRoom ( int, room ) =
-    li [ class "list-item", onClick (ClickedRoom int)] [ div [] [ text room.abbr ] ]
+    li [ class "list-item", onClick (ClickedRoom int)] [ div [class "custom-scrollbar", class "list-text"] [ text room.abbr ] ]
 
 
 renderLecturers : Table Lecturer -> Html Msg
@@ -190,7 +190,7 @@ renderLecturers lecturers =
 
 renderLecturer : ( Int, Lecturer ) -> Html Msg
 renderLecturer ( int, lecturer ) =
-    li [ class "list-item", onClick (ClickedLecturer int) ] [ div [] [ text lecturer.abbr ] ]
+    li [ class "list-item", onClick (ClickedLecturer int) ] [ div [class "custom-scrollbar", class "list-text"] [ text lecturer.abbr ] ]
 
 
 main : Program () Model Msg

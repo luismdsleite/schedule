@@ -91,3 +91,9 @@ ul:before{
   font-weight:bold;
   /* margin-left:-15px; */
 }
+
+.list-text{
+  white-space: nowrap;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
