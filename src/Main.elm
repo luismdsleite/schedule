@@ -19,10 +19,13 @@ import Time exposing (..)
 --     { data : Data
 --     , filters : Array ScheduleFilter
 --     }
+-- TODO: Colision Model
+-- DONE: Superior ordem function on filter (anonymous function)
+-- TODO: Separate view to a different file
 
 
 type Model
-    = Model Data (Array ScheduleFilter)
+    = Model Data ScheduleFilter
 
 
 type alias Data =
@@ -33,17 +36,27 @@ type alias Data =
     }
 
 
-
--- type ScheduleFilter
---     = RoomFilter (List ( Int, Event ))
---     | LecturerFilter (List ( Int, Event ))
---     | BlockFilter (List ( Int, Event ))
+type ScheduleFilter
+    = ScheduleFilter RoomFilter LecturerFilter BlockFilter
 
 
-{-| Has the data required to represent a schedule
--}
-type alias ScheduleFilter =
-    List ( Int, Event )
+type alias RoomFilter =
+    Int -> Event -> Bool
+
+
+type alias LecturerFilter =
+    Int -> Event -> Bool
+
+
+type alias BlockFilter =
+    Int -> Event -> Bool
+
+
+
+-- {-| Has the data required to represent a schedule
+-- -}
+-- type alias ScheduleFilter =
+--     List ( Int, Event )
 
 
 filterIndex : { lecturer : Int, room : Int }
@@ -66,12 +79,7 @@ init =
                 ]
         , blocks = []
         }
-        (Array.fromList
-            [ []
-            , []
-            , []
-            ]
-        )
+        (ScheduleFilter (\_ _ -> False) (\_ _ -> False) (\_ _ -> False))
     , Cmd.none
     )
 
@@ -81,9 +89,13 @@ init =
 
 
 type Msg
-    = ClickedRoom Int -- Selected a specific Room
-    | ClickedLecturer Int -- Selected a specific Lecturer
-    | ClickedEvent Int -- Selected a specific Event
+    = ItemClick OnItemClick
+
+
+type OnItemClick
+    = OnRoomClick Int
+    | OnLecturerClick Int
+    | OnEventClick Int
 
 
 
@@ -96,41 +108,81 @@ type Msg
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
-update msg (Model data filters) =
+update msg (Model data (ScheduleFilter roomFilter lectFilter blockFilter)) =
     case msg of
-        -- Get all events with a certain room ID, construct a ScheduleFilter and update it in the Model
-        ClickedRoom id ->
+        -- Get all events with a certain Room ID and with it update the Room Filter.
+        ItemClick (OnRoomClick id) ->
             let
-                roomFilter : Int -> Event -> Bool
-                roomFilter _ event =
+                newRoomFilter : Int -> Event -> Bool
+                newRoomFilter _ event =
                     case event.room of
                         Just (ID int) ->
                             int == id
 
                         Nothing ->
                             False
-
-                filteredEvents : ScheduleFilter
-                filteredEvents =
-                    filter roomFilter data.events
             in
-            ( Model data (Array.set filterIndex.room filteredEvents filters), Cmd.none )
+            ( Model data (ScheduleFilter newRoomFilter lectFilter blockFilter), Cmd.none )
 
-        _ ->
-            ( Model data filters, Cmd.none )
+        -- Get all events with a certain Lecturer ID and with it update the Lecturer Filter.
+        ItemClick (OnLecturerClick id) ->
+            let
+                newLectFilter : Int -> Event -> Bool
+                newLectFilter _ event =
+                    case event.lecturer of
+                        Just (ID int) ->
+                            int == id
+
+                        Nothing ->
+                            False
+            in
+            ( Model data (ScheduleFilter roomFilter newLectFilter blockFilter), Cmd.none )
+
+        {-
+           For an Event click we need to change both the room Filter and the Lecturer Filter.
+           Get all events with a certain Room ID and with it update the Room Filter.
+           Get all events with a certain Lecturer ID and with it update the Lecturer Filter.
+        -}
+        ItemClick (OnEventClick id) ->
+            -- let
+            --     -- Getting the event from the Table of Events
+            --     eventGet =
+            --         Table.get (ID id) data.events
+            --     (newRoomFilter,newRoomFilter2) =
+            --         case eventGet of
+            --             Just event ->
+            --                 (roomFilter,roomFilter)
+            --             _ -> 
+            --                 (roomFilter,roomFilter)
+            -- in
+            ( Model data (ScheduleFilter roomFilter lectFilter blockFilter), Cmd.none )
 
 
 
+-- _ ->
+--     ( Model data (ScheduleFilter roomFilter lectFilter blockFilter), Cmd.none )
 ---- VIEW ----
 
 
 view : Model -> Html Msg
-view (Model data filters) =
+view (Model data (ScheduleFilter roomFilter lectFilter blockFilter)) =
     let
         tableWidth =
-            90 / (Array.length filters |> toFloat) |> floor
+            90 / (3 |> toFloat) |> floor
 
-        -- x = Debug.log "" tableWidth
+        -- To shorten the function call
+        renderScheduleAbbr =
+            renderSchedule tableWidth
+
+        -- Here we render the filters, turning them from (Int -> Event -> Bool) into a List (Int, Event)
+        roomList =
+            filter roomFilter data.events
+
+        lectList =
+            filter lectFilter data.events
+
+        blockList =
+            filter blockFilter data.events
     in
     div []
         [ div [ class "listbox-area" ]
@@ -138,18 +190,17 @@ view (Model data filters) =
             , renderRooms data.rooms
             , renderEvents (toList data.events) data.rooms data.lecturers
             ]
-        , div [ class "table-container" ] (Array.map (renderSchedule tableWidth) filters |> Array.toList)
+        , div [ class "table-container" ] [ renderScheduleAbbr roomList, renderScheduleAbbr lectList, renderScheduleAbbr blockList ]
         ]
 
 
-renderSchedule : Int -> ScheduleFilter -> Html Msg
-renderSchedule tableWidth schedule =
+renderSchedule : Int -> List ( Int, Event ) -> Html Msg
+renderSchedule tableWidth filter =
     let
         widthStr =
             String.append (tableWidth |> String.fromInt) "%"
-
     in
-    table [ class "calender", class "table", class "table-bordered", style "width" widthStr ] []
+    table [ class "calender", class "table", class "table-bordered", style "width" widthStr ] [ text <| Debug.toString <| filter ]
 
 
 {-| Renders all the events into a list
@@ -195,7 +246,7 @@ renderEvent rooms lecturers ( eventID, event ) =
                 Nothing ->
                     Lecturer "----" "----" [] [] []
     in
-    li [ class "list-item", onClick (ClickedEvent eventID) ]
+    li [ class "list-item", onClick (ItemClick (OnEventClick eventID)) ]
         [ div [ class "custom-scrollbar", class "list-text", style "width" "10%" ] [ text event.subjectAbbr ]
         , div [ class "custom-scrollbar", class "list-text", style "width" "35%" ] [ text event.subject ]
         , div [ class "custom-scrollbar", class "list-text", style "width" "5%" ] [ text (convertWeekDay event.start_time) ]
@@ -219,7 +270,7 @@ renderRooms rooms =
 
 renderRoom : ( Int, Room ) -> Html Msg
 renderRoom ( int, room ) =
-    li [ class "list-item", onClick (ClickedRoom int) ] [ div [ class "custom-scrollbar", class "list-text" ] [ text room.abbr ] ]
+    li [ class "list-item", onClick (ItemClick (OnRoomClick int)) ] [ div [ class "custom-scrollbar", class "list-text" ] [ text room.abbr ] ]
 
 
 renderLecturers : Table Lecturer -> Html Msg
@@ -234,7 +285,7 @@ renderLecturers lecturers =
 
 renderLecturer : ( Int, Lecturer ) -> Html Msg
 renderLecturer ( int, lecturer ) =
-    li [ class "list-item", onClick (ClickedLecturer int) ] [ div [ class "custom-scrollbar", class "list-text" ] [ text lecturer.abbr ] ]
+    li [ class "list-item", onClick (ItemClick (OnLecturerClick int)) ] [ div [ class "custom-scrollbar", class "list-text" ] [ text lecturer.abbr ] ]
 
 
 main : Program () Model Msg
