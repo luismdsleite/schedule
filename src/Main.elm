@@ -220,7 +220,7 @@ renderSchedule tableWidth filter title =
     in
     -- table [ class "calender", class "table", class "table-bordered", style "width" widthStr ] [ caption [] [ text <| title ], htmlTableHeader ]
     -- Debug table
-    table [ class "calender", class "table", class "table-bordered", style "width" widthStr ] [ text <| Debug.toString <| filter ]
+    table [ class "calender", class "table", class "table-bordered", style "width" widthStr ] [ caption [] [ text <| title ], text <| Debug.toString <| filter ]
 
 
 {-| Renders all the events into a list
