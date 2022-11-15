@@ -76,6 +76,9 @@ init =
                 [ Event "Algoritmos (CC4010)_TP.1" "Alga-TP3" (Just (ID 0)) (Just (WeekTime Time.Mon 9 30)) (Just (WeekTime Time.Mon 11 0)) (Just (ID 0))
                 , Event "asdasd (CC4011)_TP.1" "Alga-TP2" (Just (ID 0)) (Just (WeekTime Time.Mon 11 30)) (Just (WeekTime Time.Mon 12 0)) (Just (ID 1))
                 , Event "subject" "subjAbrr" (Just (ID 1)) (Just (WeekTime Time.Mon 11 30)) (Just (WeekTime Time.Mon 12 0)) (Just (ID 1))
+                , Event "noRoomEvent" "noRoomEvent" (Nothing) (Just (WeekTime Time.Mon 11 30)) (Just (WeekTime Time.Mon 12 0)) (Just (ID 1))
+                , Event "noLectEvent" "noLectEvent" (Just (ID 1)) (Just (WeekTime Time.Mon 11 30)) (Just (WeekTime Time.Mon 12 0)) (Nothing)
+                , Event "noRoom&LecEvent" "noRoom&LecEvent" (Nothing) (Just (WeekTime Time.Mon 11 30)) (Just (WeekTime Time.Mon 12 0)) (Nothing)
                 ]
         , blocks = []
         }
@@ -96,16 +99,6 @@ type OnItemClick
     = OnRoomClick Int
     | OnLecturerClick Int
     | OnEventClick Int
-
-
-
--- Error: Compiler complains when I add Clicked to Msg
--- type Clicked =
---     -- | OnBlockClick BlockID -- Selected a specific Block
---     ClickedRoom Int -- Selected a specific Room
---     | ClickedLecturer Int -- Selected a specific Lecturer
---     | ClickedEvent Int -- Selected a specific Event
-
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg (Model data (ScheduleFilter roomFilter lectFilter blockFilter)) =
@@ -142,20 +135,84 @@ update msg (Model data (ScheduleFilter roomFilter lectFilter blockFilter)) =
            For an Event click we need to change both the room Filter and the Lecturer Filter.
            Get all events with a certain Room ID and with it update the Room Filter.
            Get all events with a certain Lecturer ID and with it update the Lecturer Filter.
+           If the event ID received is not valid then no changes will occur.
         -}
         ItemClick (OnEventClick id) ->
-            -- let
-            --     -- Getting the event from the Table of Events
-            --     eventGet =
-            --         Table.get (ID id) data.events
-            --     (newRoomFilter,newRoomFilter2) =
-            --         case eventGet of
-            --             Just event ->
-            --                 (roomFilter,roomFilter)
-            --             _ -> 
-            --                 (roomFilter,roomFilter)
-            -- in
-            ( Model data (ScheduleFilter roomFilter lectFilter blockFilter), Cmd.none )
+            let
+                -- Getting the event from the Table of Events
+                eventGet =
+                    Table.get (ID id) data.events
+
+                {-
+                This double assignment searches if the event has a room and a lecturer. If the event has a room/lecturer exist then the filter is replaced with the matching room/lecturer filter, otherwise, we maintain the previous filter.
+                -}
+                -- 
+                ( updatedRoomFilter, updatedLectFilter ) =
+                    case eventGet of
+                        Just event ->
+                            let
+                                newroomfilter =
+                                    case event.room of
+                                        Just (ID roomID) ->
+                                            let
+                                                newRoomFilter : Int -> Event -> Bool
+                                                newRoomFilter _ ev =
+                                                    case ev.room of
+                                                        Just (ID int) ->
+                                                            int == roomID
+
+                                                        Nothing ->
+                                                            False
+                                            in
+                                            newRoomFilter
+
+                                        _ ->
+                                            roomFilter
+                                newLectfilter =
+                                    case event.lecturer of
+                                        Just (ID lectID) ->
+                                            let
+                                                newLectFilter : Int -> Event -> Bool
+                                                newLectFilter _ ev =
+                                                    case ev.lecturer of
+                                                        Just (ID int) ->
+                                                            int == lectID
+
+                                                        Nothing ->
+                                                            False
+                                            in
+                                            newLectFilter
+
+                                        _ ->
+                                            lectFilter
+                            in
+                            -- case event.room of
+                            --     Just (ID roomID) ->
+                            --         let
+                            --             newRoomFilter : Int -> Event -> Bool
+                            --             newRoomFilter _ ev =
+                            --                 case ev.room of
+                            --                     Just (ID int) ->
+                            --                         int == roomID
+                            --                     Nothing ->
+                            --                         False
+                            --             newLectFilter2 : Int -> Event -> Bool
+                            --             newLectFilter2 _ ev =
+                            --                 case ev.lecturer of
+                            --                     Just (ID int) ->
+                            --                         int == id
+                            --                     Nothing ->
+                            --                         False
+                            --         in
+                            --         ( newRoomFilter, newLectFilter2 )
+                            --     _ ->
+                            --         ( roomFilter, lectFilter )
+                            ( newroomfilter, newLectfilter )
+
+                        _ ->
+                            ( roomFilter, lectFilter )
+            in
+            ( Model data (ScheduleFilter updatedRoomFilter updatedLectFilter blockFilter), Cmd.none )
 
 
 
@@ -190,17 +247,17 @@ view (Model data (ScheduleFilter roomFilter lectFilter blockFilter)) =
             , renderRooms data.rooms
             , renderEvents (toList data.events) data.rooms data.lecturers
             ]
-        , div [ class "table-container" ] [ renderScheduleAbbr roomList, renderScheduleAbbr lectList, renderScheduleAbbr blockList ]
+        , div [ class "table-container" ] [ renderScheduleAbbr roomList "Salas", renderScheduleAbbr lectList "Docentes", renderScheduleAbbr blockList "Blocos"]
         ]
 
 
-renderSchedule : Int -> List ( Int, Event ) -> Html Msg
-renderSchedule tableWidth filter =
+renderSchedule : Int -> List ( Int, Event ) -> String -> Html Msg
+renderSchedule tableWidth filter title =
     let
         widthStr =
             String.append (tableWidth |> String.fromInt) "%"
     in
-    table [ class "calender", class "table", class "table-bordered", style "width" widthStr ] [ text <| Debug.toString <| filter ]
+    table [ class "calender", class "table", class "table-bordered", style "width" widthStr ] [caption [] [text <| title],  text <| Debug.toString <| filter ]
 
 
 {-| Renders all the events into a list
