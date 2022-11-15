@@ -10,6 +10,13 @@ A block is composed of events. An event is comprised of a subject, given in a sp
 type alias Block =
     { name : String, abbr : String, events : List Event, cond : Bool }
 
+type alias Data =
+    { rooms : Table Room
+    , lecturers : Table Lecturer
+    , events : Table Event
+    , blocks : List Block
+    }
+
 
 type alias Event =
     { subject : String
@@ -30,23 +37,40 @@ type alias WeekTime =
 type alias Lecturer =
     { name : String, abbr : String, goodTime : List WeekTime, difficultTime : List WeekTime, unavailableTime : List WeekTime }
 
-
-type alias LecturerID =
-    ID
-
-
-type alias EventID =
-    ID
-
-
 {-| A room has an ID, a name, a abbreviation and a capacity.
 -}
 type alias Room =
     { name : String, abbr : String, capacity : Int }
 
+type alias LecturerID =
+    ID
+
+type alias EventID =
+    ID
 
 type alias RoomID =
     ID
+
+
+
+---- Filters ----
+
+{-
+    A Filter is a specific view of all events (e.g. show all events from room X or show all events whose lecturer is C). 
+    The ScheduleFilter holds 3 different filter functions that are only parsed when displaying html.
+-}
+type ScheduleFilter
+    = ScheduleFilter RoomFilter LecturerFilter BlockFilter
+type alias RoomFilter =
+    Int -> Event -> Bool
+
+
+type alias LecturerFilter =
+    Int -> Event -> Bool
+
+
+type alias BlockFilter =
+    Int -> Event -> Bool 
 
 
 

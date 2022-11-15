@@ -21,39 +21,18 @@ import Time exposing (..)
 --     , filters : Array ScheduleFilter
 --     }
 -- TODO: Separate view to a different file
-
+-- PROBLEM: All view related functions output Html Msg, Msg is part of the Main module.
 -- DONE: Colision Model.
--- INFO: Hash function = (hour-8)*2+V(minute), V(minute) = 1 if minute >= 30, otherwise minute = 0. H
+-- INFO: Hash function = (hour-8)*2+V(minute), V(minute) = 1 if minute >= 30, otherwise minute = 0. type alias Hashmap = Array (List Event).
 -- DONE: Superior ordem function on filter (anonymous function). Delaying the events calculation till we render the view.
 -- DONE: Finished all updates of the OnItemClick msgs.
--- Done: Encapsulated all On(something)Click msgs to a OnItemClick type
--- PROBLEM: planned schedule html display does not fulfill our needs.
+-- DONE: Encapsulated all On(something)Click msgs to a OnItemClick type
+-- PROBLEM: planned schedule html display does not fulfill our needs. Do i try to create a new one using css grid?
+
+
 type Model
     = Model Data ScheduleFilter
 
-
-type alias Data =
-    { rooms : Table Room
-    , lecturers : Table Lecturer
-    , events : Table Event
-    , blocks : List Block
-    }
-
-
-type ScheduleFilter
-    = ScheduleFilter RoomFilter LecturerFilter BlockFilter
-
-
-type alias RoomFilter =
-    Int -> Event -> Bool
-
-
-type alias LecturerFilter =
-    Int -> Event -> Bool
-
-
-type alias BlockFilter =
-    Int -> Event -> Bool 
 
 filterIndex : { lecturer : Int, room : Int }
 filterIndex =
@@ -190,6 +169,9 @@ update msg (Model data (ScheduleFilter roomFilter lectFilter blockFilter)) =
                             ( roomFilter, lectFilter )
             in
             ( Model data (ScheduleFilter updatedRoomFilter updatedLectFilter blockFilter), Cmd.none )
+
+
+
 ---- VIEW ----
 
 
@@ -236,9 +218,9 @@ renderSchedule tableWidth filter title =
             in
             thead [] [ tr [] [ th [] [ text <| nbsp ], dayOfWeekDiv Mon, dayOfWeekDiv Tue, dayOfWeekDiv Wed, dayOfWeekDiv Thu, dayOfWeekDiv Fri ] ]
     in
-    table [ class "calender", class "table", class "table-bordered", style "width" widthStr ] [ caption [] [ text <| title ], htmlTableHeader ]
-    -- Debug table 
-    -- table [class "calender", class "table", class "table-bordered", style "width" widthStr ] [text <| Debug.toString <| filter ]
+    -- table [ class "calender", class "table", class "table-bordered", style "width" widthStr ] [ caption [] [ text <| title ], htmlTableHeader ]
+    -- Debug table
+    table [ class "calender", class "table", class "table-bordered", style "width" widthStr ] [ text <| Debug.toString <| filter ]
 
 
 {-| Renders all the events into a list
@@ -326,6 +308,10 @@ renderLecturer ( int, lecturer ) =
     li [ class "list-item", onClick (ItemClick (OnLecturerClick int)) ] [ div [ class "custom-scrollbar", class "list-text" ] [ text lecturer.abbr ] ]
 
 
+
+---- MAIN ----
+
+
 main : Program () Model Msg
 main =
     Browser.element
@@ -334,8 +320,3 @@ main =
         , update = update
         , subscriptions = always Sub.none
         }
-
-
-
--- createRoomID : Int -> RoomID
--- createRoomID int = RoomID(int)
