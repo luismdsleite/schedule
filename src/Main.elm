@@ -2,6 +2,7 @@ module Main exposing (..)
 
 import Array exposing (Array)
 import Browser
+import Exts.Html exposing (nbsp)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Attributes.Aria exposing (ariaLabel)
@@ -19,11 +20,14 @@ import Time exposing (..)
 --     { data : Data
 --     , filters : Array ScheduleFilter
 --     }
--- TODO: Colision Model
--- DONE: Superior ordem function on filter (anonymous function)
 -- TODO: Separate view to a different file
 
-
+-- DONE: Colision Model.
+-- INFO: Hash function = (hour-8)*2+V(minute), V(minute) = 1 if minute >= 30, otherwise minute = 0. H
+-- DONE: Superior ordem function on filter (anonymous function). Delaying the events calculation till we render the view.
+-- DONE: Finished all updates of the OnItemClick msgs.
+-- Done: Encapsulated all On(something)Click msgs to a OnItemClick type
+-- PROBLEM: planned schedule html display does not fulfill our needs.
 type Model
     = Model Data ScheduleFilter
 
@@ -49,15 +53,7 @@ type alias LecturerFilter =
 
 
 type alias BlockFilter =
-    Int -> Event -> Bool
-
-
-
--- {-| Has the data required to represent a schedule
--- -}
--- type alias ScheduleFilter =
---     List ( Int, Event )
-
+    Int -> Event -> Bool 
 
 filterIndex : { lecturer : Int, room : Int }
 filterIndex =
@@ -76,9 +72,9 @@ init =
                 [ Event "Algoritmos (CC4010)_TP.1" "Alga-TP3" (Just (ID 0)) (Just (WeekTime Time.Mon 9 30)) (Just (WeekTime Time.Mon 11 0)) (Just (ID 0))
                 , Event "asdasd (CC4011)_TP.1" "Alga-TP2" (Just (ID 0)) (Just (WeekTime Time.Mon 11 30)) (Just (WeekTime Time.Mon 12 0)) (Just (ID 1))
                 , Event "subject" "subjAbrr" (Just (ID 1)) (Just (WeekTime Time.Mon 11 30)) (Just (WeekTime Time.Mon 12 0)) (Just (ID 1))
-                , Event "noRoomEvent" "noRoomEvent" (Nothing) (Just (WeekTime Time.Mon 11 30)) (Just (WeekTime Time.Mon 12 0)) (Just (ID 1))
-                , Event "noLectEvent" "noLectEvent" (Just (ID 1)) (Just (WeekTime Time.Mon 11 30)) (Just (WeekTime Time.Mon 12 0)) (Nothing)
-                , Event "noRoom&LecEvent" "noRoom&LecEvent" (Nothing) (Just (WeekTime Time.Mon 11 30)) (Just (WeekTime Time.Mon 12 0)) (Nothing)
+                , Event "noRoomEvent" "noRoomEvent" Nothing (Just (WeekTime Time.Tue 11 30)) (Just (WeekTime Time.Tue 12 0)) (Just (ID 1))
+                , Event "noLectEvent" "noLectEvent" (Just (ID 1)) (Just (WeekTime Time.Sat 11 30)) (Just (WeekTime Time.Sat 12 0)) Nothing
+                , Event "noRoom&LecEvent" "noRoom&LecEvent" Nothing (Just (WeekTime Time.Wed 11 30)) (Just (WeekTime Time.Wed 12 0)) Nothing
                 ]
         , blocks = []
         }
@@ -99,6 +95,7 @@ type OnItemClick
     = OnRoomClick Int
     | OnLecturerClick Int
     | OnEventClick Int
+
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg (Model data (ScheduleFilter roomFilter lectFilter blockFilter)) =
@@ -144,9 +141,9 @@ update msg (Model data (ScheduleFilter roomFilter lectFilter blockFilter)) =
                     Table.get (ID id) data.events
 
                 {-
-                This double assignment searches if the event has a room and a lecturer. If the event has a room/lecturer exist then the filter is replaced with the matching room/lecturer filter, otherwise, we maintain the previous filter.
+                   This double assignment searches if the event has a room and a lecturer. If the event has a room/lecturer exist then the filter is replaced with the matching room/lecturer filter, otherwise, we maintain the previous filter.
                 -}
-                -- 
+                --
                 ( updatedRoomFilter, updatedLectFilter ) =
                     case eventGet of
                         Just event ->
@@ -168,6 +165,7 @@ update msg (Model data (ScheduleFilter roomFilter lectFilter blockFilter)) =
 
                                         _ ->
                                             roomFilter
+
                                 newLectfilter =
                                     case event.lecturer of
                                         Just (ID lectID) ->
@@ -186,38 +184,12 @@ update msg (Model data (ScheduleFilter roomFilter lectFilter blockFilter)) =
                                         _ ->
                                             lectFilter
                             in
-                            -- case event.room of
-                            --     Just (ID roomID) ->
-                            --         let
-                            --             newRoomFilter : Int -> Event -> Bool
-                            --             newRoomFilter _ ev =
-                            --                 case ev.room of
-                            --                     Just (ID int) ->
-                            --                         int == roomID
-                            --                     Nothing ->
-                            --                         False
-                            --             newLectFilter2 : Int -> Event -> Bool
-                            --             newLectFilter2 _ ev =
-                            --                 case ev.lecturer of
-                            --                     Just (ID int) ->
-                            --                         int == id
-                            --                     Nothing ->
-                            --                         False
-                            --         in
-                            --         ( newRoomFilter, newLectFilter2 )
-                            --     _ ->
-                            --         ( roomFilter, lectFilter )
                             ( newroomfilter, newLectfilter )
 
                         _ ->
                             ( roomFilter, lectFilter )
             in
             ( Model data (ScheduleFilter updatedRoomFilter updatedLectFilter blockFilter), Cmd.none )
-
-
-
--- _ ->
---     ( Model data (ScheduleFilter roomFilter lectFilter blockFilter), Cmd.none )
 ---- VIEW ----
 
 
@@ -247,7 +219,7 @@ view (Model data (ScheduleFilter roomFilter lectFilter blockFilter)) =
             , renderRooms data.rooms
             , renderEvents (toList data.events) data.rooms data.lecturers
             ]
-        , div [ class "table-container" ] [ renderScheduleAbbr roomList "Salas", renderScheduleAbbr lectList "Docentes", renderScheduleAbbr blockList "Blocos"]
+        , div [ class "table-container" ] [ renderScheduleAbbr roomList "Salas", renderScheduleAbbr lectList "Docentes", renderScheduleAbbr blockList "Blocos" ]
         ]
 
 
@@ -256,8 +228,17 @@ renderSchedule tableWidth filter title =
     let
         widthStr =
             String.append (tableWidth |> String.fromInt) "%"
+
+        htmlTableHeader =
+            let
+                dayOfWeekDiv day =
+                    th [ style "width" "20%" ] [ text <| toPortugueseWeekday <| day ]
+            in
+            thead [] [ tr [] [ th [] [ text <| nbsp ], dayOfWeekDiv Mon, dayOfWeekDiv Tue, dayOfWeekDiv Wed, dayOfWeekDiv Thu, dayOfWeekDiv Fri ] ]
     in
-    table [ class "calender", class "table", class "table-bordered", style "width" widthStr ] [caption [] [text <| title],  text <| Debug.toString <| filter ]
+    table [ class "calender", class "table", class "table-bordered", style "width" widthStr ] [ caption [] [ text <| title ], htmlTableHeader ]
+    -- Debug table 
+    -- table [class "calender", class "table", class "table-bordered", style "width" widthStr ] [text <| Debug.toString <| filter ]
 
 
 {-| Renders all the events into a list
