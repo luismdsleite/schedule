@@ -33,14 +33,6 @@ import Time exposing (..)
 type Model
     = Model Data ScheduleFilter
 
-
-filterIndex : { lecturer : Int, room : Int }
-filterIndex =
-    { lecturer = 1
-    , room = 2
-    }
-
-
 init : ( Model, Cmd Msg )
 init =
     ( Model
