@@ -2,6 +2,7 @@ module Main exposing (..)
 
 import Array exposing (Array)
 import Browser
+import DisplayEvents exposing (..)
 import Exts.Html exposing (nbsp)
 import Html exposing (..)
 import Html.Attributes exposing (..)
@@ -32,6 +33,7 @@ import Time exposing (..)
 
 type Model
     = Model Data ScheduleFilter
+
 
 init : ( Model, Cmd Msg )
 init =
@@ -114,7 +116,7 @@ update msg (Model data (ScheduleFilter roomFilter lectFilter blockFilter)) =
                 {-
                    This double assignment searches if the event has a room and a lecturer. If the event has a room/lecturer exist then the filter is replaced with the matching room/lecturer filter, otherwise, we maintain the previous filter.
                 -}
-                --
+                -- This can be reduced! I simply do not know how, I suspect it's with the use of Maybe.AndThen().
                 ( updatedRoomFilter, updatedLectFilter ) =
                     case eventGet of
                         Just event ->
