@@ -16,20 +16,8 @@ import Time exposing (..)
 
 -- TODO: Remove data in init and read from a json file
 -- TODO: Represent blocks by function that receives and event and outputs a bool
----- MODEL ----
--- type alias Model =
---     { data : Data
---     , filters : Array ScheduleFilter
---     }
--- TODO: Separate view to a different file
--- PROBLEM: All view related functions output Html Msg, Msg is part of the Main module.
--- DONE: Colision Model.
 -- INFO: Hash function = (hour-8)*2+V(minute), V(minute) = 1 if minute >= 30, otherwise minute = 0. type alias Hashmap = Array (List Event).
--- DONE: Superior ordem function on filter (anonymous function). Delaying the events calculation till we render the view.
--- DONE: Finished all updates of the OnItemClick msgs.
--- DONE: Encapsulated all On(something)Click msgs to a OnItemClick type
--- PROBLEM: planned schedule html display does not fulfill our needs. Do i try to create a new one using css grid?
-
+-- DUVIDA: padding in .calendar li{}
 
 type Model
     = Model Data ScheduleFilter
@@ -195,7 +183,7 @@ view (Model data (ScheduleFilter roomFilter lectFilter blockFilter)) =
             , renderRooms data.rooms
             , renderEvents (toList data.events) data.rooms data.lecturers
             ]
-        , div [ class "table-container" ] [ renderScheduleAbbr roomList "Salas", renderScheduleAbbr lectList "Docentes", renderScheduleAbbr blockList "Blocos" ]
+        , div [ class "grids-container" ] [ renderScheduleAbbr roomList "Salas", renderScheduleAbbr lectList "Docentes", renderScheduleAbbr blockList "Blocos" ]
         ]
 
 
@@ -205,16 +193,53 @@ renderSchedule tableWidth filter title =
         widthStr =
             String.append (tableWidth |> String.fromInt) "%"
 
-        htmlTableHeader =
+        mon =
+            li [ class "day mon" ] [ text "Seg" ]
+
+        tue =
+            li [ class "day tue" ] [ text "Terç" ]
+
+        wed =
+            li [ class "day wed" ] [ text "Qua" ]
+
+        thu =
+            li [ class "day thu" ] [ text "Qui" ]
+
+        fri =
+            li [ class "day fri" ] [ text "Sex" ]
+
+        -- List ["08:00", "08:30", .. , "19:00", "19:30"]
+        timeblocksText =
             let
-                dayOfWeekDiv day =
-                    th [ style "width" "20%" ] [ text <| toPortugueseWeekday <| day ]
+                -- List [8,8,9,9,10,10,..,18,18,19,19]
+                hours =
+                    List.sort ((List.range 8 19) ++ (List.range 8 19))
+
+                -- List [0,30,0,30,30, ...]
+                minutes =
+                    List.indexedMap
+                        (\index _ ->
+                            if modBy 2 index == 0 then
+                                0
+
+                            else
+                                30
+                        )
+                        (List.repeat 24 0)
             in
-            thead [] [ tr [] [ th [] [ text <| nbsp ], dayOfWeekDiv Mon, dayOfWeekDiv Tue, dayOfWeekDiv Wed, dayOfWeekDiv Thu, dayOfWeekDiv Fri ] ]
+            List.map2 convertHourAndMinute (Debug.log "hours" hours) (Debug.log "minutes" minutes)
+
+        timeblocks =
+            List.map2 (\index str -> li [ class ("time t" ++ String.fromInt index) ] [ text str ]) (List.range 0 23) (Debug.log "table" timeblocksText)
     in
-    -- table [ class "calender", class "table", class "table-bordered", style "width" widthStr ] [ caption [] [ text <| title ], htmlTableHeader ]
-    -- Debug table
-    table [ class "calender", class "table", class "table-bordered", style "width" widthStr ] [ caption [] [ text <| title ], text <| Debug.toString <| filter ]
+    ul [ class "calendar weekly-byhour", style "width" widthStr ]
+        ([ mon, tue, wed, thu, fri ] ++ timeblocks ++ List.repeat (24 * 5) (li [] []))
+
+
+
+-- |> Debug.log "1:" timeblocks
+-- Debug table
+-- table [ class "calender", class "table", class "table-bordered", style "width" widthStr ] [ caption [] [ text <| title ], text <| Debug.toString <| filter ]
 
 
 {-| Renders all the events into a list
@@ -264,8 +289,8 @@ renderEvent rooms lecturers ( eventID, event ) =
         [ div [ class "custom-scrollbar", class "list-text", style "width" "10%" ] [ text event.subjectAbbr ]
         , div [ class "custom-scrollbar", class "list-text", style "width" "35%" ] [ text event.subject ]
         , div [ class "custom-scrollbar", class "list-text", style "width" "5%" ] [ text (convertWeekDay event.start_time) ]
-        , div [ class "custom-scrollbar", class "list-text", style "width" "10%" ] [ text (convertHourAndMinute event.start_time) ]
-        , div [ class "custom-scrollbar", class "list-text", style "width" "10%" ] [ text (convertHourAndMinute event.end_time) ]
+        , div [ class "custom-scrollbar", class "list-text", style "width" "10%" ] [ text (convertWeekTimeHourAndMinute event.start_time) ]
+        , div [ class "custom-scrollbar", class "list-text", style "width" "10%" ] [ text (convertWeekTimeHourAndMinute event.end_time) ]
         , div [ class "custom-scrollbar", class "list-text", style "width" "10%" ] [ text room.abbr ]
         , div [ class "custom-scrollbar", class "list-text", style "width" "10%" ] [ text (String.fromInt room.capacity) ]
         , div [ class "custom-scrollbar", class "list-text", style "width" "10%" ] [ text lecturer.abbr ]

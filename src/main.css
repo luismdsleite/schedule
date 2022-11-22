@@ -95,6 +95,12 @@ ul:before{
 
 .list-text{
   white-space: nowrap;
-  overflow-x: auto;
-  overflow-y: hidden;
+  overflow:hidden;
+  direction:ltr;
+  /* overflow-x: auto;
+  overflow-y: hidden; */
+}
+
+.list-text:hover{
+  overflow:auto;
 }

@@ -1,0 +1,110 @@
+/* body { font: 1em sans-serif;} */
+
+.grids-container {
+    width: 100%;
+    /* height: 60vh; */
+    display: inline-flex;
+    justify-content: space-evenly;
+  }
+
+/* GRID SETUP */
+.calendar {
+  box-shadow: 0 5px 10px rgba(154,160,185,.05), 0 15px 40px rgba(166,173,201,.2);
+  display: grid;
+  grid-gap: 1px;
+  background-color: #eee;
+  /* position: fixed; */
+  width: 100%;
+  height: 100%;
+  padding: unset;
+/*   padding: 5px; */
+
+}
+
+.weekly-byhour {
+  /* NAMED LINE NUMBERS (between tracks): 
+        COLS: hour markers + 7 days
+        ROWS: day markers + 24 hours */
+  grid-template-columns: 
+    [time] auto [mon] 1fr [tue] 1fr [wed] 1fr [thu] 1fr [fri] 1fr [end-col];
+  grid-template-rows:
+    [day]  auto
+    [t0]  1fr 
+    [t1]  1fr 
+    [t2]  1fr 
+    [t3]  1fr 
+    [t4]  1fr 
+    [t5]  1fr
+    [t6]  1fr
+    [t7]  1fr 
+    [t8]  1fr
+    [t9]  1fr
+    [t10]  1fr 
+    [t11]  1fr 
+    [t12]  1fr 
+    [t13]  1fr 
+    [t14]  1fr 
+    [t15]  1fr 
+    [t16]  1fr 
+    [t17]  1fr 
+    [t18]  1fr 
+    [t19]  1fr 
+    [t20]  1fr 
+    [t21]  1fr 
+    [t22]  1fr 
+    [t23]  1fr 
+    [end-row];
+}
+
+/* GENERAL ITEM SETUP */
+.calendar li {
+  background-color: white;
+  padding: 0.15em;
+  display: inline-block;
+  /* border: 1px solid rgba(0, 0, 0, 0.8); */
+}
+
+/* ITEM TYPES */
+li.day, li.time, li.corner { background-color: #f5f5f5; }
+li.day { text-align: center; }
+li.time { text-align: right; vertical-align: bottom; }
+li.event { background-color: #82caaf; position: absolute; height: 100%; width: 100%; padding: unset; text-align: center; box-shadow: 1px 1px; /* box-shadow: 1px 1px 2px 0px rgba(0,0,0,1); */}
+
+/* CATEGORIES */
+.event.work { background-color: #fecf6a; }
+.event.personal { background-color: #82caaf; }
+
+/* DAY HEADINGS   row / col */
+.sun { grid-area: day / sun; }
+.mon { grid-area: day / mon; }
+.tue { grid-area: day / tue; }
+.wed { grid-area: day / wed; }
+.thu { grid-area: day / thu; }
+.fri { grid-area: day / fri; }
+.sat { grid-area: day / sat; }
+
+/* TIME HEADINGS  row / col */
+.t0 { grid-area: t0 / time; }
+.t1 { grid-area: t1 / time; }
+.t2 { grid-area: t2 / time; }
+.t3 { grid-area: t3 / time; }
+.t4 { grid-area: t4 / time; }
+.t5 { grid-area: t5 / time; }
+.t6 { grid-area: t6 / time; }
+.t7 { grid-area: t7 / time; }
+.t8 { grid-area: t8 / time; }
+.t9 { grid-area: t9 / time; }
+.t10 { grid-area: t10 / time; }
+.t11 { grid-area: t11 / time; }
+.t12 { grid-area: t12 / time; }
+.t13 { grid-area: t13 / time; }
+.t14 { grid-area: t14 / time; }
+.t15 { grid-area: t15 / time; }
+.t16 { grid-area: t16 / time; }
+.t17 { grid-area: t17 / time; }
+.t18 { grid-area: t18 / time; }
+.t19 { grid-area: t19 / time; }
+.t20 { grid-area: t20 / time; }
+.t21 { grid-area: t21 / time; }
+.t22 { grid-area: t22 / time; }
+.t23 { grid-area: t23 / time; }

@@ -126,26 +126,30 @@ toPortugueseWeekday weekday =
     convertHourAndMinute 10 30 == "10:30"
 
 -}
-convertHourAndMinute : Maybe WeekTime -> String
-convertHourAndMinute time =
+convertWeekTimeHourAndMinute : Maybe WeekTime -> String
+convertWeekTimeHourAndMinute time =
     case time of
         Nothing ->
             "----"
 
         Just val ->
+            convertHourAndMinute val.hour val.minute
+
+convertHourAndMinute : Int -> Int -> String
+convertHourAndMinute hour minute = 
             let
                 hourStr =
-                    if val.hour < 10 then
-                        "0" ++ String.fromInt val.hour
+                    if hour < 10 then
+                        "0" ++ String.fromInt hour
 
                     else
-                        String.fromInt val.hour
+                        String.fromInt hour
 
                 minuteStr =
-                    if val.minute < 10 then
-                        String.fromInt val.minute ++ "0"
+                    if minute < 10 then
+                        (String.fromInt minute) ++ "0"
 
                     else
-                        String.fromInt val.minute
+                        String.fromInt minute
             in
             hourStr ++ ":" ++ minuteStr
