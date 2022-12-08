@@ -2,7 +2,6 @@
 
 .grids-container {
     width: 100%;
-    /* height: 60vh; */
     display: inline-flex;
     justify-content: space-evenly;
   }
@@ -13,9 +12,7 @@
   display: grid;
   grid-gap: 1px;
   background-color: #eee;
-  /* position: fixed; */
-  width: 100%;
-  height: 100%;
+  position: absolute;
   padding: unset;
 /*   padding: 5px; */
 
@@ -71,7 +68,7 @@ li.time { text-align: right; vertical-align: bottom; }
 li.event { background-color: #82caaf; position: absolute; height: 100%; width: 100%; padding: unset; text-align: center; box-shadow: 1px 1px; /* box-shadow: 1px 1px 2px 0px rgba(0,0,0,1); */}
 
 /* CATEGORIES */
-.event.work { background-color: #fecf6a; }
+.event.work { background-color: #fecf6a; overflow:hidden}
 .event.personal { background-color: #82caaf; }
 
 /* DAY HEADINGS   row / col */

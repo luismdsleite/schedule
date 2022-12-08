@@ -17,12 +17,16 @@ import Time exposing (..)
 -- TODO: Remove data in init and read from a json file
 -- TODO: Represent blocks by function that receives and event and outputs a bool
 -- INFO: Hash function = (hour-8)*2+V(minute), V(minute) = 1 if minute >= 30, otherwise minute = 0. type alias Hashmap = Array (List Event).
--- DUVIDA: padding in .calendar li{}
+-- Question: The algorithm I know for calculating time scheduling colisions is O(n)=n². Should I continue using the grid column size equal to the number of events to display or should I calculate max number the colisions and use that as the grid column?
+-- Question: How to transform the loop into functional programming?
+
 
 type Model
     = Model Data ScheduleFilter
 
 
+{-| WARNING: Do not create any entry with ID=0
+-}
 init : ( Model, Cmd Msg )
 init =
     ( Model
@@ -30,11 +34,12 @@ init =
         , lecturers = fromList [ Lecturer "N'Golo Kanté" "NGK" [] [] [], Lecturer "Alberto" "Al" [] [] [], Lecturer "Alberto" "Al" [] [] [], Lecturer "Alberto" "Al" [] [] [], Lecturer "Alberto" "Al" [] [] [], Lecturer "Alberto" "Al" [] [] [], Lecturer "Alberto" "Al" [] [] [], Lecturer "Alberto" "Al" [] [] [], Lecturer "Alberto" "Al" [] [] [], Lecturer "Alberto" "Al" [] [] [], Lecturer "Alberto" "Al" [] [] [], Lecturer "Alberto" "Al" [] [] [], Lecturer "Alberto" "Al" [] [] [] ]
         , events =
             fromList
-                [ Event "Algoritmos (CC4010)_TP.1" "Alga-TP3" (Just (ID 0)) (Just (WeekTime Time.Mon 9 30)) (Just (WeekTime Time.Mon 11 0)) (Just (ID 0))
-                , Event "asdasd (CC4011)_TP.1" "Alga-TP2" (Just (ID 0)) (Just (WeekTime Time.Mon 11 30)) (Just (WeekTime Time.Mon 12 0)) (Just (ID 1))
-                , Event "subject" "subjAbrr" (Just (ID 1)) (Just (WeekTime Time.Mon 11 30)) (Just (WeekTime Time.Mon 12 0)) (Just (ID 1))
-                , Event "noRoomEvent" "noRoomEvent" Nothing (Just (WeekTime Time.Tue 11 30)) (Just (WeekTime Time.Tue 12 0)) (Just (ID 1))
-                , Event "noLectEvent" "noLectEvent" (Just (ID 1)) (Just (WeekTime Time.Sat 11 30)) (Just (WeekTime Time.Sat 12 0)) Nothing
+                [ Event "Algoritmos (CC4010)_TP.1" "Alga-TP3" (Just (ID 1)) (Just (WeekTime Time.Mon 9 30)) (Just (WeekTime Time.Mon 11 0)) (Just (ID 1))
+                , Event "asdasd (CC4011)_TP.1" "Alga-TP2" (Just (ID 1)) (Just (WeekTime Time.Mon 10 30)) (Just (WeekTime Time.Mon 12 0)) (Just (ID 2))
+                , Event "Harooo" "Alga-TPX" (Just (ID 1)) (Just (WeekTime Time.Mon 11 0)) (Just (WeekTime Time.Mon 14 0)) (Just (ID 2))
+                , Event "subject" "subjAbrr" (Just (ID 2)) (Just (WeekTime Time.Mon 11 30)) (Just (WeekTime Time.Mon 12 30)) (Just (ID 2))
+                , Event "noRoomEvent" "noRoomEvent" Nothing (Just (WeekTime Time.Tue 11 30)) (Just (WeekTime Time.Tue 12 0)) (Just (ID 2))
+                , Event "noLectEvent" "noLectEvent" (Just (ID 2)) (Just (WeekTime Time.Sat 11 30)) (Just (WeekTime Time.Sat 12 0)) Nothing
                 , Event "noRoom&LecEvent" "noRoom&LecEvent" Nothing (Just (WeekTime Time.Wed 11 30)) (Just (WeekTime Time.Wed 12 0)) Nothing
                 ]
         , blocks = []
@@ -183,37 +188,29 @@ view (Model data (ScheduleFilter roomFilter lectFilter blockFilter)) =
             , renderRooms data.rooms
             , renderEvents (toList data.events) data.rooms data.lecturers
             ]
-        , div [ class "grids-container" ] [ renderScheduleAbbr roomList "Salas", renderScheduleAbbr lectList "Docentes", renderScheduleAbbr blockList "Blocos" ]
+        , div [ class "grids-container" ] [ renderScheduleAbbr "-65%" blockList "Blocos", renderScheduleAbbr "unset" roomList "Salas", renderScheduleAbbr "65%" lectList "Docentes" ]
         ]
 
 
-renderSchedule : Int -> List ( Int, Event ) -> String -> Html Msg
-renderSchedule tableWidth filter title =
+renderSchedule : Int -> String -> List ( Int, Event ) -> String -> Html Msg
+renderSchedule tableWidth marginLeft events title =
     let
+        nothing22 =
+            Debug.log "--------------" title
+
         widthStr =
             String.append (tableWidth |> String.fromInt) "%"
 
-        mon =
-            li [ class "day mon" ] [ text "Seg" ]
+        -- Function to create Columns headers li.
+        weekdayToHtml weekDay =
+            li [ class ("day " ++ (weekDay |> toCssClassWeekDay)) ] [ weekDay |> toPortugueseWeekday |> text ]
 
-        tue =
-            li [ class "day tue" ] [ text "Terç" ]
-
-        wed =
-            li [ class "day wed" ] [ text "Qua" ]
-
-        thu =
-            li [ class "day thu" ] [ text "Qui" ]
-
-        fri =
-            li [ class "day fri" ] [ text "Sex" ]
-
-        -- List ["08:00", "08:30", .. , "19:00", "19:30"]
+        -- Creating Row Header e.g: List ["08:00", "08:30", .. , "19:00", "19:30"].
         timeblocksText =
             let
                 -- List [8,8,9,9,10,10,..,18,18,19,19]
                 hours =
-                    List.sort ((List.range 8 19) ++ (List.range 8 19))
+                    List.sort (List.range 8 19 ++ List.range 8 19)
 
                 -- List [0,30,0,30,30, ...]
                 minutes =
@@ -227,19 +224,72 @@ renderSchedule tableWidth filter title =
                         )
                         (List.repeat 24 0)
             in
-            List.map2 convertHourAndMinute (Debug.log "hours" hours) (Debug.log "minutes" minutes)
+            List.map2 convertHourAndMinute hours minutes
 
         timeblocks =
-            List.map2 (\index str -> li [ class ("time t" ++ String.fromInt index) ] [ text str ]) (List.range 0 23) (Debug.log "table" timeblocksText)
+            List.map2 (\index str -> li [ class ("time t" ++ String.fromInt index) ] [ text str ]) (List.range 0 23) timeblocksText
+
+        -- Display Events Cells to be renders
+        liDisplayEvents =
+            let
+                -- Events separated based on their Time.Weekday.
+                evSortedByDays =
+                    List.map (sortByWeekday events) displayedWeekDays
+
+                -- Display Events separated based on their Time.Weekday.
+                dEvSortedByDays =
+                    List.map createDisplayEvents evSortedByDays
+
+                -- Function to render all display events of a certain day
+                renderDayDisplayEvents : ( List DisplayEvent, Int ) -> List (Html Msg)
+                renderDayDisplayEvents ( dEvents, colLength ) =
+                    List.map (renderDisplayEvent colLength) dEvents
+            in
+            List.foldl (++) [] (List.map renderDayDisplayEvents dEvSortedByDays)
     in
-    ul [ class "calendar weekly-byhour", style "width" widthStr ]
-        ([ mon, tue, wed, thu, fri ] ++ timeblocks ++ List.repeat (24 * 5) (li [] []))
+    ul [ class "calendar weekly-byhour", style "width" widthStr, style "margin-left" marginLeft ]
+        (List.map weekdayToHtml displayedWeekDays ++ timeblocks ++ List.repeat (24 * 5) (li [] []) ++ liDisplayEvents)
 
 
+renderDisplayEvent : Int -> DisplayEvent -> Html msg
+renderDisplayEvent colLength (DisplayEvent id ev dInfo) =
+    let
+        -- a =
+        --     if ev.subjectAbbr == "Alga-TPX" then
+        --         True
+        --     else
+        --         False
+        -- b =
+        --     if a then
+        --         Debug.log "dInfo" dInfo
+        --     else
+        --         dInfo
+        width =
+            ((dInfo.colEnd + 1) - dInfo.colStart) * 100 // colLength
 
--- |> Debug.log "1:" timeblocks
--- Debug table
--- table [ class "calender", class "table", class "table-bordered", style "width" widthStr ] [ caption [] [ text <| title ], text <| Debug.toString <| filter ]
+        -- debug1 = Debug.log "Dinfo " dInfo
+        -- debug2 = Debug.log "Width= " width
+        leftMargin =
+            (dInfo.colStart * 100) // colLength
+
+        weekday =
+            toCssClassWeekDay dInfo.day
+
+        {- Feature to Improve Visibility. Forces shadows to overlap other (rightmost) elements if the cell isn't the last one in the column. -}
+        zIndex =
+            if dInfo.colEnd /= (colLength - 1) then
+                "999"
+
+            else
+                "unset"
+
+        -- ++ ";grid-row:  t" ++ String.fromInt dInfo.lineStart ++ "   /  h" ++ String.fromInt dInfo.lineEnd
+    in
+    if List.member dInfo.day displayedWeekDays then
+        li [ class "event work", style "style" ("grid-column: " ++ weekday), style "margin-left" (String.fromInt leftMargin ++ "%"), style "grid-row" ("t" ++ String.fromInt dInfo.lineStart ++ "   /  t" ++ String.fromInt dInfo.lineEnd), style "width" (String.fromInt width ++ "%"), style "grid-column" weekday, style "z-index" zIndex ] [ text ev.subjectAbbr ]
+
+    else
+        li [ style "display" "none" ] [ text ev.subjectAbbr ]
 
 
 {-| Renders all the events into a list

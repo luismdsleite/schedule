@@ -17,7 +17,7 @@ type Table info
 
 empty : Table info
 empty =
-    Table 0 Dict.empty
+    Table 1 Dict.empty
 
 
 get : ID -> Table info -> Maybe info

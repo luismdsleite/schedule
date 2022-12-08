@@ -10,6 +10,7 @@ A block is composed of events. An event is comprised of a subject, given in a sp
 type alias Block =
     { name : String, abbr : String, events : List Event, cond : Bool }
 
+
 type alias Data =
     { rooms : Table Room
     , lecturers : Table Lecturer
@@ -37,16 +38,20 @@ type alias WeekTime =
 type alias Lecturer =
     { name : String, abbr : String, goodTime : List WeekTime, difficultTime : List WeekTime, unavailableTime : List WeekTime }
 
+
 {-| A room has an ID, a name, a abbreviation and a capacity.
 -}
 type alias Room =
     { name : String, abbr : String, capacity : Int }
 
+
 type alias LecturerID =
     ID
 
+
 type alias EventID =
     ID
+
 
 type alias RoomID =
     ID
@@ -54,13 +59,16 @@ type alias RoomID =
 
 
 ---- Filters ----
-
 {-
-    A Filter is a specific view of all events (e.g. show all events from room X or show all events whose lecturer is C). 
-    The ScheduleFilter holds 3 different filter functions that are only parsed when displaying html.
+   A Filter is a specific view of all events (e.g. show all events from room X or show all events whose lecturer is C).
+   The ScheduleFilter holds 3 different filter functions that are only parsed when displaying html.
 -}
+
+
 type ScheduleFilter
     = ScheduleFilter RoomFilter LecturerFilter BlockFilter
+
+
 type alias RoomFilter =
     Int -> Event -> Bool
 
@@ -70,18 +78,18 @@ type alias LecturerFilter =
 
 
 type alias BlockFilter =
-    Int -> Event -> Bool 
+    Int -> Event -> Bool
 
 
 
 ---- weekDay converting functions ----
 
 
-{-| The days of the week are represented as an `Int` and stored in a `WeekTime.weekday`. This function converts them into a `String`.
+{-| The days of the week are represented as Time.WeekTime and stored in a `WeekTime.weekday`. This function converts them into a Portuguese `String`.
 
-    convertWeekDay 1 == "Segunda"
+    convertWeekDay Time.Mon == "Seg"
 
-    convertWeekDay 5 == "Sexta"
+    convertWeekDay Time.Tue == "Ter"
 
 -}
 convertWeekDay : Maybe WeekTime -> String
@@ -101,7 +109,7 @@ toPortugueseWeekday weekday =
             "Seg"
 
         Tue ->
-            "Terç"
+            "Ter"
 
         Wed ->
             "Qua"
@@ -117,6 +125,31 @@ toPortugueseWeekday weekday =
 
         Sun ->
             "Dom"
+
+
+toCssClassWeekDay : Time.Weekday -> String
+toCssClassWeekDay weekday =
+    case weekday of
+        Mon ->
+            "mon"
+
+        Tue ->
+            "tue"
+
+        Wed ->
+            "wed"
+
+        Thu ->
+            "thu"
+
+        Fri ->
+            "fri"
+
+        Sat ->
+            "sat"
+
+        Sun ->
+            "sun"
 
 
 {-| The Hours and Minutes are represented as an `Int` as part of the `WeekTime` record. This function converts them into a `String`
@@ -135,21 +168,40 @@ convertWeekTimeHourAndMinute time =
         Just val ->
             convertHourAndMinute val.hour val.minute
 
+
 convertHourAndMinute : Int -> Int -> String
-convertHourAndMinute hour minute = 
-            let
-                hourStr =
-                    if hour < 10 then
-                        "0" ++ String.fromInt hour
+convertHourAndMinute hour minute =
+    let
+        hourStr =
+            if hour < 10 then
+                "0" ++ String.fromInt hour
 
-                    else
-                        String.fromInt hour
+            else
+                String.fromInt hour
 
-                minuteStr =
-                    if minute < 10 then
-                        (String.fromInt minute) ++ "0"
+        minuteStr =
+            if minute < 10 then
+                String.fromInt minute ++ "0"
 
-                    else
-                        String.fromInt minute
-            in
-            hourStr ++ ":" ++ minuteStr
+            else
+                String.fromInt minute
+    in
+    hourStr ++ ":" ++ minuteStr
+
+
+sortByWeekday : List ( Int, Event ) -> Time.Weekday -> List ( Int, Event )
+sortByWeekday allEvents weekDay =
+    let
+        filter : Time.Weekday -> ( Int, Event ) -> Bool
+        filter weekday ( id, ev ) =
+            case ev.start_time of
+                Just time ->
+                    time.weekday == weekday
+
+                Nothing ->
+                    False
+    in
+    List.filter (filter weekDay) allEvents
+
+displayedWeekDays : List Weekday
+displayedWeekDays = [ Time.Mon, Time.Tue, Time.Wed, Time.Thu, Time.Fri ]
