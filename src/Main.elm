@@ -249,8 +249,11 @@ renderSchedule tableWidth marginLeft events title =
             in
             List.foldl (++) [] (List.map renderDayDisplayEvents dEvSortedByDays)
     in
-    ul [ class "calendar weekly-byhour", style "width" widthStr, style "margin-left" marginLeft ]
-        (List.map weekdayToHtml displayedWeekDays ++ timeblocks ++ List.repeat (24 * 5) (li [] []) ++ liDisplayEvents)
+    div [ style "width" widthStr ]
+        [ h3 [style "margin" "unset"] [ text title ]
+        , ul [ class "calendar weekly-byhour", style "width" widthStr ]
+            (List.map weekdayToHtml displayedWeekDays ++ timeblocks ++ List.repeat (24 * 5) (li [] []) ++ liDisplayEvents)
+        ]
 
 
 {-| Turns a Display Event into a HTML <li> tag.
