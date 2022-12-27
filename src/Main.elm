@@ -278,7 +278,7 @@ renderDisplayEvent colLength (DisplayEvent id ev dInfo) =
         -- ++ ";grid-row:  t" ++ String.fromInt dInfo.lineStart ++ "   /  h" ++ String.fromInt dInfo.lineEnd
     in
     if List.member dInfo.day displayedWeekDays then
-        li [ class "event work", style "style" ("grid-column: " ++ weekday), style "margin-left" (String.fromInt leftMargin ++ "%"), style "grid-row" ("t" ++ String.fromInt dInfo.lineStart ++ "   /  t" ++ String.fromInt dInfo.lineEnd), style "width" (String.fromInt width ++ "%"), style "grid-column" weekday, style "z-index" zIndex ] [ text ev.subjectAbbr ]
+        li [ class "event work", style "style" ("grid-column: " ++ weekday), style "margin-left" (String.fromInt leftMargin ++ "%"), style "grid-row" ("t" ++ String.fromInt dInfo.lineStart ++ "   /  t" ++ String.fromInt dInfo.lineEnd), style "width" (String.fromInt width ++ "%"), style "grid-column" weekday, style "z-index" zIndex, attribute "title" ev.subjectAbbr ] [ text ev.subjectAbbr ]
 
     else
         li [ style "display" "none" ] [ text ev.subjectAbbr ]
@@ -328,12 +328,12 @@ renderEvent rooms lecturers ( eventID, event ) =
                     Lecturer "----" "----" [] [] []
     in
     li [ class "list-item", onClick (ItemClick (OnEventClick eventID)) ]
-        [ div [ class "custom-scrollbar", class "list-text", style "width" "10%", attribute "data-tooltip" event.subjectAbbr ] [ text event.subjectAbbr ]
-        , div [ class "custom-scrollbar", class "list-text", style "width" "35%", attribute "data-tooltip" event.subject] [ text event.subject ]
+        [ div [ class "custom-scrollbar", class "list-text", style "width" "10%", attribute "title" event.subjectAbbr ] [ text event.subjectAbbr ]
+        , div [ class "custom-scrollbar", class "list-text", style "width" "35%", attribute "title" event.subject] [ text event.subject ]
         , div [ class "custom-scrollbar", class "list-text", style "width" "5%" ] [ text (convertWeekDay event.start_time) ]
         , div [ class "custom-scrollbar", class "list-text", style "width" "10%" ] [ text (convertWeekTimeHourAndMinute event.start_time) ]
         , div [ class "custom-scrollbar", class "list-text", style "width" "10%" ] [ text (convertWeekTimeHourAndMinute event.end_time) ]
-        , div [ class "custom-scrollbar", class "list-text", style "width" "10%", attribute "data-tooltip" room.abbr ] [ text room.abbr ]
+        , div [ class "custom-scrollbar", class "list-text", style "width" "10%", attribute "title" room.abbr ] [ text room.abbr ]
         , div [ class "custom-scrollbar", class "list-text", style "width" "10%" ] [ text (String.fromInt room.capacity) ]
         , div [ class "custom-scrollbar", class "list-text", style "width" "10%" ] [ text lecturer.abbr ]
         ]
@@ -351,7 +351,7 @@ renderRooms rooms =
 
 renderRoom : ( Int, Room ) -> Html Msg
 renderRoom ( int, room ) =
-    li [ class "list-item", onClick (ItemClick (OnRoomClick int)), attribute "data-tooltip" room.name ] [ div [ class "custom-scrollbar", class "list-text" ] [ text room.abbr ] ]
+    li [ class "list-item", onClick (ItemClick (OnRoomClick int)), attribute "title" room.name ] [ div [ class "custom-scrollbar", class "list-text" ] [ text room.abbr ] ]
 
 
 renderLecturers : Table Lecturer -> Html Msg
@@ -366,7 +366,7 @@ renderLecturers lecturers =
 
 renderLecturer : ( Int, Lecturer ) -> Html Msg
 renderLecturer ( int, lecturer ) =
-    li [ class "list-item", onClick (ItemClick (OnLecturerClick int)), attribute "data-tooltip" lecturer.name ] [ div [ class "custom-scrollbar", class "list-text" ] [ text lecturer.abbr ] ]
+    li [ class "list-item", onClick (ItemClick (OnLecturerClick int)), attribute "title" lecturer.name ] [ div [ class "custom-scrollbar", class "list-text" ] [ text lecturer.abbr ] ]
 
 
 
