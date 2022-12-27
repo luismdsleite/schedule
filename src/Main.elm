@@ -11,7 +11,6 @@ import Table exposing (..)
 import Time exposing (..)
 
 
-
 -- TODO: Remove data in init and read from a json file
 -- TODO: Represent blocks by function that receives and event and outputs a bool
 -- INFO: Hash function = (hour-8)*2+V(minute), V(minute) = 1 if minute >= 30, otherwise minute = 0. type alias Hashmap = Array (List Event).
@@ -29,7 +28,7 @@ init : ( Model, Cmd Msg )
 init =
     ( Model
         { rooms = fromList [ Room "DCC Lab. 2" "FC6_157 (Lab2)" 20, Room "DCC Lab. 3" "FC6_177 (Lab3)" 30, Room "CCC Lab. 6" "FC2_222 (Lab3)(LongName)" 30 ]
-        , lecturers = fromList [ Lecturer "N'Golo Kanté" "NGK" [] [] [], Lecturer "Alberto" "Al" [] [] [], Lecturer "Alberto" "Al" [] [] [], Lecturer "Alberto" "Al" [] [] [], Lecturer "Alberto" "Al" [] [] [], Lecturer "Alberto" "Al" [] [] [], Lecturer "Alberto" "Al" [] [] [], Lecturer "Alberto" "Al" [] [] [], Lecturer "Alberto" "Al" [] [] [], Lecturer "Alberto" "Al" [] [] [], Lecturer "Alberto" "Al" [] [] [], Lecturer "Alberto" "Al" [] [] [], Lecturer "Alberto" "Al" [] [] [] ]
+        , lecturers = fromList [ Lecturer "N'Golo Kanté" "NGK" [] [] [], Lecturer "Alberto" "Al" [] [] [], Lecturer "Apikalia" "Ak" [] [] [], Lecturer "Sofi" "Ae" [] [] [], Lecturer "Lianne" "Ac" [] [] [], Lecturer "Mayur" "Aa" [] [] [], Lecturer "Kristine" "Af" [] [] [], Lecturer "Straton" "Az" [] [] [], Lecturer "Svanhild" "Am" [] [] [], Lecturer "Ayla" "Aç" [] [] [], Lecturer "Mayem" "Ai" [] [] [], Lecturer "Minakshi" "BA" [] [] [], Lecturer "Isaiah" "CA" [] [] [] ]
         , events =
             fromList
                 [ Event "Algoritmos (CC4010)_TP.1" "Alga-TP3" (Just (ID 1)) (Just (WeekTime Time.Mon 9 30)) (Just (WeekTime Time.Mon 11 0)) (Just (ID 1))
@@ -250,7 +249,7 @@ renderSchedule tableWidth marginLeft events title =
             List.foldl (++) [] (List.map renderDayDisplayEvents dEvSortedByDays)
     in
     div [ style "width" widthStr ]
-        [ h3 [style "margin" "unset"] [ text title ]
+        [ h3 [ style "margin" "unset" ] [ text title ]
         , ul [ class "calendar weekly-byhour", style "width" widthStr ]
             (List.map weekdayToHtml displayedWeekDays ++ timeblocks ++ List.repeat (24 * 5) (li [] []) ++ liDisplayEvents)
         ]
@@ -352,7 +351,7 @@ renderRooms rooms =
 
 renderRoom : ( Int, Room ) -> Html Msg
 renderRoom ( int, room ) =
-    li [ class "list-item", onClick (ItemClick (OnRoomClick int)) ] [ div [ class "custom-scrollbar", class "list-text" ] [ text room.abbr ] ]
+    li [ class "list-item", onClick (ItemClick (OnRoomClick int)), attribute "data-tooltip"  room.name ] [ div [ class "custom-scrollbar", class "list-text" ] [ text room.abbr] ]
 
 
 renderLecturers : Table Lecturer -> Html Msg
@@ -367,7 +366,7 @@ renderLecturers lecturers =
 
 renderLecturer : ( Int, Lecturer ) -> Html Msg
 renderLecturer ( int, lecturer ) =
-    li [ class "list-item", onClick (ItemClick (OnLecturerClick int)) ] [ div [ class "custom-scrollbar", class "list-text" ] [ text lecturer.abbr ] ]
+    li [ class "list-item", onClick (ItemClick (OnLecturerClick int)), attribute "data-tooltip"  lecturer.name ] [ div [ class "custom-scrollbar", class "list-text" ] [ text lecturer.abbr ] ]
 
 
 
