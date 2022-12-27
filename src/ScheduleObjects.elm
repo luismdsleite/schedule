@@ -59,14 +59,13 @@ type alias RoomID =
 
 
 ---- Filters ----
-{-
-   A Filter is a specific view of all events (e.g. show all events from room X or show all events whose lecturer is C).
-   The ScheduleFilter holds 3 different filter functions that are only parsed when displaying html.
+
+
+{-| A Filter is a specific view of all events (e.g. show all events from room X or show all events whose lecturer is C).
+The ScheduleFilter holds 3 different filter functions that are only parsed when displaying html.
 -}
-
-
 type ScheduleFilter
-    = ScheduleFilter RoomFilter LecturerFilter BlockFilter
+    = ScheduleFilter RoomFilter LecturerFilter BlockFilter RoomName LecturerName BlockName
 
 
 type alias RoomFilter =
@@ -79,6 +78,18 @@ type alias LecturerFilter =
 
 type alias BlockFilter =
     Int -> Event -> Bool
+
+
+type alias RoomName =
+    String
+
+
+type alias LecturerName =
+    String
+
+
+type alias BlockName =
+    String
 
 
 
@@ -203,5 +214,7 @@ sortByWeekday allEvents weekDay =
     in
     List.filter (filter weekDay) allEvents
 
+
 displayedWeekDays : List Weekday
-displayedWeekDays = [ Time.Mon, Time.Tue, Time.Wed, Time.Thu, Time.Fri ]
+displayedWeekDays =
+    [ Time.Mon, Time.Tue, Time.Wed, Time.Thu, Time.Fri ]
