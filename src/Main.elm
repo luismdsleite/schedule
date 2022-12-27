@@ -185,7 +185,8 @@ view (Model data (ScheduleFilter roomFilter lectFilter blockFilter)) =
     in
     div []
         [ div [ class "listbox-area" ]
-            [ renderLecturers data.lecturers
+            [ ul [ ariaLabel "Blocos", class "list custom-scrollbar" ] []
+            , renderLecturers data.lecturers
             , renderRooms data.rooms
             , renderEvents (toList data.events) data.rooms data.lecturers
             ]
@@ -268,7 +269,7 @@ renderDisplayEvent colLength (DisplayEvent id ev dInfo) =
         weekday =
             toCssClassWeekDay dInfo.day
 
-        {- Feature to Improve Visibility. Makes event visibility priority go from left to right-}
+        {- Feature to Improve Visibility. Makes event visibility priority go from left to right -}
         zIndex =
             String.fromInt (999 - dInfo.colStart)
 

@@ -59,7 +59,7 @@ img {
   display: grid;
   justify-content: center;  
   grid-gap: 1vh;
-  grid-template-columns: 20% 10% 70%;
+  grid-template-columns: 10% 10% 10% 70%;
   padding: 20px;
   border: 1px solid #aaa;
   border-radius: 4px;
