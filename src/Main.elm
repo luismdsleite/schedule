@@ -189,12 +189,12 @@ view (Model data (ScheduleFilter roomFilter lectFilter blockFilter roomName lect
             , renderRooms data.rooms
             , renderEvents (toList data.events) data.rooms data.lecturers
             ]
-        , div [ class "grids-container" ] [ renderScheduleAbbr "-65%" blockList ("Bloco:" ++ blockName), renderScheduleAbbr "unset" roomList ("Sala:" ++ roomName), renderScheduleAbbr "65%" lectList ("Docente:" ++ lectName) ]
+        , div [ class "grids-container" ] [ renderScheduleAbbr blockList ("Bloco:" ++ blockName), renderScheduleAbbr roomList ("Sala:" ++ roomName), renderScheduleAbbr lectList ("Docente:" ++ lectName) ]
         ]
 
 
-renderSchedule : Int -> String -> List ( Int, Event ) -> String -> Html Msg
-renderSchedule tableWidth marginLeft events title =
+renderSchedule : Int -> List ( Int, Event ) -> String -> Html Msg
+renderSchedule tableWidth events title =
     let
         nothing22 =
             Debug.log "--------------" title
