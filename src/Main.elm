@@ -1,9 +1,7 @@
 module Main exposing (..)
 
-import Array exposing (Array)
 import Browser
 import DisplayEvents exposing (..)
-import Exts.Html exposing (nbsp)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Attributes.Aria exposing (ariaLabel)
@@ -36,6 +34,8 @@ init =
             fromList
                 [ Event "Algoritmos (CC4010)_TP.1" "Alga-TP3" (Just (ID 1)) (Just (WeekTime Time.Mon 9 30)) (Just (WeekTime Time.Mon 11 0)) (Just (ID 1))
                 , Event "asdasd (CC4011)_TP.1" "Alga-TP2" (Just (ID 1)) (Just (WeekTime Time.Mon 10 30)) (Just (WeekTime Time.Mon 12 0)) (Just (ID 2))
+                , Event "asdasd (CC4011)_TP.1" "Alga-TP45" (Just (ID 1)) (Just (WeekTime Time.Mon 10 30)) (Just (WeekTime Time.Mon 12 0)) (Just (ID 2))
+                , Event "asdasd (CC4011)_TP.1" "Alga-TP44" (Just (ID 1)) (Just (WeekTime Time.Mon 12 30)) (Just (WeekTime Time.Mon 13 30)) (Just (ID 2))
                 , Event "Harooo" "Alga-TPX" (Just (ID 1)) (Just (WeekTime Time.Mon 11 0)) (Just (WeekTime Time.Mon 14 0)) (Just (ID 2))
                 , Event "Harooo" "Alga-TPY" (Just (ID 1)) (Just (WeekTime Time.Mon 15 0)) (Just (WeekTime Time.Mon 17 0)) (Just (ID 2))
                 , Event "subject" "subjAbrr" (Just (ID 2)) (Just (WeekTime Time.Mon 11 30)) (Just (WeekTime Time.Mon 12 30)) (Just (ID 2))
@@ -252,37 +252,25 @@ renderSchedule tableWidth marginLeft events title =
         (List.map weekdayToHtml displayedWeekDays ++ timeblocks ++ List.repeat (24 * 5) (li [] []) ++ liDisplayEvents)
 
 
+{-| Turns a Display Event into a HTML <li> tag.
+ColLength corresponds to the maximum number of colision between events in a day.
+TODO: Add Drag/Drop event.
+-}
 renderDisplayEvent : Int -> DisplayEvent -> Html msg
 renderDisplayEvent colLength (DisplayEvent id ev dInfo) =
     let
-        -- a =
-        --     if ev.subjectAbbr == "Alga-TPX" then
-        --         True
-        --     else
-        --         False
-        -- b =
-        --     if a then
-        --         Debug.log "dInfo" dInfo
-        --     else
-        --         dInfo
         width =
             ((dInfo.colEnd + 1) - dInfo.colStart) * 100 // colLength
 
-        -- debug1 = Debug.log "Dinfo " dInfo
-        -- debug2 = Debug.log "Width= " width
         leftMargin =
             (dInfo.colStart * 100) // colLength
 
         weekday =
             toCssClassWeekDay dInfo.day
 
-        {- Feature to Improve Visibility. Forces shadows to overlap other (rightmost) elements if the cell isn't the last one in the column. -}
+        {- Feature to Improve Visibility. Makes event visibility priority go from left to right-}
         zIndex =
-            if dInfo.colEnd /= (colLength - 1) then
-                "999"
-
-            else
-                "unset"
+            String.fromInt (999 - dInfo.colStart)
 
         -- ++ ";grid-row:  t" ++ String.fromInt dInfo.lineStart ++ "   /  h" ++ String.fromInt dInfo.lineEnd
     in

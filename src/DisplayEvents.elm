@@ -1,11 +1,7 @@
--- TODO: Expose only createDisplayEvents.
+module DisplayEvents exposing (DisplayEvent(..), createDisplayEvents)
 
-
-module DisplayEvents exposing (..)
-
-import Array exposing (Array, length)
+import Array exposing (Array)
 import Matrix exposing (..)
-import Maybe exposing (andThen)
 import ScheduleObjects exposing (Event, WeekTime)
 import Time exposing (..)
 
@@ -56,35 +52,17 @@ hash weekTime =
           )
 
 
-
--- {-| Checks if an event can fit in a certain column without overlapping with other events.
--- -}
--- doesEvFitInCol : DisplayEvent -> Int -> Matrix Int -> Bool
--- doesEvFitInCol (DisplayEvent _ _ evInfo) colIndex colisionGrid =
---     -- If out of bounds, return False
---     if colIndex == -1 || colIndex >= (Tuple.first <| size <| colisionGrid) then
---         False
---         -- Else check if there exists any event already in the same range
---     else
---         Array.foldr (+) 0 (Matrix.getYs colisionGrid colIndex |> Array.slice evInfo.lineStart evInfo.lineEnd) == 0
-
-
 {-| Checks if an event can fit in a certain column without overlapping with other events.
+TODO: Use List.any
 -}
-
-
-
--- TODO: Use List.any
-
-
 doesEvFitInCol : Event -> Int -> Matrix Int -> Bool
 doesEvFitInCol ev colIndex colisionGrid =
     -- If out of bounds, return False
     if colIndex == -1 || colIndex >= (Tuple.first <| size <| colisionGrid) then
         False
-        -- Else check if there exists any event already in the same range
 
     else
+        -- Else check if there exists any event already in the same range
         Maybe.withDefault False
             (ev.start_time
                 |> Maybe.andThen
@@ -95,29 +73,7 @@ doesEvFitInCol ev colIndex colisionGrid =
             )
 
 
-{-| After knowing in what columns each event will be (without overlap), we figure out how much empty space exists to the left of the event (without overlapping with other events) and expand it.
--}
-evLeftExp : DisplayEvent -> Int -> Matrix Int -> Int
-evLeftExp (DisplayEvent id ev evInfo) colIndex colisionGrid =
-    if doesEvFitInCol ev (colIndex - 1) colisionGrid then
-        evLeftExp (DisplayEvent id ev evInfo) (colIndex - 1) colisionGrid
-
-    else
-        colIndex
-
-
-{-| After knowing in what columns each event will be (without overlap), we figure out how much empty space exists to the right of the event (without overlapping with other events) and expand it.
--}
-evRightExp : DisplayEvent -> Int -> Matrix Int -> Int
-evRightExp (DisplayEvent id ev evInfo) colIndex colisionGrid =
-    if doesEvFitInCol ev (colIndex + 1) colisionGrid then
-        evRightExp (DisplayEvent id ev evInfo) (colIndex + 1) colisionGrid
-
-    else
-        colIndex
-
-
-{-| TODO: finish this function and expose it.
+{-|
 INFO: If an event doesn't has a start\_time and a end\_time else dont display it!
 -}
 createDisplayEvents : List ( Int, Event ) -> ( List DisplayEvent, Int )
@@ -130,7 +86,7 @@ createDisplayEvents evList =
         gridColsSize =
             List.length evList
 
-        ( dEvents, grid ) =
+        ( notExpandedDisplayEvents, grid ) =
             getDisplayEvents evList [] (Matrix.initialize gridLinesSize gridColsSize (\_ _ -> 0)) 0
 
         -- Aux function to determine how many of the grids columns are actually being used.
@@ -154,13 +110,10 @@ createDisplayEvents evList =
         realCols =
             Array.foldl max 0 (Array.map (getLength (gridColsSize - 1)) grid) + 1
 
-        nothing3 =
-            Debug.log "gridcolsSize" gridColsSize
-
-        nothing4 =
-            Debug.log "realCols" realCols
+        expandedDisplayEvents =
+            expandDisplayEvents notExpandedDisplayEvents [] grid realCols
     in
-    ( dEvents, realCols )
+    ( expandedDisplayEvents, realCols )
 
 
 
@@ -212,6 +165,54 @@ getDisplayEvents evList dEvList grid colIndex =
             ( dEvList, grid )
 
 
+{-| This function "expands" Display Events. Expanding means an event occuping columns to the left and right that are empty.
+Recursively expands events, in each iteration it removes the head of the dEvList and appends it to the expandedDevList.
+To expand a certain list of display events call expandDisplayEvents {Display Events} [] {grid}.
+-}
+expandDisplayEvents : List DisplayEvent -> List DisplayEvent -> Matrix Int -> Int -> List DisplayEvent
+expandDisplayEvents dEvList expandedDEvList grid gridColLength =
+    let
+        -- After knowing in what columns each event will be (without overlap), we figure out how much empty space exists to the left of the event (without overlapping with other events) and expand it.
+        evLeftExp : DisplayEvent -> Int -> Matrix Int -> Int
+        evLeftExp (DisplayEvent id ev evInfo) colIndex colisionGrid =
+            if doesEvFitInCol ev (colIndex - 1) colisionGrid then
+                evLeftExp (DisplayEvent id ev evInfo) (colIndex - 1) colisionGrid
+
+            else
+                colIndex
+
+        -- After knowing in what columns each event will be (without overlap), we figure out how much empty space exists to the right of the event (without overlapping with other events) and expand it.
+        evRightExp : DisplayEvent -> Int -> Matrix Int -> Int
+        evRightExp (DisplayEvent id ev evInfo) colIndex colisionGrid =
+            if colIndex + 1 >= gridColLength then
+                colIndex
+
+            else if doesEvFitInCol ev (colIndex + 1) colisionGrid then
+                evRightExp (DisplayEvent id ev evInfo) (colIndex + 1) colisionGrid
+
+            else
+                colIndex
+    in
+    -- Iteratively expand each Display Event in the dEvList and append it to the expandedDEvList
+    case dEvList of
+        -- If dEvList is not empty then take the head, expand it, add it to expandedDEvList and check again.
+        (DisplayEvent id ev dInfo) :: tail ->
+            let
+                -- Use evRightExp and evLeftExp to expand the display event
+                expandedEvent =
+                    -- DisplayEvent id ev dInfo
+                    DisplayEvent id ev { dInfo | colStart = evLeftExp (DisplayEvent id ev dInfo) dInfo.colStart grid, colEnd = evRightExp (DisplayEvent id ev dInfo) dInfo.colEnd grid }
+            in
+            -- Append it to the Expanded Events List
+            expandDisplayEvents tail (expandedEvent :: expandedDEvList) grid gridColLength
+
+        [] ->
+            -- All events have been expanded, return the result.
+            expandedDEvList
+
+
+{-| Fills the grid with a DisplayEvent
+-}
 gridSetEvent : DisplayEvent -> Matrix Int -> Int -> Matrix Int
 gridSetEvent (DisplayEvent id _ dInfo) grid colIndex =
     let
@@ -227,6 +228,9 @@ fillLinesGrid id col line grid =
     Matrix.set grid line col id
 
 
-fillColsGrid : Int -> Int -> Int -> Matrix Int -> Matrix Int
-fillColsGrid id line col grid =
-    Matrix.set grid line col id
+
+{- Not used since we only need fillLinesGrid
+   fillColsGrid : Int -> Int -> Int -> Matrix Int -> Matrix Int
+   fillColsGrid id line col grid =
+       Matrix.set grid line col id
+-}
