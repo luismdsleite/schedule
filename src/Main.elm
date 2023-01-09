@@ -43,7 +43,11 @@ init =
                 , Event "noLectEvent" "noLectEvent" (Just (ID 2)) (Just (WeekTime Time.Sat 11 30)) (Just (WeekTime Time.Sat 12 0)) Nothing
                 , Event "noRoom&LecEvent" "noRoom&LecEvent" Nothing (Just (WeekTime Time.Wed 11 30)) (Just (WeekTime Time.Wed 12 0)) Nothing
                 ]
-        , blocks = []
+        , blocks =
+            fromList
+                [ Block "All Events" "All Events" (\ev -> True)
+                , Block "Eventos de Alga" "(CC4011)" (\ev -> String.contains "(CC4011)" ev.subject)
+                ]
         }
         (ScheduleFilter (\_ _ -> False) (\_ _ -> False) (\_ _ -> False) "" "" "")
     , Cmd.none
@@ -62,6 +66,7 @@ type OnItemClick
     = OnRoomClick Int
     | OnLecturerClick Int
     | OnEventClick Int
+    | OnBlockClick ( Int, Block )
 
 
 {-| Update Room / Lecturer parameters based on the msg received.
@@ -107,6 +112,9 @@ update msg (Model data (ScheduleFilter roomFilter lectFilter blockFilter roomNam
                     lectName
     in
     case msg of
+        ItemClick (OnBlockClick ( id, block )) ->
+            ( Model data (ScheduleFilter roomFilter lectFilter (\_ -> block.cond) roomName lectName block.nameAbbr), Cmd.none )
+
         -- Get all events with a certain Room ID and with it update the Room Filter and Abbr.
         ItemClick (OnRoomClick id) ->
             ( Model data (ScheduleFilter (createNewRoomFilter id) lectFilter blockFilter (getRoomAbbr id) lectName blockName), Cmd.none )
@@ -184,7 +192,7 @@ view (Model data (ScheduleFilter roomFilter lectFilter blockFilter roomName lect
     in
     div []
         [ div [ class "listbox-area" ]
-            [ ul [ ariaLabel "Blocos", class "list custom-scrollbar" ] []
+            [ renderBlocks data.blocks
             , renderLecturers data.lecturers
             , renderRooms data.rooms
             , renderEvents (toList data.events) data.rooms data.lecturers
@@ -329,7 +337,7 @@ renderEvent rooms lecturers ( eventID, event ) =
     in
     li [ class "list-item", onClick (ItemClick (OnEventClick eventID)) ]
         [ div [ class "custom-scrollbar", class "list-text", style "width" "10%", attribute "title" event.subjectAbbr ] [ text event.subjectAbbr ]
-        , div [ class "custom-scrollbar", class "list-text", style "width" "35%", attribute "title" event.subject] [ text event.subject ]
+        , div [ class "custom-scrollbar", class "list-text", style "width" "35%", attribute "title" event.subject ] [ text event.subject ]
         , div [ class "custom-scrollbar", class "list-text", style "width" "5%" ] [ text (convertWeekDay event.start_time) ]
         , div [ class "custom-scrollbar", class "list-text", style "width" "10%" ] [ text (convertWeekTimeHourAndMinute event.start_time) ]
         , div [ class "custom-scrollbar", class "list-text", style "width" "10%" ] [ text (convertWeekTimeHourAndMinute event.end_time) ]
@@ -367,6 +375,20 @@ renderLecturers lecturers =
 renderLecturer : ( Int, Lecturer ) -> Html Msg
 renderLecturer ( int, lecturer ) =
     li [ class "list-item", onClick (ItemClick (OnLecturerClick int)), attribute "title" lecturer.name ] [ div [ class "custom-scrollbar", class "list-text" ] [ text lecturer.abbr ] ]
+
+
+renderBlocks : Table Block -> Html Msg
+renderBlocks blocks =
+    let
+        blocksList =
+            Table.toList blocks
+    in
+    ul [ ariaLabel "Blocos", class "list custom-scrollbar" ] (List.map renderBlock blocksList)
+
+
+renderBlock : ( Int, Block ) -> Html Msg
+renderBlock ( id, block ) =
+    li [ class "list-item", onClick (ItemClick (OnBlockClick ( id, block ))), attribute "title" block.name ] [ div [ class "custom-scrollbar", class "list-text" ] [ text block.nameAbbr ] ]
 
 
 

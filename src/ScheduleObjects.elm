@@ -8,14 +8,14 @@ import Time exposing (..)
 A block is composed of events. An event is comprised of a subject, given in a specific room by a lecturer during a given time.
 -}
 type alias Block =
-    { name : String, abbr : String, events : List Event, cond : Bool }
+    { name : String, nameAbbr : String, cond : Event -> Bool }
 
 
 type alias Data =
     { rooms : Table Room
     , lecturers : Table Lecturer
     , events : Table Event
-    , blocks : List Block
+    , blocks : Table Block
     }
 
 
