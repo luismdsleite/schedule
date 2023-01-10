@@ -2,7 +2,8 @@ module Main exposing (..)
 
 import Browser
 import DisplayEvents exposing (..)
-import DnD 
+import DnD
+import DragDrop exposing (..)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Attributes.Aria exposing (ariaLabel)
@@ -21,7 +22,13 @@ import Time exposing (..)
 
 
 type Model
-    = Model Data ScheduleFilter
+    = Model Data ScheduleFilter Draggable
+
+
+{-| Init Drag and Drop messages
+-}
+dnd =
+    DnD.init DnDMsg OnDrop
 
 
 {-| WARNING: Do not create any entry with ID=0
@@ -51,6 +58,7 @@ init =
                 ]
         }
         (ScheduleFilter (\_ _ -> False) (\_ _ -> False) (\_ _ -> False) "" "" "")
+        dnd.model
     , Cmd.none
     )
 
@@ -61,6 +69,9 @@ init =
 
 type Msg
     = ItemClick OnItemClick
+    | DnDMsg (DnD.Msg ( DropEvent, WeekTime ) ID)
+    | OnDrop ( DropEvent, WeekTime ) ID
+
 
 type OnItemClick
     = OnRoomClick Int
@@ -69,17 +80,23 @@ type OnItemClick
     | OnBlockClick ( Int, Block )
 
 
-
-
 {-| Update Room / Lecturer parameters based on the msg received.
 -}
 update : Msg -> Model -> ( Model, Cmd Msg )
-update msg model =
+update msg (Model data filters draggable) =
     case msg of
-        (ItemClick clickMsg) -> updateOnItemClick clickMsg model
+        ItemClick clickMsg ->
+            updateOnItemClick clickMsg (Model data filters draggable)
+
+        DnDMsg dndmsg ->
+            ( Model data filters (DnD.update dndmsg draggable), Cmd.none )
+
+        OnDrop _ _ ->
+            Debug.todo "branch 'OnDrop _ _' not implemented"
+
 
 updateOnItemClick : OnItemClick -> Model -> ( Model, Cmd Msg )
-updateOnItemClick msg (Model data filters) =
+updateOnItemClick msg (Model data filters draggable) =
     let
         {- We Create a function to fetch a new Room/Lecturer filter and abbreviation based on a Room/Lecturer ID.
            If the Room/Lecturer to update is already the one being displayed then dont perform any action.
@@ -120,15 +137,15 @@ updateOnItemClick msg (Model data filters) =
     in
     case msg of
         OnBlockClick ( id, block ) ->
-            ( Model data {filters | block=(\_ -> block.cond), blockName = block.nameAbbr}, Cmd.none )
+            ( Model data { filters | block = \_ -> block.cond, blockName = block.nameAbbr } draggable, Cmd.none )
 
         -- Get all events with a certain Room ID and with it update the Room Filter and Abbr.
         OnRoomClick id ->
-            ( Model data {filters | room=createNewRoomFilter id, roomName=getRoomAbbr id}, Cmd.none )
+            ( Model data { filters | room = createNewRoomFilter id, roomName = getRoomAbbr id } draggable, Cmd.none )
 
         -- Get all events with a certain Lecturer ID and with it update the Lecturer Filter.
         OnLecturerClick id ->
-            ( Model data {filters | lect = createNewLectFilter id, lectName = getLectAbbr id}, Cmd.none )
+            ( Model data { filters | lect = createNewLectFilter id, lectName = getLectAbbr id } draggable, Cmd.none )
 
         {-
            For an Event click we need to change both the room Filter and the Lecturer Filter.
@@ -170,8 +187,7 @@ updateOnItemClick msg (Model data filters) =
                         _ ->
                             ( filters.lect, filters.lectName )
             in
-            ( Model data {filters | room = updatedRoomFilter, lect = updatedLectFilter, roomName = updatedRoomName, lectName = updatedLectName}, Cmd.none )
-
+            ( Model data { filters | room = updatedRoomFilter, lect = updatedLectFilter, roomName = updatedRoomName, lectName = updatedLectName } draggable, Cmd.none )
 
 
 
@@ -179,7 +195,7 @@ updateOnItemClick msg (Model data filters) =
 
 
 view : Model -> Html Msg
-view (Model data filters) =
+view (Model data filters draggable) =
     let
         tableWidth =
             90 / (3 |> toFloat) |> floor
@@ -197,6 +213,10 @@ view (Model data filters) =
 
         blockList =
             filter filters.block data.events
+
+        dragged : ID -> Html Msg
+        dragged (ID int) =
+            div [] [ int |> Debug.toString |> text ]
     in
     div []
         [ div [ class "listbox-area" ]
@@ -206,6 +226,9 @@ view (Model data filters) =
             , renderEvents (toList data.events) data.rooms data.lecturers
             ]
         , div [ class "grids-container" ] [ renderScheduleAbbr blockList ("Bloco:" ++ filters.blockName), renderScheduleAbbr roomList ("Sala:" ++ filters.roomName), renderScheduleAbbr lectList ("Docente:" ++ filters.lectName) ]
+        , DnD.dragged
+            draggable
+            dragged
         ]
 
 
@@ -215,7 +238,8 @@ renderSchedule tableWidth events title =
         nothing22 =
             Debug.log "--------------" title
 
-        nothing33 = Debug.log "List of (ID,Event)" events 
+        nothing33 =
+            Debug.log "List of (ID,Event)" events
 
         widthStr =
             String.append (tableWidth |> String.fromInt) "%"
@@ -277,7 +301,7 @@ renderSchedule tableWidth events title =
 ColLength corresponds to the maximum number of colision between events in a day.
 TODO: Add Drag/Drop event.
 -}
-renderDisplayEvent : Int -> DisplayEvent -> Html msg
+renderDisplayEvent : Int -> DisplayEvent -> Html Msg
 renderDisplayEvent colLength (DisplayEvent id ev dInfo) =
     let
         width =
@@ -296,7 +320,8 @@ renderDisplayEvent colLength (DisplayEvent id ev dInfo) =
         -- ++ ";grid-row:  t" ++ String.fromInt dInfo.lineStart ++ "   /  h" ++ String.fromInt dInfo.lineEnd
     in
     if List.member dInfo.day displayedWeekDays then
-        li [ class "event work", style "style" ("grid-column: " ++ weekday), style "margin-left" (String.fromInt leftMargin ++ "%"), style "grid-row" ("t" ++ String.fromInt dInfo.lineStart ++ "   /  t" ++ String.fromInt dInfo.lineEnd), style "width" (String.fromInt width ++ "%"), style "grid-column" weekday, style "z-index" zIndex, attribute "title" ev.subjectAbbr ] [ text ev.subjectAbbr ]
+        -- li [ class "event work", style "style" ("grid-column: " ++ weekday), style "margin-left" (String.fromInt leftMargin ++ "%"), style "grid-row" ("t" ++ String.fromInt dInfo.lineStart ++ "   /  t" ++ String.fromInt dInfo.lineEnd), style "width" (String.fromInt width ++ "%"), style "grid-column" weekday, style "z-index" zIndex, attribute "title" ev.subjectAbbr ] [ text ev.subjectAbbr ]th ++ "%"), style "grid-column" weekday, style "z-index" zIndex, attribute "title" ev.subjectAbbr ] [ text ev.subjectAbbr ] ]
+        li [ class "event work", style "style" ("grid-column: " ++ weekday), style "margin-left" (String.fromInt leftMargin ++ "%"), style "grid-row" ("t" ++ String.fromInt dInfo.lineStart ++ "   /  t" ++ String.fromInt dInfo.lineEnd), style "width" (String.fromInt width ++ "%"), style "grid-column" weekday, style "z-index" zIndex, attribute "title" ev.subjectAbbr ] [ dnd.draggable (ID id) [style "height" "-webkit-fill-available", style "width" "-webkit-fill-available"] [ text ev.subjectAbbr ] ]
 
     else
         li [ style "display" "none" ] [ text ev.subjectAbbr ]
@@ -401,6 +426,11 @@ renderBlock ( id, block ) =
     li [ class "list-item", onClick (ItemClick (OnBlockClick ( id, block ))), attribute "title" block.name ] [ div [ class "custom-scrollbar", class "list-text" ] [ text block.nameAbbr ] ]
 
 
+subscriptions : Model -> Sub Msg
+subscriptions (Model _ _ draggable) =
+    dnd.subscriptions draggable
+
+
 
 ---- MAIN ----
 
@@ -411,5 +441,5 @@ main =
         { view = view
         , init = \_ -> init
         , update = update
-        , subscriptions = always Sub.none
+        , subscriptions = subscriptions
         }
