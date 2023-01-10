@@ -2,6 +2,7 @@ module Main exposing (..)
 
 import Browser
 import DisplayEvents exposing (..)
+import DnD 
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Attributes.Aria exposing (ariaLabel)
@@ -61,7 +62,6 @@ init =
 type Msg
     = ItemClick OnItemClick
 
-
 type OnItemClick
     = OnRoomClick Int
     | OnLecturerClick Int
@@ -69,10 +69,17 @@ type OnItemClick
     | OnBlockClick ( Int, Block )
 
 
+
+
 {-| Update Room / Lecturer parameters based on the msg received.
 -}
 update : Msg -> Model -> ( Model, Cmd Msg )
-update msg (Model data (ScheduleFilter roomFilter lectFilter blockFilter roomName lectName blockName)) =
+update msg model =
+    case msg of
+        (ItemClick clickMsg) -> updateOnItemClick clickMsg model
+
+updateOnItemClick : OnItemClick -> Model -> ( Model, Cmd Msg )
+updateOnItemClick msg (Model data filters) =
     let
         {- We Create a function to fetch a new Room/Lecturer filter and abbreviation based on a Room/Lecturer ID.
            If the Room/Lecturer to update is already the one being displayed then dont perform any action.
@@ -92,7 +99,7 @@ update msg (Model data (ScheduleFilter roomFilter lectFilter blockFilter roomNam
                     r.abbr
 
                 Nothing ->
-                    roomName
+                    filters.roomName
 
         createNewLectFilter : Int -> Int -> Event -> Bool
         createNewLectFilter lectid _ event =
@@ -109,19 +116,19 @@ update msg (Model data (ScheduleFilter roomFilter lectFilter blockFilter roomNam
                     r.abbr
 
                 Nothing ->
-                    lectName
+                    filters.lectName
     in
     case msg of
-        ItemClick (OnBlockClick ( id, block )) ->
-            ( Model data (ScheduleFilter roomFilter lectFilter (\_ -> block.cond) roomName lectName block.nameAbbr), Cmd.none )
+        OnBlockClick ( id, block ) ->
+            ( Model data {filters | block=(\_ -> block.cond), blockName = block.nameAbbr}, Cmd.none )
 
         -- Get all events with a certain Room ID and with it update the Room Filter and Abbr.
-        ItemClick (OnRoomClick id) ->
-            ( Model data (ScheduleFilter (createNewRoomFilter id) lectFilter blockFilter (getRoomAbbr id) lectName blockName), Cmd.none )
+        OnRoomClick id ->
+            ( Model data {filters | room=createNewRoomFilter id, roomName=getRoomAbbr id}, Cmd.none )
 
         -- Get all events with a certain Lecturer ID and with it update the Lecturer Filter.
-        ItemClick (OnLecturerClick id) ->
-            ( Model data (ScheduleFilter roomFilter (createNewLectFilter id) blockFilter roomName (getLectAbbr id) blockName), Cmd.none )
+        OnLecturerClick id ->
+            ( Model data {filters | lect = createNewLectFilter id, lectName = getLectAbbr id}, Cmd.none )
 
         {-
            For an Event click we need to change both the room Filter and the Lecturer Filter.
@@ -129,7 +136,7 @@ update msg (Model data (ScheduleFilter roomFilter lectFilter blockFilter roomNam
            Get all events with a certain Lecturer ID and with it update the Lecturer Filter.
            If the event ID received is not valid then no changes will occur.
         -}
-        ItemClick (OnEventClick id) ->
+        OnEventClick id ->
             let
                 -- Getting the event from the Table of Events
                 eventGet =
@@ -144,10 +151,10 @@ update msg (Model data (ScheduleFilter roomFilter lectFilter blockFilter roomNam
                                     ( createNewRoomFilter roomid, getRoomAbbr roomid )
 
                                 Nothing ->
-                                    ( roomFilter, roomName )
+                                    ( filters.room, filters.roomName )
 
                         _ ->
-                            ( roomFilter, roomName )
+                            ( filters.room, filters.roomName )
 
                 -- Updating Lecturer Filter / Abbr
                 ( updatedLectFilter, updatedLectName ) =
@@ -158,12 +165,13 @@ update msg (Model data (ScheduleFilter roomFilter lectFilter blockFilter roomNam
                                     ( createNewLectFilter lectid, getLectAbbr lectid )
 
                                 Nothing ->
-                                    ( lectFilter, lectName )
+                                    ( filters.lect, filters.lectName )
 
                         _ ->
-                            ( lectFilter, lectName )
+                            ( filters.lect, filters.lectName )
             in
-            ( Model data (ScheduleFilter updatedRoomFilter updatedLectFilter blockFilter updatedRoomName updatedLectName blockName), Cmd.none )
+            ( Model data {filters | room = updatedRoomFilter, lect = updatedLectFilter, roomName = updatedRoomName, lectName = updatedLectName}, Cmd.none )
+
 
 
 
@@ -171,7 +179,7 @@ update msg (Model data (ScheduleFilter roomFilter lectFilter blockFilter roomNam
 
 
 view : Model -> Html Msg
-view (Model data (ScheduleFilter roomFilter lectFilter blockFilter roomName lectName blockName)) =
+view (Model data filters) =
     let
         tableWidth =
             90 / (3 |> toFloat) |> floor
@@ -182,13 +190,13 @@ view (Model data (ScheduleFilter roomFilter lectFilter blockFilter roomName lect
 
         -- Here we render the filters, turning them from (Int -> Event -> Bool) into a List (Int, Event)
         roomList =
-            filter roomFilter data.events
+            filter filters.room data.events
 
         lectList =
-            filter lectFilter data.events
+            filter filters.lect data.events
 
         blockList =
-            filter blockFilter data.events
+            filter filters.block data.events
     in
     div []
         [ div [ class "listbox-area" ]
@@ -197,7 +205,7 @@ view (Model data (ScheduleFilter roomFilter lectFilter blockFilter roomName lect
             , renderRooms data.rooms
             , renderEvents (toList data.events) data.rooms data.lecturers
             ]
-        , div [ class "grids-container" ] [ renderScheduleAbbr blockList ("Bloco:" ++ blockName), renderScheduleAbbr roomList ("Sala:" ++ roomName), renderScheduleAbbr lectList ("Docente:" ++ lectName) ]
+        , div [ class "grids-container" ] [ renderScheduleAbbr blockList ("Bloco:" ++ filters.blockName), renderScheduleAbbr roomList ("Sala:" ++ filters.roomName), renderScheduleAbbr lectList ("Docente:" ++ filters.lectName) ]
         ]
 
 
@@ -206,6 +214,8 @@ renderSchedule tableWidth events title =
     let
         nothing22 =
             Debug.log "--------------" title
+
+        nothing33 = Debug.log "List of (ID,Event)" events 
 
         widthStr =
             String.append (tableWidth |> String.fromInt) "%"

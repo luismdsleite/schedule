@@ -64,32 +64,12 @@ type alias RoomID =
 {-| A Filter is a specific view of all events (e.g. show all events from room X or show all events whose lecturer is C).
 The ScheduleFilter holds 3 different filter functions that are only parsed when displaying html.
 -}
-type ScheduleFilter
-    = ScheduleFilter RoomFilter LecturerFilter BlockFilter RoomName LecturerName BlockName
+type alias ScheduleFilter
+    = {room: Filter,  lect: Filter, block: Filter, roomName: String, lectName: String, blockName: String}
 
 
-type alias RoomFilter =
+type alias Filter =
     Int -> Event -> Bool
-
-
-type alias LecturerFilter =
-    Int -> Event -> Bool
-
-
-type alias BlockFilter =
-    Int -> Event -> Bool
-
-
-type alias RoomName =
-    String
-
-
-type alias LecturerName =
-    String
-
-
-type alias BlockName =
-    String
 
 
 
