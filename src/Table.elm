@@ -1,4 +1,4 @@
-module Table exposing (ID(..), Table, add, get, empty, fromList, toList, values, filter)
+module Table exposing (ID(..), Table, add, empty, filter, fromList, get, toList, values, put)
 
 import Dict exposing (Dict)
 
@@ -32,13 +32,17 @@ add info (Table nextId dict) =
     )
 
 
+put : ID -> info -> Table info -> ( Table info)
+put (ID id) v (Table nextId dict) =
+    Table (id) (Dict.insert id v dict)
+
+
 {-| Table equivalent of Dict.fromList
 I have no idea if this is correct...
 -}
 fromList : List info -> Table info
 fromList list =
     fillTablefromList empty list
-
 
 
 fillTablefromList : Table info -> List info -> Table info
@@ -55,11 +59,16 @@ fillTablefromList table list =
             fillTablefromList (Tuple.first (add x table)) xs
 
 
-toList : Table info -> List (Int,info)
-toList (Table _ info) = Dict.toList info
+toList : Table info -> List ( Int, info )
+toList (Table _ info) =
+    Dict.toList info
+
 
 values : Table info -> List info
-values (Table _ info) = Dict.values info
+values (Table _ info) =
+    Dict.values info
 
-filter : (Int -> info -> Bool) -> Table info -> List (Int,info)
-filter isGood (Table _ info) =  Dict.filter isGood info |> Dict.toList
+
+filter : (Int -> info -> Bool) -> Table info -> List ( Int, info )
+filter isGood (Table _ info) =
+    Dict.filter isGood info |> Dict.toList
