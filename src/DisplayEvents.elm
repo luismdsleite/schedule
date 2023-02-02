@@ -1,4 +1,4 @@
-module DisplayEvents exposing (DisplayEvent(..), createDisplayEvents)
+module DisplayEvents exposing (DisplayEvent(..), createDisplayEvents, startingHour, startingMinute, endingHour, endingMinute)
 
 import Array exposing (Array)
 import Matrix exposing (..)
