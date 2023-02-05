@@ -15,7 +15,6 @@ import Time exposing (..)
 
 
 -- TODO: Remove data in init and read from a json file
--- TODO: Represent blocks by function that receives and event and outputs a bool
 -- INFO: Hash function = (hour-8)*2+V(minute), V(minute) = 1 if minute >= 30, otherwise minute = 0. type alias Hashmap = Array (List Event).
 -- Question: The algorithm I know for calculating time scheduling colisions is O(n)=n². Should I continue using the grid column size equal to the number of events to display or should I calculate max number the colisions and use that as the grid column?
 -- Question: How to transform the loop into functional programming?
@@ -49,7 +48,7 @@ init =
                 , Event "subject" "subjAbrr" (Just (ID 2)) (Just (WeekTime Time.Mon 11 30)) (Just (WeekTime Time.Mon 12 30)) (Just (ID 2))
                 , Event "noRoomEvent" "noRoomEvent" Nothing (Just (WeekTime Time.Tue 11 30)) (Just (WeekTime Time.Tue 12 0)) (Just (ID 2))
                 , Event "noLectEvent" "noLectEvent" (Just (ID 2)) (Just (WeekTime Time.Sat 11 30)) (Just (WeekTime Time.Sat 12 0)) Nothing
-                , Event "noRoom&LecEvent" "noRoom&LecEvent" Nothing (Just (WeekTime Time.Wed 11 30)) (Just (WeekTime Time.Wed 12 0)) Nothing
+                , Event "noRoom&LecEvent" "noRoom&LecEvent" Nothing (Just (WeekTime Time.Wed 9 30)) (Just (WeekTime Time.Wed 12 0)) Nothing
                 ]
         , blocks =
             fromList
@@ -91,8 +90,65 @@ update msg (Model data filters draggable) =
         DnDMsg dndmsg ->
             ( Model data filters (DnD.update dndmsg draggable), Cmd.none )
 
-        OnDrop _ _ ->
-            Debug.todo "branch 'OnDrop _ _' not implemented"
+        OnDrop ( dropEvent, weekTime ) eventID ->
+            let
+                event =
+                    Table.get eventID data.events
+            in
+            case event of
+                Just ev ->
+                    let
+                        startingTime =
+                            Maybe.withDefault (WeekTime Time.Mon endingHour DisplayEvents.endingMinute) ev.start_time
+
+                        endingTime =
+                            Maybe.withDefault (WeekTime Time.Mon endingHour DisplayEvents.endingMinute) ev.end_time
+
+                        isTopSwitch =
+                            if startingTime.minute == 30 then
+                                -1
+
+                            else
+                                0
+
+                        isBotSwitch =
+                            if endingTime.minute == 30 then
+                                1
+
+                            else
+                                0
+
+                        slotsOccupied =
+                            (endingTime.hour - startingTime.hour) * 2 + isTopSwitch + isBotSwitch
+
+                        newEndTime =
+                            --| Target slot is of the format "xx:30" and the event occupies an EVEN number of slots.
+                            if weekTime.minute == 30 && (modBy 2 slotsOccupied == 0) then
+                                WeekTime startingTime.weekday (weekTime.hour + (slotsOccupied // 2)) 30
+
+                            else if weekTime.minute == 30 && (modBy 2 slotsOccupied == 1) then
+                                -- Target slot is of the format "xx:30" and the event occupies an ODD number of slots.
+                                WeekTime startingTime.weekday (weekTime.hour + (slotsOccupied // 2) + 1) 0
+
+                            else if weekTime.minute == 0 && (modBy 2 slotsOccupied == 0) then
+                                -- Target slot is of the format "xx:00" and the event occupies an EVEN number of slots.
+                                WeekTime startingTime.weekday (weekTime.hour + (slotsOccupied // 2)) 0
+
+                            else
+                                -- Target slot is of the format "xx:00" and the event occupies an ODD number of slots.
+                                WeekTime startingTime.weekday (weekTime.hour + (slotsOccupied // 2)) 30
+
+                        newEv =
+                            -- { ev | start_time = Just weekTime }
+                            { ev | start_time = Just weekTime, end_time = Just newEndTime }
+
+                        newEvents =
+                            Table.put eventID newEv data.events
+                    in
+                    ( Model { data | events = newEvents } filters draggable, Cmd.none )
+
+                Nothing ->
+                    ( Model data filters draggable, Cmd.none )
 
 
 updateOnItemClick : OnItemClick -> Model -> ( Model, Cmd Msg )
@@ -235,12 +291,10 @@ view (Model data filters draggable) =
 renderSchedule : Int -> List ( Int, Event ) -> String -> Html Msg
 renderSchedule tableWidth events title =
     let
-        nothing22 =
-            Debug.log "--------------" title
-
-        nothing33 =
-            Debug.log "List of (ID,Event)" events
-
+        -- nothing22 =
+        --     Debug.log "--------------" title
+        -- nothing33 =
+        --     Debug.log "List of (ID,Event)" events
         widthStr =
             String.append (tableWidth |> String.fromInt) "%"
 
@@ -272,6 +326,28 @@ renderSchedule tableWidth events title =
         timeblocks =
             List.map2 (\index str -> li [ class ("time t" ++ String.fromInt index) ] [ text str ]) (List.range 0 23) timeblocksText
 
+        -- Empty slots (with no events). They possess a event listener that triggers on the case of an event that is dragged to it (Triggers a Msg onDrop).
+        liWeekSlots =
+            let
+                -- List [8,8,9,9,10,10,..,18,18,19,19]
+                hours =
+                    List.sort (List.range startingHour endingHour ++ List.range startingHour endingHour)
+
+                getMinute index =
+                    if modBy 2 index == 0 then
+                        0
+
+                    else
+                        30
+
+                -- Create empty slots for a line of a schedule
+                lineWeekLi =
+                    \index hour -> List.map (\weekday -> li [] [ dnd.droppable ( RoomEvent (ID 1), WeekTime weekday hour (getMinute index) ) [ style "height" "100%", style "width" "100%" ] [] ]) displayedWeekDays
+
+                -- lineWeekLi = (\index hour -> List.map (\weekday -> li [] [ dnd.droppable ( RoomEvent (ID 1), WeekTime weekday hour (getMinute index) ) [ style "height" "100%", style "width" "100%" ] [  Debug.toString weekday ++ " " ++ Debug.toString hour ++ ":" ++ Debug.toString (getMinute index) |> text ] ]) displayedWeekDays)
+            in
+            List.indexedMap lineWeekLi hours |> List.concat
+
         -- Display Events Cells to be renders
         liDisplayEvents =
             let
@@ -293,7 +369,8 @@ renderSchedule tableWidth events title =
     div [ style "width" widthStr ]
         [ h3 [ style "margin" "unset" ] [ text title ]
         , ul [ class "calendar weekly-byhour", style "width" widthStr ]
-            (List.map weekdayToHtml displayedWeekDays ++ timeblocks ++ List.repeat (24 * 5) (li [] []) ++ liDisplayEvents)
+            -- (List.map weekdayToHtml displayedWeekDays ++ timeblocks ++ List.repeat (24 * 5) (li [] []) ++ liDisplayEvents)
+            (List.map weekdayToHtml displayedWeekDays ++ timeblocks ++ liWeekSlots ++ liDisplayEvents)
         ]
 
 
@@ -321,7 +398,7 @@ renderDisplayEvent colLength (DisplayEvent id ev dInfo) =
     in
     if List.member dInfo.day displayedWeekDays then
         -- li [ class "event work", style "style" ("grid-column: " ++ weekday), style "margin-left" (String.fromInt leftMargin ++ "%"), style "grid-row" ("t" ++ String.fromInt dInfo.lineStart ++ "   /  t" ++ String.fromInt dInfo.lineEnd), style "width" (String.fromInt width ++ "%"), style "grid-column" weekday, style "z-index" zIndex, attribute "title" ev.subjectAbbr ] [ text ev.subjectAbbr ]th ++ "%"), style "grid-column" weekday, style "z-index" zIndex, attribute "title" ev.subjectAbbr ] [ text ev.subjectAbbr ] ]
-        li [ class "event work", style "style" ("grid-column: " ++ weekday), style "margin-left" (String.fromInt leftMargin ++ "%"), style "grid-row" ("t" ++ String.fromInt dInfo.lineStart ++ "   /  t" ++ String.fromInt dInfo.lineEnd), style "width" (String.fromInt width ++ "%"), style "grid-column" weekday, style "z-index" zIndex, attribute "title" ev.subjectAbbr ] [ dnd.draggable (ID id) [style "height" "-webkit-fill-available", style "width" "-webkit-fill-available"] [ text ev.subjectAbbr ] ]
+        li [ class "event work", style "style" ("grid-column: " ++ weekday), style "margin-left" (String.fromInt leftMargin ++ "%"), style "grid-row" ("t" ++ String.fromInt dInfo.lineStart ++ "   /  t" ++ String.fromInt dInfo.lineEnd), style "width" (String.fromInt width ++ "%"), style "grid-column" weekday, style "z-index" zIndex, attribute "title" ev.subjectAbbr ] [ dnd.draggable (ID id) [ style "height" "-webkit-fill-available", style "width" "-webkit-fill-available" ] [ text ev.subjectAbbr ] ]
 
     else
         li [ style "display" "none" ] [ text ev.subjectAbbr ]
