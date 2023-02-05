@@ -68,13 +68,12 @@ doesEvFitInCol ev colIndex colisionGrid =
                 |> Maybe.andThen
                     (\start_time ->
                         ev.end_time
-                            |> Maybe.andThen (\end_time -> Just (Array.foldr (+) 0 (Matrix.getYs colisionGrid colIndex |> Array.slice (start_time |> hash) ((end_time |> hash) + 1)) == 0))
+                            |> Maybe.andThen (\end_time -> Just (Array.foldr (+) 0 (Matrix.getYs colisionGrid colIndex |> Array.slice (start_time |> hash) (end_time |> hash)) == 0))
                     )
             )
 
 
-{-|
-INFO: If an event doesn't has a start\_time and a end\_time else dont display it!
+{-| INFO: If an event doesn't has a start\_time and a end\_time else dont display it!
 -}
 createDisplayEvents : List ( Int, Event ) -> ( List DisplayEvent, Int )
 createDisplayEvents evList =
