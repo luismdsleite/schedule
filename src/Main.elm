@@ -26,6 +26,7 @@ type Model
 
 {-| Init Drag and Drop messages
 -}
+dnd : DnD.DraggableInit ( DropEvent, WeekTime ) ID Msg
 dnd =
     DnD.init DnDMsg OnDrop
 
@@ -258,7 +259,7 @@ view (Model data filters draggable) =
 
         -- To shorten the function call
         renderScheduleAbbr =
-            renderSchedule tableWidth
+            renderSchedule tableWidth draggable
 
         -- Here we render the filters, turning them from (Int -> Event -> Bool) into a List (Int, Event)
         roomList =
@@ -288,8 +289,8 @@ view (Model data filters draggable) =
         ]
 
 
-renderSchedule : Int -> List ( Int, Event ) -> String -> Html Msg
-renderSchedule tableWidth events title =
+renderSchedule : Int -> Draggable -> List ( Int, Event ) -> String -> Html Msg
+renderSchedule tableWidth draggable events title =
     let
         -- nothing22 =
         --     Debug.log "--------------" title
@@ -362,7 +363,7 @@ renderSchedule tableWidth events title =
                 -- Function to render all display events of a certain day
                 renderDayDisplayEvents : ( List DisplayEvent, Int ) -> List (Html Msg)
                 renderDayDisplayEvents ( dEvents, colLength ) =
-                    List.map (renderDisplayEvent colLength) dEvents
+                    List.map (renderDisplayEvent colLength draggable) dEvents
             in
             List.foldl (++) [] (List.map renderDayDisplayEvents dEvSortedByDays)
     in
@@ -376,10 +377,9 @@ renderSchedule tableWidth events title =
 
 {-| Turns a Display Event into a HTML <li> tag.
 ColLength corresponds to the maximum number of colision between events in a day.
-TODO: Add Drag/Drop event.
 -}
-renderDisplayEvent : Int -> DisplayEvent -> Html Msg
-renderDisplayEvent colLength (DisplayEvent id ev dInfo) =
+renderDisplayEvent : Int -> Draggable -> DisplayEvent -> Html Msg
+renderDisplayEvent colLength draggable (DisplayEvent id ev dInfo) =
     let
         width =
             ((dInfo.colEnd + 1) - dInfo.colStart) * 100 // colLength
@@ -394,11 +394,17 @@ renderDisplayEvent colLength (DisplayEvent id ev dInfo) =
         zIndex =
             String.fromInt (999 - dInfo.colStart)
 
-        -- ++ ";grid-row:  t" ++ String.fromInt dInfo.lineStart ++ "   /  h" ++ String.fromInt dInfo.lineEnd
+        {- Hide DisplayEvents when we want to drop a displayEvent -}
+        hideAtt =
+            case DnD.getDragMeta draggable of
+                Just _ ->
+                    [ style "pointer-events" "none" ]
+
+                _ ->
+                    [ ]
     in
     if List.member dInfo.day displayedWeekDays then
-        -- li [ class "event work", style "style" ("grid-column: " ++ weekday), style "margin-left" (String.fromInt leftMargin ++ "%"), style "grid-row" ("t" ++ String.fromInt dInfo.lineStart ++ "   /  t" ++ String.fromInt dInfo.lineEnd), style "width" (String.fromInt width ++ "%"), style "grid-column" weekday, style "z-index" zIndex, attribute "title" ev.subjectAbbr ] [ text ev.subjectAbbr ]th ++ "%"), style "grid-column" weekday, style "z-index" zIndex, attribute "title" ev.subjectAbbr ] [ text ev.subjectAbbr ] ]
-        li [ class "event work", style "style" ("grid-column: " ++ weekday), style "margin-left" (String.fromInt leftMargin ++ "%"), style "grid-row" ("t" ++ String.fromInt dInfo.lineStart ++ "   /  t" ++ String.fromInt dInfo.lineEnd), style "width" (String.fromInt width ++ "%"), style "grid-column" weekday, style "z-index" zIndex, attribute "title" ev.subjectAbbr ] [ dnd.draggable (ID id) [ style "height" "-webkit-fill-available", style "width" "-webkit-fill-available" ] [ text ev.subjectAbbr ] ]
+        li ([ class "event work", style "style" ("grid-column: " ++ weekday), style "margin-left" (String.fromInt leftMargin ++ "%"), style "grid-row" ("t" ++ String.fromInt dInfo.lineStart ++ "   /  t" ++ String.fromInt dInfo.lineEnd), style "width" (String.fromInt width ++ "%"), style "grid-column" weekday, style "z-index" zIndex, attribute "title" ev.subjectAbbr ] ++ hideAtt) [ dnd.draggable (ID id) [ style "height" "-webkit-fill-available", style "width" "-webkit-fill-available" ] [ text ev.subjectAbbr ] ]
 
     else
         li [ style "display" "none" ] [ text ev.subjectAbbr ]
