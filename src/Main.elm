@@ -449,11 +449,11 @@ renderEvent rooms lecturers ( eventID, event ) =
 
                         -- ERROR: RoomID is missing from the database!
                         Nothing ->
-                            Room "----" "----" -1 "1.55"
+                            Room "----" "----" -1 "----"
 
                 -- Event still has no room assigned
                 Nothing ->
-                    Room "----" "----" -1 "1.77"
+                    Room "----" "----" -1 "----"
 
         lecturer =
             case event.lecturer of
