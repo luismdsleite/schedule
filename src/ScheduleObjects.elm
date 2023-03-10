@@ -42,7 +42,7 @@ type alias Lecturer =
 {-| A room has an ID, a name, a abbreviation and a capacity.
 -}
 type alias Room =
-    { name : String, abbr : String, capacity : Int }
+    { name : String, abbr : String, capacity : Int, number : String }
 
 
 type alias ID =
