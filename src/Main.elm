@@ -1,6 +1,7 @@
 module Main exposing (..)
 
 import Browser
+import Dict exposing (Dict)
 import DisplayEvents exposing (..)
 import DnD
 import DragDrop exposing (..)
@@ -9,15 +10,11 @@ import Html.Attributes exposing (..)
 import Html.Attributes.Aria exposing (ariaLabel)
 import Html.Events exposing (onClick)
 import ScheduleObjects exposing (..)
-import Table exposing (..)
 import Time exposing (..)
 
 
 
--- TODO: Remove data in init and read from a json file
 -- INFO: Hash function = (hour-8)*2+V(minute), V(minute) = 1 if minute >= 30, otherwise minute = 0. type alias Hashmap = Array (List Event).
--- Question: The algorithm I know for calculating time scheduling colisions is O(n)=n². Should I continue using the grid column size equal to the number of events to display or should I calculate max number the colisions and use that as the grid column?
--- Question: How to transform the loop into functional programming?
 
 
 type Model
@@ -36,25 +33,45 @@ dnd =
 init : ( Model, Cmd Msg )
 init =
     ( Model
-        { rooms = fromList [ Room "DCC Lab. 2" "FC6_157 (Lab2)" 20, Room "DCC Lab. 3" "FC6_177 (Lab3)" 30, Room "CCC Lab. 6" "FC2_222 (Lab3)(LongName)" 30 ]
-        , lecturers = fromList [ Lecturer "N'Golo Kanté" "NGK" [] [] [], Lecturer "Alberto" "Al" [] [] [], Lecturer "Apikalia" "Ak" [] [] [], Lecturer "Sofi" "Ae" [] [] [], Lecturer "Lianne" "Ac" [] [] [], Lecturer "Mayur" "Aa" [] [] [], Lecturer "Kristine" "Af" [] [] [], Lecturer "Straton" "Az" [] [] [], Lecturer "Svanhild" "Am" [] [] [], Lecturer "Ayla" "Aç" [] [] [], Lecturer "Mayem" "Ai" [] [] [], Lecturer "Minakshi" "BA" [] [] [], Lecturer "Isaiah" "CA" [] [] [] ]
+        { rooms =
+            Dict.fromList
+                [ ( 1, Room "DCC Lab. 2" "FC6_157 (Lab2)" 20 )
+                , ( 2, Room "DCC Lab. 3" "FC6_177 (Lab3)" 30 )
+                , ( 3, Room "CCC Lab. 6" "FC2_222 (Lab3)(LongName)" 30 )
+                ]
+        , lecturers =
+            Dict.fromList
+                [ ( 1, Lecturer "N'Golo Kanté" "NGK" [] [] [] )
+                , ( 2, Lecturer "Alberto" "Al" [] [] [] )
+                , ( 3, Lecturer "Apikalia" "Ak" [] [] [] )
+                , ( 4, Lecturer "Sofi" "Ae" [] [] [] )
+                , ( 5, Lecturer "Lianne" "Ac" [] [] [] )
+                , ( 6, Lecturer "Mayur" "Aa" [] [] [] )
+                , ( 7, Lecturer "Kristine" "Af" [] [] [] )
+                , ( 8, Lecturer "Straton" "Az" [] [] [] )
+                , ( 9, Lecturer "Svanhild" "Am" [] [] [] )
+                , ( 10, Lecturer "Ayla" "Aç" [] [] [] )
+                , ( 11, Lecturer "Mayem" "Ai" [] [] [] )
+                , ( 12, Lecturer "Minakshi" "BA" [] [] [] )
+                , ( 13, Lecturer "Isaiah" "CA" [] [] [] )
+                ]
         , events =
-            fromList
-                [ Event "Algoritmos (CC4010)_TP.1" "Alga-TP3" (Just (ID 1)) (Just (WeekTime Time.Mon 9 30)) (Just (WeekTime Time.Mon 11 0)) (Just (ID 1))
-                , Event "asdasd (CC4011)_TP.1" "Alga-TP2" (Just (ID 1)) (Just (WeekTime Time.Mon 10 30)) (Just (WeekTime Time.Mon 12 0)) (Just (ID 2))
-                , Event "asdasd (CC4011)_TP.1" "Alga-TP45" (Just (ID 1)) (Just (WeekTime Time.Mon 10 30)) (Just (WeekTime Time.Mon 12 0)) (Just (ID 2))
-                , Event "asdasd (CC4011)_TP.1" "Alga-TP44" (Just (ID 1)) (Just (WeekTime Time.Mon 12 30)) (Just (WeekTime Time.Mon 13 30)) (Just (ID 2))
-                , Event "Harooo" "Alga-TPX" (Just (ID 1)) (Just (WeekTime Time.Mon 11 0)) (Just (WeekTime Time.Mon 14 0)) (Just (ID 2))
-                , Event "Harooo" "Alga-TPY" (Just (ID 1)) (Just (WeekTime Time.Mon 15 0)) (Just (WeekTime Time.Mon 17 0)) (Just (ID 2))
-                , Event "subject" "subjAbrr" (Just (ID 2)) (Just (WeekTime Time.Mon 11 30)) (Just (WeekTime Time.Mon 12 30)) (Just (ID 2))
-                , Event "noRoomEvent" "noRoomEvent" Nothing (Just (WeekTime Time.Tue 11 30)) (Just (WeekTime Time.Tue 12 0)) (Just (ID 2))
-                , Event "noLectEvent" "noLectEvent" (Just (ID 2)) (Just (WeekTime Time.Sat 11 30)) (Just (WeekTime Time.Sat 12 0)) Nothing
-                , Event "noRoom&LecEvent" "noRoom&LecEvent" Nothing (Just (WeekTime Time.Wed 9 30)) (Just (WeekTime Time.Wed 12 0)) Nothing
+            Dict.fromList
+                [ ( 1, Event "Algoritmos (CC4010)_TP.1" "Alga-TP3" (Just 1) (Just (WeekTime Time.Mon 9 30)) (Just (WeekTime Time.Mon 11 0)) (Just 1) )
+                , ( 2, Event "asdasd (CC4011)_TP.1" "Alga-TP2" (Just 1) (Just (WeekTime Time.Mon 10 30)) (Just (WeekTime Time.Mon 12 0)) (Just 2) )
+                , ( 3, Event "asdasd (CC4011)_TP.1" "Alga-TP45" (Just 1) (Just (WeekTime Time.Mon 10 30)) (Just (WeekTime Time.Mon 12 0)) (Just 2) )
+                , ( 4, Event "asdasd (CC4011)_TP.1" "Alga-TP44" (Just 1) (Just (WeekTime Time.Mon 12 30)) (Just (WeekTime Time.Mon 13 30)) (Just 2) )
+                , ( 5, Event "Harooo" "Alga-TPX" (Just 1) (Just (WeekTime Time.Mon 11 0)) (Just (WeekTime Time.Mon 14 0)) (Just 2) )
+                , ( 6, Event "Harooo" "Alga-TPY" (Just 1) (Just (WeekTime Time.Mon 15 0)) (Just (WeekTime Time.Mon 17 0)) (Just 2) )
+                , ( 7, Event "subject" "subjAbrr" (Just 2) (Just (WeekTime Time.Mon 11 30)) (Just (WeekTime Time.Mon 12 30)) (Just 2) )
+                , ( 8, Event "noRoomEvent" "noRoomEvent" Nothing (Just (WeekTime Time.Tue 11 30)) (Just (WeekTime Time.Tue 12 0)) (Just 2) )
+                , ( 9, Event "noLectEvent" "noLectEvent" (Just 2) (Just (WeekTime Time.Sat 11 30)) (Just (WeekTime Time.Sat 12 0)) Nothing )
+                , ( 10, Event "noRoom&LecEvent" "noRoom&LecEvent" Nothing (Just (WeekTime Time.Wed 9 30)) (Just (WeekTime Time.Wed 12 0)) Nothing )
                 ]
         , blocks =
-            fromList
-                [ Block "All Events" "All Events" (\ev -> True)
-                , Block "Eventos de Alga" "(CC4011)" (\ev -> String.contains "(CC4011)" ev.subject)
+            Dict.fromList
+                [ ( 1, Block "All Events" "All Events" (\_ -> True) )
+                , ( 2, Block "Eventos de Alga" "(CC4011)" (\ev -> String.contains "(CC4011)" ev.subject) )
                 ]
         }
         (ScheduleFilter (\_ _ -> False) (\_ _ -> False) (\_ _ -> False) "" "" "")
@@ -91,10 +108,10 @@ update msg (Model data filters draggable) =
         DnDMsg dndmsg ->
             ( Model data filters (DnD.update dndmsg draggable), Cmd.none )
 
-        OnDrop ( dropEvent, weekTime ) eventID ->
+        OnDrop ( _, weekTime ) eventID ->
             let
                 event =
-                    Table.get eventID data.events
+                    Dict.get eventID data.events
             in
             case event of
                 Just ev ->
@@ -144,7 +161,7 @@ update msg (Model data filters draggable) =
                             { ev | start_time = Just weekTime, end_time = Just newEndTime }
 
                         newEvents =
-                            Table.put eventID newEv data.events
+                            Dict.insert eventID newEv data.events
                     in
                     ( Model { data | events = newEvents } filters draggable, Cmd.none )
 
@@ -161,14 +178,14 @@ updateOnItemClick msg (Model data filters draggable) =
         createNewRoomFilter : Int -> Int -> Event -> Bool
         createNewRoomFilter roomid _ event =
             case event.room of
-                Just (ID int) ->
-                    int == roomid
+                Just id ->
+                    id == roomid
 
                 Nothing ->
                     False
 
         getRoomAbbr roomid =
-            case Table.get (ID roomid) data.rooms of
+            case Dict.get roomid data.rooms of
                 Just r ->
                     r.abbr
 
@@ -178,14 +195,14 @@ updateOnItemClick msg (Model data filters draggable) =
         createNewLectFilter : Int -> Int -> Event -> Bool
         createNewLectFilter lectid _ event =
             case event.lecturer of
-                Just (ID int) ->
-                    int == lectid
+                Just id ->
+                    id == lectid
 
                 Nothing ->
                     False
 
         getLectAbbr lectid =
-            case Table.get (ID lectid) data.lecturers of
+            case Dict.get lectid data.lecturers of
                 Just r ->
                     r.abbr
 
@@ -193,7 +210,7 @@ updateOnItemClick msg (Model data filters draggable) =
                     filters.lectName
     in
     case msg of
-        OnBlockClick ( id, block ) ->
+        OnBlockClick ( _, block ) ->
             ( Model data { filters | block = \_ -> block.cond, blockName = block.nameAbbr } draggable, Cmd.none )
 
         -- Get all events with a certain Room ID and with it update the Room Filter and Abbr.
@@ -212,16 +229,16 @@ updateOnItemClick msg (Model data filters draggable) =
         -}
         OnEventClick id ->
             let
-                -- Getting the event from the Table of Events
+                -- Getting the event from the Dict of Events
                 eventGet =
-                    Table.get (ID id) data.events
+                    Dict.get id data.events
 
                 -- Updating Room Filter / Abbr
                 ( updatedRoomFilter, updatedRoomName ) =
                     case eventGet of
                         Just event ->
                             case event.room of
-                                Just (ID roomid) ->
+                                Just roomid ->
                                     ( createNewRoomFilter roomid, getRoomAbbr roomid )
 
                                 Nothing ->
@@ -235,7 +252,7 @@ updateOnItemClick msg (Model data filters draggable) =
                     case eventGet of
                         Just event ->
                             case event.lecturer of
-                                Just (ID lectid) ->
+                                Just lectid ->
                                     ( createNewLectFilter lectid, getLectAbbr lectid )
 
                                 Nothing ->
@@ -263,24 +280,24 @@ view (Model data filters draggable) =
 
         -- Here we render the filters, turning them from (Int -> Event -> Bool) into a List (Int, Event)
         roomList =
-            filter filters.room data.events
+            Dict.filter filters.room data.events |> Dict.toList
 
         lectList =
-            filter filters.lect data.events
+            Dict.filter filters.lect data.events |> Dict.toList
 
         blockList =
-            filter filters.block data.events
+            Dict.filter filters.block data.events |> Dict.toList
 
         dragged : ID -> Html Msg
-        dragged (ID int) =
-            div [] [ int |> Debug.toString |> text ]
+        dragged id =
+            div [] [ id |> Debug.toString |> text ]
     in
     div []
         [ div [ class "listbox-area" ]
             [ renderBlocks data.blocks
             , renderLecturers data.lecturers
             , renderRooms data.rooms
-            , renderEvents (toList data.events) data.rooms data.lecturers
+            , renderEvents (Dict.toList data.events) data.rooms data.lecturers
             ]
         , div [ class "grids-container" ] [ renderScheduleAbbr blockList ("Bloco:" ++ filters.blockName), renderScheduleAbbr roomList ("Sala:" ++ filters.roomName), renderScheduleAbbr lectList ("Docente:" ++ filters.lectName) ]
         , DnD.dragged
@@ -343,9 +360,9 @@ renderSchedule tableWidth draggable events title =
 
                 -- Create empty slots for a line of a schedule
                 lineWeekLi =
-                    \index hour -> List.map (\weekday -> li [] [ dnd.droppable ( RoomEvent (ID 1), WeekTime weekday hour (getMinute index) ) [ style "height" "100%", style "width" "100%" ] [] ]) displayedWeekDays
+                    \index hour -> List.map (\weekday -> li [] [ dnd.droppable ( RoomEvent 1, WeekTime weekday hour (getMinute index) ) [ style "height" "100%", style "width" "100%" ] [] ]) displayedWeekDays
 
-                -- lineWeekLi = (\index hour -> List.map (\weekday -> li [] [ dnd.droppable ( RoomEvent (ID 1), WeekTime weekday hour (getMinute index) ) [ style "height" "100%", style "width" "100%" ] [  Debug.toString weekday ++ " " ++ Debug.toString hour ++ ":" ++ Debug.toString (getMinute index) |> text ] ]) displayedWeekDays)
+                -- lineWeekLi = (\index hour -> List.map (\weekday -> li [] [ dnd.droppable ( RoomEvent 1, WeekTime weekday hour (getMinute index) ) [ style "height" "100%", style "width" "100%" ] [  Debug.toString weekday ++ " " ++ Debug.toString hour ++ ":" ++ Debug.toString (getMinute index) |> text ] ]) displayedWeekDays)
             in
             List.indexedMap lineWeekLi hours |> List.concat
 
@@ -401,10 +418,10 @@ renderDisplayEvent colLength draggable (DisplayEvent id ev dInfo) =
                     [ style "pointer-events" "none" ]
 
                 _ ->
-                    [ ]
+                    []
     in
     if List.member dInfo.day displayedWeekDays then
-        li ([ class "event work", style "style" ("grid-column: " ++ weekday), style "margin-left" (String.fromInt leftMargin ++ "%"), style "grid-row" ("t" ++ String.fromInt dInfo.lineStart ++ "   /  t" ++ String.fromInt dInfo.lineEnd), style "width" (String.fromInt width ++ "%"), style "grid-column" weekday, style "z-index" zIndex, attribute "title" ev.subjectAbbr ] ++ hideAtt) [ dnd.draggable (ID id) [ style "height" "-webkit-fill-available", style "width" "-webkit-fill-available" ] [ text ev.subjectAbbr ] ]
+        li ([ class "event work", style "style" ("grid-column: " ++ weekday), style "margin-left" (String.fromInt leftMargin ++ "%"), style "grid-row" ("t" ++ String.fromInt dInfo.lineStart ++ "   /  t" ++ String.fromInt dInfo.lineEnd), style "width" (String.fromInt width ++ "%"), style "grid-column" weekday, style "z-index" zIndex, attribute "title" ev.subjectAbbr ] ++ hideAtt) [ dnd.draggable id [ style "height" "-webkit-fill-available", style "width" "-webkit-fill-available" ] [ text ev.subjectAbbr ] ]
 
     else
         li [ style "display" "none" ] [ text ev.subjectAbbr ]
@@ -412,7 +429,7 @@ renderDisplayEvent colLength draggable (DisplayEvent id ev dInfo) =
 
 {-| Renders all the events into a list
 -}
-renderEvents : List ( Int, Event ) -> Table Room -> Table Lecturer -> Html Msg
+renderEvents : List ( Int, Event ) -> Dict RoomID Room -> Dict LecturerID Lecturer -> Html Msg
 renderEvents events rooms lecturers =
     ul [ ariaLabel "Cadeiras", class "list custom-scrollbar" ]
         (List.map (renderEvent rooms lecturers) events)
@@ -420,13 +437,13 @@ renderEvents events rooms lecturers =
 
 {-| Transforms an event into a list item
 -}
-renderEvent : Table Room -> Table Lecturer -> ( Int, Event ) -> Html Msg
+renderEvent : Dict RoomID Room -> Dict LecturerID Lecturer -> ( Int, Event ) -> Html Msg
 renderEvent rooms lecturers ( eventID, event ) =
     let
         room =
             case event.room of
                 Just roomID ->
-                    case Table.get roomID rooms of
+                    case Dict.get roomID rooms of
                         Just val ->
                             val
 
@@ -441,7 +458,7 @@ renderEvent rooms lecturers ( eventID, event ) =
         lecturer =
             case event.lecturer of
                 Just lecturerID ->
-                    case Table.get lecturerID lecturers of
+                    case Dict.get lecturerID lecturers of
                         Just val ->
                             val
 
@@ -465,11 +482,11 @@ renderEvent rooms lecturers ( eventID, event ) =
         ]
 
 
-renderRooms : Table Room -> Html Msg
+renderRooms : Dict RoomID Room -> Html Msg
 renderRooms rooms =
     let
         roomsList =
-            Table.toList rooms
+            Dict.toList rooms
     in
     ul [ ariaLabel "Salas", class "list custom-scrollbar" ]
         (List.map renderRoom roomsList)
@@ -480,11 +497,11 @@ renderRoom ( int, room ) =
     li [ class "list-item", onClick (ItemClick (OnRoomClick int)), attribute "title" room.name ] [ div [ class "custom-scrollbar", class "list-text" ] [ text room.abbr ] ]
 
 
-renderLecturers : Table Lecturer -> Html Msg
+renderLecturers : Dict LecturerID Lecturer -> Html Msg
 renderLecturers lecturers =
     let
         lecturersList =
-            Table.toList lecturers
+            Dict.toList lecturers
     in
     ul [ ariaLabel "Docentes", class "list custom-scrollbar" ]
         (List.map renderLecturer lecturersList)
@@ -495,11 +512,11 @@ renderLecturer ( int, lecturer ) =
     li [ class "list-item", onClick (ItemClick (OnLecturerClick int)), attribute "title" lecturer.name ] [ div [ class "custom-scrollbar", class "list-text" ] [ text lecturer.abbr ] ]
 
 
-renderBlocks : Table Block -> Html Msg
+renderBlocks : Dict BlockID Block -> Html Msg
 renderBlocks blocks =
     let
         blocksList =
-            Table.toList blocks
+            Dict.toList blocks
     in
     ul [ ariaLabel "Blocos", class "list custom-scrollbar" ] (List.map renderBlock blocksList)
 

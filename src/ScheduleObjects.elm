@@ -1,6 +1,6 @@
 module ScheduleObjects exposing (..)
 
-import Table exposing (..)
+import Dict exposing (Dict)
 import Time exposing (..)
 
 
@@ -12,10 +12,10 @@ type alias Block =
 
 
 type alias Data =
-    { rooms : Table Room
-    , lecturers : Table Lecturer
-    , events : Table Event
-    , blocks : Table Block
+    { rooms : Dict ID Room
+    , lecturers : Dict ID Lecturer
+    , events : Dict ID Event
+    , blocks : Dict ID Block
     }
 
 
@@ -45,6 +45,10 @@ type alias Room =
     { name : String, abbr : String, capacity : Int }
 
 
+type alias ID =
+    Int
+
+
 type alias LecturerID =
     ID
 
@@ -57,6 +61,10 @@ type alias RoomID =
     ID
 
 
+type alias BlockID =
+    ID
+
+
 
 ---- Filters ----
 
@@ -64,8 +72,8 @@ type alias RoomID =
 {-| A Filter is a specific view of all events (e.g. show all events from room X or show all events whose lecturer is C).
 The ScheduleFilter holds 3 different filter functions that are only parsed when displaying html.
 -}
-type alias ScheduleFilter
-    = {room: Filter,  lect: Filter, block: Filter, roomName: String, lectName: String, blockName: String}
+type alias ScheduleFilter =
+    { room : Filter, lect : Filter, block : Filter, roomName : String, lectName : String, blockName : String }
 
 
 type alias Filter =
