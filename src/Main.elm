@@ -35,9 +35,9 @@ init =
     ( Model
         { rooms =
             Dict.fromList
-                [ ( 1, Room "DCC Lab. 2" "FC6_157 (Lab2)" 20 )
-                , ( 2, Room "DCC Lab. 3" "FC6_177 (Lab3)" 30 )
-                , ( 3, Room "CCC Lab. 6" "FC2_222 (Lab3)(LongName)" 30 )
+                [ ( 1, Room "DCC Lab. 2" "FC6_157 (Lab2)" 20 "1.58" )
+                , ( 2, Room "DCC Lab. 3" "FC6_177 (Lab3)" 30 "1.93" )
+                , ( 3, Room "CCC Lab. 6" "FC2_222 (Lab3)(LongName)" 30 "1.67" )
                 ]
         , lecturers =
             Dict.fromList
@@ -449,11 +449,11 @@ renderEvent rooms lecturers ( eventID, event ) =
 
                         -- ERROR: RoomID is missing from the database!
                         Nothing ->
-                            Room "----" "----" -1
+                            Room "----" "----" -1 "1.55"
 
                 -- Event still has no room assigned
                 Nothing ->
-                    Room "----" "----" -1
+                    Room "----" "----" -1 "1.77"
 
         lecturer =
             case event.lecturer of
