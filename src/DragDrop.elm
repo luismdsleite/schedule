@@ -1,7 +1,8 @@
 module DragDrop exposing (..)
 
 import DnD
-import ScheduleObjects exposing (ID, WeekTime)
+import ScheduleObjects.WeekTime exposing (WeekTime)
+import ScheduleObjects.Id exposing (ID)
 
 
 type alias Draggable =

@@ -9,9 +9,17 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Attributes.Aria exposing (ariaLabel)
 import Html.Events exposing (onClick)
-import ScheduleObjects exposing (..)
 import Time exposing (..)
-
+import ScheduleObjects.Data exposing (Data)
+import ScheduleObjects.Filters exposing (ScheduleFilter)
+import ScheduleObjects.WeekTime exposing (WeekTime)
+import ScheduleObjects.Id exposing (ID)
+import ScheduleObjects.Room exposing (Room, RoomID)
+import ScheduleObjects.Lecturer exposing (Lecturer, LecturerID)
+import ScheduleObjects.Event exposing (Event)
+import ScheduleObjects.Block exposing (Block, BlockID)
+import ScheduleObjects.WeekTimeConverters exposing (..)
+import ScheduleObjects.Event exposing (EventID)
 
 
 -- INFO: Hash function = (hour-8)*2+V(minute), V(minute) = 1 if minute >= 30, otherwise minute = 0. type alias Hashmap = Array (List Event).
@@ -91,10 +99,10 @@ type Msg
 
 
 type OnItemClick
-    = OnRoomClick Int
-    | OnLecturerClick Int
-    | OnEventClick Int
-    | OnBlockClick ( Int, Block )
+    = OnRoomClick RoomID
+    | OnLecturerClick LecturerID
+    | OnEventClick EventID
+    | OnBlockClick ( BlockID, Block )
 
 
 {-| Update Room / Lecturer parameters based on the msg received.

@@ -2,10 +2,9 @@ module DisplayEvents exposing (DisplayEvent(..), createDisplayEvents, endingHour
 
 import Array exposing (Array)
 import Matrix exposing (..)
-import ScheduleObjects exposing (Event, WeekTime)
 import Time exposing (..)
-
-
+import ScheduleObjects.Event exposing (Event)
+import ScheduleObjects.WeekTime exposing(WeekTime)
 {-| Important Constants
 -}
 startingHour : Int
