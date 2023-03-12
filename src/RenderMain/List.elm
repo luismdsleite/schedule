@@ -1,17 +1,19 @@
 module RenderMain.List exposing (renderBlocks, renderEvents, renderLecturers, renderRooms)
+
 {-| Responsible for displaying a list of a certain resource (e.g. list of rooms).
 -}
+
 import Dict exposing (Dict)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Attributes.Aria exposing (ariaLabel)
 import Html.Events exposing (onClick)
+import RenderMain.Msg exposing (Msg(..), OnItemClick(..))
+import ScheduleObjects.Block exposing (Block, BlockID)
 import ScheduleObjects.Event exposing (Event)
 import ScheduleObjects.Lecturer exposing (Lecturer, LecturerID)
 import ScheduleObjects.Room exposing (Room, RoomID)
-import ScheduleObjects.Block exposing (Block, BlockID)
 import ScheduleObjects.WeekTimeConverters exposing (..)
-import RenderMain.Msg exposing (Msg(..), OnItemClick(..))
 
 
 {-| Renders all the events into a list

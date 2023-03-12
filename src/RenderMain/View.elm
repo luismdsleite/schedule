@@ -1,13 +1,16 @@
 module RenderMain.View exposing (..)
+
+import Dict
+import DnD
 import Html exposing (..)
 import Html.Attributes exposing (..)
-import DnD
+import RenderMain.List exposing (renderBlocks, renderEvents, renderLecturers, renderRooms)
 import RenderMain.Model exposing (Model(..))
 import RenderMain.Msg exposing (Msg(..))
-import RenderMain.Schedule exposing(..)
-import Dict
+import RenderMain.Schedule exposing (..)
 import ScheduleObjects.Id exposing (ID)
-import RenderMain.List exposing (renderBlocks, renderEvents, renderLecturers, renderRooms)
+
+
 view : Model -> Html Msg
 view (Model data filters draggable) =
     let

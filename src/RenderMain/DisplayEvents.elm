@@ -1,15 +1,13 @@
 module RenderMain.DisplayEvents exposing (DisplayEvent(..), createDisplayEvents, endingHour, endingMinute, startingHour, startingMinute)
 
 {-| Responsible for converting `(EventID,Event)`s into `DisplayEvent`s. The new object works as a wrapper around an `Event`, holding additional information necessary to visually display it.
-
 -}
 
 import Array exposing (Array)
 import Matrix exposing (..)
-import ScheduleObjects.Event exposing (Event)
+import ScheduleObjects.Event exposing (Event, EventID)
 import ScheduleObjects.WeekTime exposing (WeekTime)
 import Time exposing (..)
-import ScheduleObjects.Event exposing (EventID)
 
 
 {-| Important Constants

@@ -1,5 +1,5 @@
-import './main.css';
-import './displayEvents.css';
+import './css/main.css';
+import './css/displayEvents.css';
 import { Elm } from './Main.elm';
 import * as serviceWorker from './serviceWorker';
 

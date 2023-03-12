@@ -1,17 +1,17 @@
 module RenderMain.Schedule exposing (renderSchedule)
 
-{-| Renders a schedule 
+{-| Renders a schedule
 -}
 
-import RenderMain.DisplayEvents exposing (..)
 import DnD
 import Html exposing (..)
 import Html.Attributes exposing (..)
-import ScheduleObjects.Event exposing (Event)
+import RenderMain.DisplayEvents exposing (..)
+import RenderMain.Msg exposing (..)
+import ScheduleObjects.Event exposing (Event, EventID)
 import ScheduleObjects.WeekTime exposing (..)
 import ScheduleObjects.WeekTimeConverters exposing (..)
-import RenderMain.Msg exposing (..)
-import ScheduleObjects.Event exposing (EventID)
+
 
 renderSchedule : Int -> Draggable -> List ( EventID, Event ) -> String -> Html Msg
 renderSchedule tableWidth draggable events title =
@@ -97,6 +97,7 @@ renderSchedule tableWidth draggable events title =
             -- (List.map weekdayToHtml displayedWeekDays ++ timeblocks ++ List.repeat (24 * 5) (li [] []) ++ liDisplayEvents)
             (List.map weekdayToHtml displayedWeekDays ++ timeblocks ++ liWeekSlots ++ liDisplayEvents)
         ]
+
 
 {-| Turns a Display Event into a HTML <li> tag.
 ColLength corresponds to the maximum number of colision between events in a day.

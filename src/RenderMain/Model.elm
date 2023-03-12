@@ -1,14 +1,17 @@
 module RenderMain.Model exposing (Model(..), init)
+
 import Dict
-import Time
-import ScheduleObjects.Data exposing (Data)
-import ScheduleObjects.Filters exposing (ScheduleFilter)
 import RenderMain.Msg exposing (Draggable, Msg(..), dnd)
-import ScheduleObjects.Room exposing (Room)
-import ScheduleObjects.Lecturer exposing (Lecturer)
-import ScheduleObjects.Event exposing (Event)
 import ScheduleObjects.Block exposing (Block)
+import ScheduleObjects.Data exposing (Data)
+import ScheduleObjects.Event exposing (Event)
+import ScheduleObjects.Filters exposing (ScheduleFilter)
+import ScheduleObjects.Lecturer exposing (Lecturer)
+import ScheduleObjects.Room exposing (Room)
 import ScheduleObjects.WeekTime exposing (WeekTime)
+import Time
+
+
 type Model
     = Model Data ScheduleFilter Draggable
 
@@ -63,4 +66,3 @@ init =
         dnd.model
     , Cmd.none
     )
-

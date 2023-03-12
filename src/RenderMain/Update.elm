@@ -1,8 +1,8 @@
 module RenderMain.Update exposing (..)
 
 import Dict
-import RenderMain.DisplayEvents exposing (..)
 import DnD
+import RenderMain.DisplayEvents exposing (..)
 import RenderMain.Model exposing (Model(..))
 import RenderMain.Msg exposing (..)
 import ScheduleObjects.Event exposing (Event)
