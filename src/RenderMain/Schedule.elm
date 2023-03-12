@@ -1,16 +1,19 @@
 module RenderMain.Schedule exposing (renderSchedule)
 
+{-| Renders a schedule 
+-}
+
 import RenderMain.DisplayEvents exposing (..)
 import DnD
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import ScheduleObjects.Event exposing (Event)
-import ScheduleObjects.Id exposing (ID)
 import ScheduleObjects.WeekTime exposing (..)
 import ScheduleObjects.WeekTimeConverters exposing (..)
 import RenderMain.Msg exposing (..)
+import ScheduleObjects.Event exposing (EventID)
 
-renderSchedule : Int -> Draggable -> List ( Int, Event ) -> String -> Html Msg
+renderSchedule : Int -> Draggable -> List ( EventID, Event ) -> String -> Html Msg
 renderSchedule tableWidth draggable events title =
     let
         -- nothing22 =

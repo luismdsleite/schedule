@@ -6,16 +6,17 @@ import ScheduleObjects.WeekTime exposing (WeekTime)
 import ScheduleObjects.Id exposing (ID)
 import ScheduleObjects.Block exposing (Block)
 
-type OnItemClick
-    = OnRoomClick Int
-    | OnLecturerClick Int
-    | OnEventClick Int
-    | OnBlockClick ( Int, Block )
 
 type Msg
     = ItemClick OnItemClick
     | DnDMsg (DnD.Msg ( DropEvent, WeekTime ) ID)
     | OnDrop ( DropEvent, WeekTime ) ID
+
+type OnItemClick
+    = OnRoomClick Int
+    | OnLecturerClick Int
+    | OnEventClick Int
+    | OnBlockClick ( Int, Block )
 
 
 type alias Draggable =

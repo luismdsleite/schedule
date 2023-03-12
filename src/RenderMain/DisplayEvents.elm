@@ -1,10 +1,17 @@
 module RenderMain.DisplayEvents exposing (DisplayEvent(..), createDisplayEvents, endingHour, endingMinute, startingHour, startingMinute)
 
+{-| Responsible for converting `(EventID,Event)`s into `DisplayEvent`s. The new object works as a wrapper around an `Event`, holding additional information necessary to visually display it.
+
+-}
+
 import Array exposing (Array)
 import Matrix exposing (..)
-import Time exposing (..)
 import ScheduleObjects.Event exposing (Event)
-import ScheduleObjects.WeekTime exposing(WeekTime)
+import ScheduleObjects.WeekTime exposing (WeekTime)
+import Time exposing (..)
+import ScheduleObjects.Event exposing (EventID)
+
+
 {-| Important Constants
 -}
 startingHour : Int
@@ -30,7 +37,7 @@ endingMinute =
 {-| Wrapper around the Event variable adding only the necessary info to display it
 -}
 type DisplayEvent
-    = DisplayEvent Int Event DisplayInfo
+    = DisplayEvent EventID Event DisplayInfo
 
 
 {-| Aditional parameters needed to display an event
@@ -74,7 +81,7 @@ doesEvFitInCol ev colIndex colisionGrid =
 
 {-| INFO: If an event doesn't has a start\_time and a end\_time else dont display it!
 -}
-createDisplayEvents : List ( Int, Event ) -> ( List DisplayEvent, Int )
+createDisplayEvents : List ( EventID, Event ) -> ( List DisplayEvent, Int )
 createDisplayEvents evList =
     let
         -- Outputs the lineEnd of the last event on the grid. This variable is used to define the grid size.

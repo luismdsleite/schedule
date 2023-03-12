@@ -1,5 +1,6 @@
-module RenderMain.List exposing (..)
-
+module RenderMain.List exposing (renderBlocks, renderEvents, renderLecturers, renderRooms)
+{-| Responsible for displaying a list of a certain resource (e.g. list of rooms).
+-}
 import Dict exposing (Dict)
 import Html exposing (..)
 import Html.Attributes exposing (..)

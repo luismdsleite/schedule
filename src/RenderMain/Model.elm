@@ -1,4 +1,4 @@
-module RenderMain.Model exposing (..)
+module RenderMain.Model exposing (Model(..), init)
 import Dict
 import Time
 import ScheduleObjects.Data exposing (Data)
