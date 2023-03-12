@@ -23,9 +23,9 @@ type alias Event =
     { subject : String
     , subjectAbbr : String
     , room : Maybe RoomID
+    , lecturer : Maybe LecturerID
     , start_time : Maybe WeekTime
     , end_time : Maybe WeekTime
-    , lecturer : Maybe LecturerID
     }
 
 
@@ -36,7 +36,7 @@ type alias WeekTime =
 {-| A lecturer/teacher has an ID, a name and a abbreviation.
 -}
 type alias Lecturer =
-    { name : String, abbr : String, goodTime : List WeekTime, difficultTime : List WeekTime, unavailableTime : List WeekTime }
+    { name : String, abbr : String, goodTime : List WeekTime, difficultTime : List WeekTime, unavailableTime : List WeekTime, office : String}
 
 
 {-| A room has an ID, a name, a abbreviation and a capacity.
