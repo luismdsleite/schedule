@@ -8,18 +8,19 @@ import RenderMain.Msg exposing (..)
 import ScheduleObjects.Event exposing (Event)
 import ScheduleObjects.WeekTime exposing (WeekTime)
 import Time
+import Effect exposing (Effect)
 
 
 {-| Update Block / Event / Room / Lecturer filters based on the msg received.
 -}
-update : Msg -> Model -> ( Model, Cmd Msg )
+update : Msg -> Model -> ( Model, Effect Msg )
 update msg (Model data filters draggable) =
     case msg of
         ItemClick clickMsg ->
             updateOnItemClick clickMsg (Model data filters draggable)
 
         DnDMsg dndmsg ->
-            ( Model data filters (DnD.update dndmsg draggable), Cmd.none )
+            ( Model data filters (DnD.update dndmsg draggable), Effect.none )
 
         OnDrop ( _, weekTime ) eventID ->
             let
@@ -76,13 +77,13 @@ update msg (Model data filters draggable) =
                         newEvents =
                             Dict.insert eventID newEv data.events
                     in
-                    ( Model { data | events = newEvents } filters draggable, Cmd.none )
+                    ( Model { data | events = newEvents } filters draggable, Effect.none )
 
                 Nothing ->
-                    ( Model data filters draggable, Cmd.none )
+                    ( Model data filters draggable, Effect.none )
 
 
-updateOnItemClick : OnItemClick -> Model -> ( Model, Cmd Msg )
+updateOnItemClick : OnItemClick -> Model -> ( Model, Effect Msg )
 updateOnItemClick msg (Model data filters draggable) =
     let
         {- We Create a function to fetch a new Room/Lecturer filter and abbreviation based on a Room/Lecturer ID.
@@ -124,15 +125,15 @@ updateOnItemClick msg (Model data filters draggable) =
     in
     case msg of
         OnBlockClick ( _, block ) ->
-            ( Model data { filters | block = \_ -> block.cond, blockName = block.nameAbbr } draggable, Cmd.none )
+            ( Model data { filters | block = \_ -> block.cond, blockName = block.nameAbbr } draggable, Effect.none )
 
         -- Get all events with a certain Room ID and with it update the Room Filter and Abbr.
         OnRoomClick id ->
-            ( Model data { filters | room = createNewRoomFilter id, roomName = getRoomAbbr id } draggable, Cmd.none )
+            ( Model data { filters | room = createNewRoomFilter id, roomName = getRoomAbbr id } draggable, Effect.none )
 
         -- Get all events with a certain Lecturer ID and with it update the Lecturer Filter.
         OnLecturerClick id ->
-            ( Model data { filters | lect = createNewLectFilter id, lectName = getLectAbbr id } draggable, Cmd.none )
+            ( Model data { filters | lect = createNewLectFilter id, lectName = getLectAbbr id } draggable, Effect.none )
 
         {-
            For an Event click we need to change both the room Filter and the Lecturer Filter.
@@ -174,4 +175,4 @@ updateOnItemClick msg (Model data filters draggable) =
                         _ ->
                             ( filters.lect, filters.lectName )
             in
-            ( Model data { filters | room = updatedRoomFilter, lect = updatedLectFilter, roomName = updatedRoomName, lectName = updatedLectName } draggable, Cmd.none )
+            ( Model data { filters | room = updatedRoomFilter, lect = updatedLectFilter, roomName = updatedRoomName, lectName = updatedLectName } draggable, Effect.none )
