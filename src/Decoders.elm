@@ -8,21 +8,12 @@ import Json.Decode as JD exposing (Decoder)
 import Json.Decode.Extra as JDE
 import ScheduleObjects.Block exposing (Block)
 import ScheduleObjects.Data exposing (Data)
-import ScheduleObjects.Lecturer exposing (Lecturer)
-import ScheduleObjects.Room exposing (Room)
 import ScheduleObjects.Event exposing (Event)
 import ScheduleObjects.Id exposing (ID)
+import ScheduleObjects.Lecturer exposing (Lecturer)
+import ScheduleObjects.Room exposing (Room)
 import ScheduleObjects.WeekTime exposing (WeekTime)
 import Time
-
-
-{-| blocks USED ONLY FOR DEBUG
--}
-blocks =
-    Dict.fromList
-        [ ( 1, Block "All Events" "All Events" (\_ -> True) )
-        , ( 2, Block "Eventos de Alga" "(CC4011)" (\ev -> String.contains "(CC4011)" ev.subject) )
-        ]
 
 
 objectsToDictParser : Decoder a -> Decoder (Dict ID a)
@@ -52,7 +43,8 @@ lectParser =
         (JD.fail "Unavailable Time Not Implemented" |> JDE.withDefault [])
         (JD.field "Office" JD.string)
 
-
+{-| Event Decoder
+-}
 eventParser : Decoder Event
 eventParser =
     JD.map6 Event
@@ -61,5 +53,81 @@ eventParser =
         -- (JD.field "RoomId" (Just JD.int) )
         (JD.maybe (JD.field "RoomId" JD.int))
         (JD.maybe (JD.field "LecturerId" JD.int))
-        (JD.fail "Start Time Implemented" |> JDE.withDefault (Just (WeekTime Time.Mon 10 30)))
-        (JD.fail "End Time Implemented" |> JDE.withDefault (Just (WeekTime Time.Mon 12 30)))
+        (JD.maybe (weektimeDecoder "StartTime"))
+        (JD.maybe (weektimeDecoder "EndTime"))
+
+
+{-| Weektime Decoder. 
+    timeToRead == "StartTime" or "EndTime"
+-}
+
+weektimeDecoder : String -> Decoder WeekTime
+weektimeDecoder timeToRead =
+    JD.map3 WeekTime
+        (JD.field "WeekDay" weekdayDecoder)
+        (JD.field timeToRead hourDecoder)
+        (JD.field timeToRead minuteDecoder)
+
+weekdayDecoder : Decoder Time.Weekday
+weekdayDecoder =
+    JD.int
+        |> JD.andThen
+            (\n ->
+                case n of
+                    1 ->
+                        JD.succeed Time.Mon
+
+                    2 ->
+                        JD.succeed Time.Tue
+
+                    3 ->
+                        JD.succeed Time.Wed
+
+                    4 ->
+                        JD.succeed Time.Thu
+
+                    5 ->
+                        JD.succeed Time.Fri
+
+                    6 ->
+                        JD.succeed Time.Sat
+
+                    7 ->
+                        JD.succeed Time.Sun
+
+                    _ ->
+                        JD.fail "Not Implemented"
+            )
+
+hourDecoder : Decoder Int
+hourDecoder =
+    JD.string
+        |> JD.andThen
+            (\timeString ->
+                case String.split ":" timeString of
+                    [ hourStr, _ ] ->
+                        JD.succeed
+                            ( (String.toInt hourStr) |> Maybe.withDefault 0)
+
+                    _ ->
+                        JD.fail "Invalid time format, expected HH:MM"
+            )
+
+
+minuteDecoder : Decoder Int
+minuteDecoder =
+    JD.string
+    |> JD.andThen
+        (\timeString ->
+            case String.split ":" timeString of
+                [ _, minuteStr ] ->
+                    case String.toInt minuteStr of
+                        Nothing ->
+                            Debug.log "1" JD.fail "Invalid time format, expected HH:MM"
+
+                        Just int ->
+                            JD.succeed int
+
+                _ ->
+                    JD.fail <| Debug.log "2" "Invalid time format, expected HH:MM"
+        )
