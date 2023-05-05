@@ -43,6 +43,7 @@ lectParser =
         (JD.fail "Unavailable Time Not Implemented" |> JDE.withDefault [])
         (JD.field "Office" JD.string)
 
+
 {-| Event Decoder
 -}
 eventParser : Decoder Event
@@ -57,16 +58,16 @@ eventParser =
         (JD.maybe (weektimeDecoder "EndTime"))
 
 
-{-| Weektime Decoder. 
-    timeToRead == "StartTime" or "EndTime"
+{-| Weektime Decoder.
+timeToRead == "StartTime" or "EndTime"
 -}
-
 weektimeDecoder : String -> Decoder WeekTime
 weektimeDecoder timeToRead =
     JD.map3 WeekTime
         (JD.field "WeekDay" weekdayDecoder)
         (JD.field timeToRead hourDecoder)
         (JD.field timeToRead minuteDecoder)
+
 
 weekdayDecoder : Decoder Time.Weekday
 weekdayDecoder =
@@ -99,6 +100,7 @@ weekdayDecoder =
                         JD.fail "Not Implemented"
             )
 
+
 hourDecoder : Decoder Int
 hourDecoder =
     JD.string
@@ -107,7 +109,7 @@ hourDecoder =
                 case String.split ":" timeString of
                     [ hourStr, _ ] ->
                         JD.succeed
-                            ( (String.toInt hourStr) |> Maybe.withDefault 0)
+                            (String.toInt hourStr |> Maybe.withDefault 0)
 
                     _ ->
                         JD.fail "Invalid time format, expected HH:MM"
@@ -117,17 +119,19 @@ hourDecoder =
 minuteDecoder : Decoder Int
 minuteDecoder =
     JD.string
-    |> JD.andThen
-        (\timeString ->
-            case String.split ":" timeString of
-                [ _, minuteStr ] ->
-                    case String.toInt minuteStr of
-                        Nothing ->
-                            Debug.log "1" JD.fail "Invalid time format, expected HH:MM"
+        |> JD.andThen
+            (\timeString ->
+                case String.split ":" timeString of
+                    [ _, minuteStr ] ->
+                        case String.toInt minuteStr of
+                            Nothing ->
+                                Debug.log "1" JD.fail "Invalid time format, expected HH:MM"
 
-                        Just int ->
-                            JD.succeed int
+                            Just int ->
+                                JD.succeed int
 
-                _ ->
-                    JD.fail <| Debug.log "2" "Invalid time format, expected HH:MM"
-        )
+                    _ ->
+                        JD.fail <| Debug.log "2" "Invalid time format, expected HH:MM"
+            )
+
+

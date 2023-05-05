@@ -129,3 +129,27 @@ displayedWeekDays : List Time.Weekday
 displayedWeekDays =
     [ Time.Mon, Time.Tue, Time.Wed, Time.Thu, Time.Fri ]
 
+{-| Used by the decoders-}
+weekdayToNumber : Time.Weekday -> Int
+weekdayToNumber weekday =
+    case weekday of
+        Time.Mon ->
+            1
+
+        Time.Tue ->
+            2
+
+        Time.Wed ->
+            3
+
+        Time.Thu ->
+            4
+
+        Time.Fri ->
+            5
+
+        Time.Sat ->
+            6
+
+        Time.Sun ->
+            7
