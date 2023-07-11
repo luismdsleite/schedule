@@ -1,4 +1,4 @@
-module Pages.Home_ exposing (Model, Msg, page)
+module Pages.Home_ exposing (Model, Msg, page, serverUrl)
 
 {-|
 
@@ -53,7 +53,7 @@ page _ _ =
 type Model
     = Loading Data (Array Bool)
     | Loaded Data
-    | Failed
+    | Failed String
 
 
 
@@ -91,7 +91,7 @@ update msg model =
         GotRooms result ->
             case result of
                 Err _ ->
-                    ( Failed, Effect.none )
+                    ( Failed "Unable to load Rooms", Effect.none )
 
                 Ok rooms ->
                     case model of
@@ -107,12 +107,12 @@ update msg model =
                                 ( Loading updatedData (Array.set 0 True state), Effect.none )
 
                         _ ->
-                            ( Failed, Effect.none )
+                            ( Failed "Unable to load Rooms", Effect.none )
 
         GotEvents result ->
             case result of
                 Err _ ->
-                    ( Failed, Effect.none )
+                    ( Failed "Unable to load Events", Effect.none )
 
                 Ok events ->
                     case model of
@@ -128,12 +128,12 @@ update msg model =
                                 ( Loading updatedData (Array.set 1 True state), Effect.none )
 
                         _ ->
-                            ( Failed, Effect.none )
+                            ( Failed "Unable to load Events", Effect.none )
 
         GotLecturers result ->
             case result of
                 Err _ ->
-                    ( Failed, Effect.none )
+                    ( Failed "Unable to load Lecturers", Effect.none )
 
                 Ok lecturers ->
                     case model of
@@ -149,7 +149,7 @@ update msg model =
                                 ( Loading updatedData (Array.set 2 True state), Effect.none )
 
                         _ ->
-                            ( Failed, Effect.none )
+                            ( Failed "Unable to load Lecturers", Effect.none )
 
         LoadedData data ->
             ( model, Effect.fromShared (Shared.LoadedData data) )
@@ -183,7 +183,6 @@ getEvents =
     Effect.fromCmd (getResource "events" eventParser GotEvents)
 
 
-
 -- SUBSCRIPTIONS
 
 
@@ -202,8 +201,8 @@ view model =
         Loading _ _ ->
             generateHtml "Loading" "Loading"
 
-        Failed ->
-            generateHtml "Failed" "Failed"
+        Failed str->
+            generateHtml "Failed" str
 
         Loaded _ ->
             generateHtml "Loaded" "Loaded"
