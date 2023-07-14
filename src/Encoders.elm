@@ -51,7 +51,7 @@ putEvent ( id, event ) =
         convertToTime time =
             case time of
                 Just v ->
-                    Encode.string (String.fromInt v.hour ++ String.fromInt v.minute)
+                    Encode.string (String.fromInt v.hour ++ ":" ++ String.fromInt v.minute)
 
                 Nothing ->
                     Encode.null
