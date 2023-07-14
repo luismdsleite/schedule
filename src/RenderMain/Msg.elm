@@ -1,7 +1,9 @@
 module RenderMain.Msg exposing (..)
 
 import DnD
+import Http
 import ScheduleObjects.Block exposing (Block)
+import ScheduleObjects.Event exposing (Event, EventID)
 import ScheduleObjects.Id exposing (ID)
 import ScheduleObjects.WeekTime exposing (WeekTime)
 
@@ -10,6 +12,7 @@ type Msg
     = ItemClick OnItemClick
     | DnDMsg (DnD.Msg ( DropEvent, WeekTime ) ID)
     | OnDrop ( DropEvent, WeekTime ) ID
+    | UpdateEvent (Result Http.Error ( EventID, Event ))
 
 
 type OnItemClick

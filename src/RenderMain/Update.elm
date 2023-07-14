@@ -2,13 +2,14 @@ module RenderMain.Update exposing (..)
 
 import Dict
 import DnD
+import Effect exposing (Effect)
+import Encoders
 import RenderMain.DisplayEvents exposing (..)
 import RenderMain.Model exposing (Model(..))
 import RenderMain.Msg exposing (..)
 import ScheduleObjects.Event exposing (Event)
 import ScheduleObjects.WeekTime exposing (WeekTime)
 import Time
-import Effect exposing (Effect)
 
 
 {-| Update Block / Event / Room / Lecturer filters based on the msg received.
@@ -74,12 +75,25 @@ update msg (Model data filters draggable) =
                             -- { ev | start_time = Just weekTime }
                             { ev | start_time = Just weekTime, end_time = Just newEndTime }
 
+                        -- newEvents =
+                        --     Dict.insert eventID newEv data.events
+                    in
+                    -- ( Model { data | events = newEvents } filters draggable, Effect.none )
+                    ( Model data filters draggable, Effect.fromCmd <| Encoders.updateEvent ( eventID, newEv ) )
+
+                Nothing ->
+                    ( Model data filters draggable, Effect.none )
+
+        UpdateEvent result ->
+            case result of
+                Ok ( evID, ev ) ->
+                    let
                         newEvents =
-                            Dict.insert eventID newEv data.events
+                            Dict.insert evID ev data.events
                     in
                     ( Model { data | events = newEvents } filters draggable, Effect.none )
 
-                Nothing ->
+                Err _ ->
                     ( Model data filters draggable, Effect.none )
 
 
