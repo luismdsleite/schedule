@@ -1,4 +1,4 @@
-module Pages.Home_ exposing (Model, Msg, page, serverUrl)
+module Pages.Home_ exposing (Model, Msg, page)
 
 {-|
 
@@ -10,8 +10,10 @@ module Pages.Home_ exposing (Model, Msg, page, serverUrl)
 
 import Array exposing (Array)
 import Decoders exposing (eventParser, lectParser, objectsToDictParser, roomParser)
+import DeployEnv exposing (serverUrl)
 import Dict exposing (Dict)
 import Effect exposing (Effect)
+import Gen.Params.Home_ exposing (Params)
 import Html
 import Http
 import Json.Decode exposing (Decoder)
@@ -19,18 +21,12 @@ import Page
 import Request
 import ScheduleObjects.Block exposing (Block)
 import ScheduleObjects.Data exposing (Data)
+import ScheduleObjects.Event exposing (Event, EventID)
+import ScheduleObjects.Id exposing (ID)
 import ScheduleObjects.Lecturer exposing (Lecturer)
 import ScheduleObjects.Room exposing (Room)
-import ScheduleObjects.Event exposing (Event)
-import ScheduleObjects.Id exposing (ID)
 import Shared
 import View exposing (View)
-import Gen.Params.Home_ exposing (Params)
-
-
-serverUrl : String
-serverUrl =
-    "https://127.0.0.1:8008/api/v1/"
 
 
 page : Shared.Model -> Request.With Params -> Page.With Model Msg
@@ -84,6 +80,7 @@ type Msg
     | GotLecturers (Result Http.Error (Dict ID Lecturer))
     | GotEvents (Result Http.Error (Dict ID Event))
     | LoadedData Data
+
 
 update : Msg -> Model -> ( Model, Effect Msg )
 update msg model =
@@ -155,11 +152,6 @@ update msg model =
             ( model, Effect.fromShared (Shared.LoadedData data) )
 
 
-
--- ( model, Request.pushRoute Gen.Route.Home_ req)
--- (model, Cmd.none)
-
-
 getResource : String -> Decoder a -> (Result Http.Error (Dict ID a) -> msg) -> Cmd msg
 getResource resource resourceParser resultToMsg =
     Http.get
@@ -183,6 +175,7 @@ getEvents =
     Effect.fromCmd (getResource "events" eventParser GotEvents)
 
 
+
 -- SUBSCRIPTIONS
 
 
@@ -201,7 +194,7 @@ view model =
         Loading _ _ ->
             generateHtml "Loading" "Loading"
 
-        Failed str->
+        Failed str ->
             generateHtml "Failed" str
 
         Loaded _ ->
