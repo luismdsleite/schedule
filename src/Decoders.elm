@@ -8,7 +8,7 @@ import Json.Decode as JD exposing (Decoder)
 import Json.Decode.Extra as JDE
 import ScheduleObjects.Block exposing (Block)
 import ScheduleObjects.Data exposing (Data)
-import ScheduleObjects.Event exposing (Event)
+import ScheduleObjects.Event exposing (Event, EventID)
 import ScheduleObjects.Id exposing (ID)
 import ScheduleObjects.Lecturer exposing (Lecturer)
 import ScheduleObjects.Room exposing (Room)
@@ -42,6 +42,11 @@ lectParser =
         (JD.fail "Difficult Time Not Implemented" |> JDE.withDefault [])
         (JD.fail "Unavailable Time Not Implemented" |> JDE.withDefault [])
         (JD.field "Office" JD.string)
+
+
+getEventAndID : Decoder ( EventID, Event )
+getEventAndID =
+    JD.map2 Tuple.pair (JD.field "Id" JD.int) eventParser
 
 
 {-| Event Decoder
@@ -133,5 +138,3 @@ minuteDecoder =
                     _ ->
                         JD.fail <| Debug.log "2" "Invalid time format, expected HH:MM"
             )
-
-
