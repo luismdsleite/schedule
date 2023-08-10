@@ -33,8 +33,7 @@ updateEvent ( id, event ) =
 --         }
 
 
-{-| TODO: Fix this code
-When we update an event there are 2 possible options:
+{-| When we update an event there are 2 possible options:
 
 1.  The event is updated successfully, in this case we do a GET request to get the updated event
 2.  The event is not updated, in this case we do nothing

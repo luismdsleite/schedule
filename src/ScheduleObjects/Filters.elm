@@ -1,5 +1,8 @@
 module ScheduleObjects.Filters exposing (..)
-import ScheduleObjects.Event exposing (Event)
+
+import ScheduleObjects.Event exposing (Event, EventID)
+import ScheduleObjects.Id exposing (ID)
+
 
 
 ---- Filters ----
@@ -13,4 +16,4 @@ type alias ScheduleFilter =
 
 
 type alias Filter =
-    Int -> Event -> Bool
+    EventID -> Event -> Bool

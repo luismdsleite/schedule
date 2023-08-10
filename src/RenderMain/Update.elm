@@ -139,7 +139,7 @@ updateOnItemClick msg (Model data filters draggable) =
     in
     case msg of
         OnBlockClick ( _, block ) ->
-            ( Model data { filters | block = \_ -> block.cond, blockName = block.nameAbbr } draggable, Effect.none )
+            ( Model data { filters | block = block.cond, blockName = block.nameAbbr } draggable, Effect.none )
 
         -- Get all events with a certain Room ID and with it update the Room Filter and Abbr.
         OnRoomClick id ->

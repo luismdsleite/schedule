@@ -9,7 +9,7 @@ module Pages.Home_ exposing (Model, Msg, page)
 -}
 
 import Array exposing (Array)
-import Decoders exposing (eventParser, lectParser, objectsToDictParser, roomParser)
+import Decoders exposing (blockParser, eventParser, lectParser, objectsToDictParser, roomParser)
 import DeployEnv exposing (serverUrl)
 import Dict exposing (Dict)
 import Effect exposing (Effect)
@@ -63,10 +63,10 @@ init =
             Data Dict.empty Dict.empty Dict.empty Dict.empty
 
         noneReceived =
-            Array.fromList [ False, False, False ]
+            Array.fromList [ False, False, False, False ]
 
         getRequests =
-            [ getEvents, getLecturers, getRooms ]
+            [ getEvents, getLecturers, getRooms, getBlocks ]
     in
     ( Loading emptyData noneReceived, Effect.batch getRequests )
 
@@ -79,6 +79,7 @@ type Msg
     = GotRooms (Result Http.Error (Dict ID Room))
     | GotLecturers (Result Http.Error (Dict ID Lecturer))
     | GotEvents (Result Http.Error (Dict ID Event))
+    | GotBlocks (Result Http.Error (Dict ID Block))
     | LoadedData Data
 
 
@@ -148,6 +149,27 @@ update msg model =
                         _ ->
                             ( Failed "Unable to load Lecturers", Effect.none )
 
+        GotBlocks result ->
+            case result of
+                Err _ ->
+                    ( Failed "Unable to load Blocks", Effect.none )
+
+                Ok blocks ->
+                    case model of
+                        Loading data state ->
+                            let
+                                updatedData =
+                                    { data | blocks = blocks }
+                            in
+                            if Array.foldl (&&) True (Array.set 3 True state) then
+                                update (LoadedData updatedData) (Loaded updatedData)
+
+                            else
+                                ( Loading updatedData (Array.set 3 True state), Effect.none )
+
+                        _ ->
+                            ( Failed "Unable to load Blocks", Effect.none )
+
         LoadedData data ->
             ( model, Effect.fromShared (Shared.LoadedData data) )
 
@@ -173,6 +195,11 @@ getLecturers =
 getEvents : Effect Msg
 getEvents =
     Effect.fromCmd (getResource "events" eventParser GotEvents)
+
+
+getBlocks : Effect Msg
+getBlocks =
+    Effect.fromCmd (getResource "blocks" blockParser GotBlocks)
 
 
 

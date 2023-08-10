@@ -6,6 +6,7 @@ module Decoders exposing (..)
 import Dict exposing (Dict)
 import Json.Decode as JD exposing (Decoder)
 import Json.Decode.Extra as JDE
+import List
 import ScheduleObjects.Block exposing (Block)
 import ScheduleObjects.Data exposing (Data)
 import ScheduleObjects.Event exposing (Event, EventID)
@@ -42,6 +43,26 @@ lectParser =
         (JD.fail "Difficult Time Not Implemented" |> JDE.withDefault [])
         (JD.fail "Unavailable Time Not Implemented" |> JDE.withDefault [])
         (JD.field "Office" JD.string)
+
+
+getBlockAndId : Decoder ( ID, Block )
+getBlockAndId =
+    JD.map2 Tuple.pair (JD.field "Id" JD.int) blockParser
+
+
+blockParser : Decoder Block
+blockParser =
+    JD.map3 Block
+        (JD.field "Name" JD.string)
+        (JD.field "NameAbbr" JD.string)
+        (JD.field "AssociatedEventIds"
+            (JD.list JD.int
+                |> JD.map
+                    (\eventIds ->
+                        \x _ -> List.member x eventIds
+                    )
+            )
+        )
 
 
 getEventAndID : Decoder ( EventID, Event )
@@ -138,3 +159,8 @@ minuteDecoder =
                     _ ->
                         JD.fail <| Debug.log "2" "Invalid time format, expected HH:MM"
             )
+
+
+blockDecoder : Block -> Decoder Block
+blockDecoder =
+    JD.succeed
