@@ -1,5 +1,8 @@
 module DeployEnv exposing (serverUrl)
 
+{-| Backend server URL
+-}
+
 
 serverUrl : String
 serverUrl =
