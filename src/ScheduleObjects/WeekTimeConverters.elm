@@ -178,4 +178,4 @@ weekTimeIsBetween givenTime ( start, end ) =
         givenMinutes =
             givenTime.hour * 60 + givenTime.minute
     in
-    weekdayCond && givenMinutes >= startMinutes && givenMinutes <= endMinutes
+    weekdayCond && givenMinutes >= startMinutes && givenMinutes < endMinutes
