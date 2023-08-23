@@ -101,25 +101,25 @@ weekdayDecoder =
         |> JD.andThen
             (\n ->
                 case n of
-                    1 ->
+                    2 ->
                         JD.succeed Time.Mon
 
-                    2 ->
+                    3 ->
                         JD.succeed Time.Tue
 
-                    3 ->
+                    4 ->
                         JD.succeed Time.Wed
 
-                    4 ->
+                    5 ->
                         JD.succeed Time.Thu
 
-                    5 ->
+                    6 ->
                         JD.succeed Time.Fri
 
-                    6 ->
+                    7 ->
                         JD.succeed Time.Sat
 
-                    7 ->
+                    8 ->
                         JD.succeed Time.Sun
 
                     _ ->
