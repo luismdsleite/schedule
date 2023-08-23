@@ -129,27 +129,50 @@ displayedWeekDays : List Time.Weekday
 displayedWeekDays =
     [ Time.Mon, Time.Tue, Time.Wed, Time.Thu, Time.Fri ]
 
-{-| Used by the decoders-}
+
+{-| Used by the decoders
+-}
 weekdayToNumber : Time.Weekday -> Int
 weekdayToNumber weekday =
     case weekday of
         Time.Mon ->
-            1
-
-        Time.Tue ->
             2
 
-        Time.Wed ->
+        Time.Tue ->
             3
 
-        Time.Thu ->
+        Time.Wed ->
             4
 
-        Time.Fri ->
+        Time.Thu ->
             5
 
-        Time.Sat ->
+        Time.Fri ->
             6
 
-        Time.Sun ->
+        Time.Sat ->
             7
+
+        Time.Sun ->
+            8
+
+
+{-| Returns true if a given time is within a start and end date.
+Warning: Unable to handle cases where start and end date have different weekdays.
+-}
+weekTimeIsBetween : WeekTime -> ( WeekTime, WeekTime ) -> Bool
+weekTimeIsBetween givenTime ( start, end ) =
+    let
+        weekdayCond =
+            weekdayToNumber givenTime.weekday >= weekdayToNumber start.weekday && weekdayToNumber givenTime.weekday <= weekdayToNumber end.weekday
+
+        startMinutes =
+            start.hour * 60 + start.minute
+
+        endMinutes =
+            end.hour * 60 + end.minute
+
+        givenMinutes =
+            givenTime.hour * 60 + givenTime.minute
+    in
+    weekdayCond && givenMinutes >= startMinutes && givenMinutes <= endMinutes
