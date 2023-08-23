@@ -1,7 +1,10 @@
 module ScheduleObjects.WeekTimeConverters exposing (..)
-import ScheduleObjects.WeekTime exposing (WeekTime)
+
 import ScheduleObjects.Event exposing (Event)
+import ScheduleObjects.WeekTime exposing (WeekTime)
 import Time
+
+
 
 ---- weekDay converting functions ----
 

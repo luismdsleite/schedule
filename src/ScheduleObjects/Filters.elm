@@ -2,6 +2,8 @@ module ScheduleObjects.Filters exposing (..)
 
 import ScheduleObjects.Event exposing (Event, EventID)
 import ScheduleObjects.Id exposing (ID)
+import ScheduleObjects.Occupation exposing (Occupation, OccupationID)
+import ScheduleObjects.Restriction exposing (Restriction, RestrictionID)
 
 
 
@@ -12,8 +14,16 @@ import ScheduleObjects.Id exposing (ID)
 The ScheduleFilter holds 3 different filter functions that are only parsed when displaying html.
 -}
 type alias ScheduleFilter =
-    { room : Filter, lect : Filter, block : Filter, roomName : String, lectName : String, blockName : String }
+    { room : Filter, lect : Filter, block : Filter, occupations : OccupationsFilter, restrictions : RestrictionsFilter, roomName : String, lectName : String, blockName : String }
 
 
 type alias Filter =
     EventID -> Event -> Bool
+
+
+type alias OccupationsFilter =
+    OccupationID -> Occupation -> Bool
+
+
+type alias RestrictionsFilter =
+    RestrictionID -> Restriction -> Bool

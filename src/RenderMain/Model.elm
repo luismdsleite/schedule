@@ -1,16 +1,21 @@
 module RenderMain.Model exposing (Model(..), init)
 
 -- import Dict
+
 import Effect exposing (Effect)
 import RenderMain.Msg exposing (Draggable, Msg(..), dnd)
 import ScheduleObjects.Data exposing (Data)
 import ScheduleObjects.Filters exposing (ScheduleFilter)
+
+
+
 -- import ScheduleObjects.Block exposing (Block)
 -- import ScheduleObjects.Event exposing (Event)
 -- import ScheduleObjects.Lecturer exposing (Lecturer)
 -- import ScheduleObjects.Room exposing (Room)
 -- import ScheduleObjects.WeekTime exposing (WeekTime)
 -- import Time
+
 
 type Model
     = Model Data ScheduleFilter Draggable
@@ -19,7 +24,7 @@ type Model
 init : Data -> ( Model, Effect Msg )
 init data =
     ( Model data
-        (ScheduleFilter (\_ _ -> False) (\_ _ -> False) (\_ _ -> False) "" "" "")
+        (ScheduleFilter (\_ _ -> False) (\_ _ -> False) (\_ _ -> False) (\_ _ -> False) (\_ _ -> False) "" "" "")
         dnd.model
     , Effect.none
     )

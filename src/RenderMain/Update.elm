@@ -8,6 +8,9 @@ import RenderMain.DisplayEvents exposing (..)
 import RenderMain.Model exposing (Model(..))
 import RenderMain.Msg exposing (..)
 import ScheduleObjects.Event exposing (Event)
+import ScheduleObjects.Id exposing (ID)
+import ScheduleObjects.Occupation exposing (Occupation, OccupationID)
+import ScheduleObjects.Restriction exposing (Restriction, RestrictionID)
 import ScheduleObjects.WeekTime exposing (WeekTime)
 import Time
 
@@ -136,6 +139,14 @@ updateOnItemClick msg (Model data filters draggable) =
 
                 Nothing ->
                     filters.lectName
+
+        createNewOccFilter : ID -> OccupationID -> Occupation -> Bool
+        createNewOccFilter roomId _ occ =
+            roomId == occ.room
+
+        createNewRestFilter : ID -> RestrictionID -> Restriction -> Bool
+        createNewRestFilter lectId _ rest =
+            lectId == rest.lect
     in
     case msg of
         OnBlockClick ( _, block ) ->
@@ -143,11 +154,11 @@ updateOnItemClick msg (Model data filters draggable) =
 
         -- Get all events with a certain Room ID and with it update the Room Filter and Abbr.
         OnRoomClick id ->
-            ( Model data { filters | room = createNewRoomFilter id, roomName = getRoomAbbr id } draggable, Effect.none )
+            ( Model data { filters | room = createNewRoomFilter id, roomName = getRoomAbbr id, occupations = createNewOccFilter id } draggable, Effect.none )
 
         -- Get all events with a certain Lecturer ID and with it update the Lecturer Filter.
         OnLecturerClick id ->
-            ( Model data { filters | lect = createNewLectFilter id, lectName = getLectAbbr id } draggable, Effect.none )
+            ( Model data { filters | lect = createNewLectFilter id, lectName = getLectAbbr id, restrictions = createNewRestFilter id } draggable, Effect.none )
 
         {-
            For an Event click we need to change both the room Filter and the Lecturer Filter.

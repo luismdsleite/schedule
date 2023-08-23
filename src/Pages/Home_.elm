@@ -9,7 +9,7 @@ module Pages.Home_ exposing (Model, Msg, page)
 -}
 
 import Array exposing (Array)
-import Decoders exposing (blockParser, eventParser, lectParser, objectsToDictParser, roomParser)
+import Decoders exposing (blockParser, eventParser, lectParser, objectsToDictParser, occupationParser, restrictionParser, roomParser)
 import DeployEnv exposing (serverUrl)
 import Dict exposing (Dict)
 import Effect exposing (Effect)
@@ -24,6 +24,8 @@ import ScheduleObjects.Data exposing (Data)
 import ScheduleObjects.Event exposing (Event, EventID)
 import ScheduleObjects.Id exposing (ID)
 import ScheduleObjects.Lecturer exposing (Lecturer)
+import ScheduleObjects.Occupation exposing (Occupation, OccupationID)
+import ScheduleObjects.Restriction exposing (Restriction)
 import ScheduleObjects.Room exposing (Room)
 import Shared
 import View exposing (View)
@@ -60,13 +62,13 @@ init : ( Model, Effect Msg )
 init =
     let
         emptyData =
-            Data Dict.empty Dict.empty Dict.empty Dict.empty
+            Data Dict.empty Dict.empty Dict.empty Dict.empty Dict.empty Dict.empty
 
         noneReceived =
-            Array.fromList [ False, False, False, False ]
+            Array.fromList [ False, False, False, False, False, False ]
 
         getRequests =
-            [ getEvents, getLecturers, getRooms, getBlocks ]
+            [ getEvents, getLecturers, getRooms, getBlocks, getOccupations, getRestrictions ]
     in
     ( Loading emptyData noneReceived, Effect.batch getRequests )
 
@@ -80,6 +82,8 @@ type Msg
     | GotLecturers (Result Http.Error (Dict ID Lecturer))
     | GotEvents (Result Http.Error (Dict ID Event))
     | GotBlocks (Result Http.Error (Dict ID Block))
+    | GotOccupations (Result Http.Error (Dict ID Occupation))
+    | GotRestrictions (Result Http.Error (Dict ID Restriction))
     | LoadedData Data
 
 
@@ -170,8 +174,50 @@ update msg model =
                         _ ->
                             ( Failed "Unable to load Blocks", Effect.none )
 
+        GotOccupations result ->
+            case result of
+                Err _ ->
+                    ( Failed "Unable to load Occupations", Effect.none )
+
+                Ok occupations ->
+                    case model of
+                        Loading data state ->
+                            let
+                                updatedData =
+                                    { data | occupations = occupations }
+                            in
+                            if Array.foldl (&&) True (Array.set 4 True state) then
+                                update (LoadedData updatedData) (Loaded updatedData)
+
+                            else
+                                ( Loading updatedData (Array.set 4 True state), Effect.none )
+
+                        _ ->
+                            ( Failed "Unable to load Occupations", Effect.none )
+
         LoadedData data ->
             ( model, Effect.fromShared (Shared.LoadedData data) )
+
+        GotRestrictions result ->
+            case result of
+                Err _ ->
+                    ( Failed "Unable to load Restrictions", Effect.none )
+
+                Ok restrictions ->
+                    case model of
+                        Loading data state ->
+                            let
+                                updatedData =
+                                    { data | restrictions = restrictions }
+                            in
+                            if Array.foldl (&&) True (Array.set 5 True state) then
+                                update (LoadedData updatedData) (Loaded updatedData)
+
+                            else
+                                ( Loading updatedData (Array.set 5 True state), Effect.none )
+
+                        _ ->
+                            ( Failed "Unable to load Restrictions", Effect.none )
 
 
 getResource : String -> Decoder a -> (Result Http.Error (Dict ID a) -> msg) -> Cmd msg
@@ -200,6 +246,16 @@ getEvents =
 getBlocks : Effect Msg
 getBlocks =
     Effect.fromCmd (getResource "blocks" blockParser GotBlocks)
+
+
+getOccupations : Effect Msg
+getOccupations =
+    Effect.fromCmd (getResource "occupations" occupationParser GotOccupations)
+
+
+getRestrictions : Effect Msg
+getRestrictions =
+    Effect.fromCmd (getResource "restrictions" restrictionParser GotRestrictions)
 
 
 

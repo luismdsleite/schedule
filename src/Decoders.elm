@@ -1,4 +1,4 @@
-module Decoders exposing (..)
+module Decoders exposing (blockParser, eventParser, lectParser, objectsToDictParser, occupationParser, restrictionParser, roomParser)
 
 {-| Json Decoders used to interact with the servers REST API
 -}
@@ -8,10 +8,11 @@ import Json.Decode as JD exposing (Decoder)
 import Json.Decode.Extra as JDE
 import List
 import ScheduleObjects.Block exposing (Block)
-import ScheduleObjects.Data exposing (Data)
 import ScheduleObjects.Event exposing (Event, EventID)
 import ScheduleObjects.Id exposing (ID)
 import ScheduleObjects.Lecturer exposing (Lecturer)
+import ScheduleObjects.Occupation exposing (Occupation)
+import ScheduleObjects.Restriction exposing (Restriction)
 import ScheduleObjects.Room exposing (Room)
 import ScheduleObjects.WeekTime exposing (WeekTime)
 import Time
@@ -82,6 +83,27 @@ eventParser =
         (JD.maybe (JD.field "LecturerId" JD.int))
         (JD.maybe (weektimeDecoder "StartTime"))
         (JD.maybe (weektimeDecoder "EndTime"))
+
+
+{-| Occupation Decoder
+-}
+occupationParser : Decoder Occupation
+occupationParser =
+    JD.map3 Occupation
+        (JD.field "RoomId" JD.int)
+        (weektimeDecoder "StartTime")
+        (weektimeDecoder "EndTime")
+
+
+{-| Restriction Decoder
+-}
+restrictionParser : Decoder Restriction
+restrictionParser =
+    JD.map4 Restriction
+        (JD.field "LecturerId" JD.int)
+        (weektimeDecoder "StartTime")
+        (weektimeDecoder "EndTime")
+        (JD.field "Type" JD.int)
 
 
 {-| Weektime Decoder.

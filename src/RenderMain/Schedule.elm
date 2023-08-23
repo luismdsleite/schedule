@@ -9,12 +9,14 @@ import Html.Attributes exposing (..)
 import RenderMain.DisplayEvents exposing (..)
 import RenderMain.Msg exposing (..)
 import ScheduleObjects.Event exposing (Event, EventID)
+import ScheduleObjects.Occupation exposing (Occupation, OccupationID)
+import ScheduleObjects.Restriction exposing (Restriction, RestrictionID)
 import ScheduleObjects.WeekTime exposing (..)
 import ScheduleObjects.WeekTimeConverters exposing (..)
 
 
-renderSchedule : Int -> Draggable -> List ( EventID, Event ) -> String -> Html Msg
-renderSchedule tableWidth draggable events title =
+renderSchedule : Int -> Draggable -> List ( EventID, Event ) -> List ( OccupationID, Occupation ) -> List ( RestrictionID, Restriction ) -> String -> Html Msg
+renderSchedule tableWidth draggable events occupations restrictions title =
     let
         -- nothing22 =
         --     Debug.log "--------------" title
@@ -65,9 +67,52 @@ renderSchedule tableWidth draggable events title =
                     else
                         30
 
+                -- List of all the occupations timeslots in the format ( start_time, end_time )
+                extractedOccupiedTimes : List ( WeekTime, WeekTime )
+                extractedOccupiedTimes =
+                    List.map (\( _, occ ) -> ( occ.start_time, occ.end_time )) occupations
+
+                -- List of all the restrictions timeslots, separated by categories, in the format ( start_time, end_time )
+                extractedGreenRestrictionsTimes : List ( WeekTime, WeekTime )
+                extractedGreenRestrictionsTimes =
+                    List.map (\( _, rest ) -> ( rest.start_time, rest.end_time )) (List.filter (\( _, rest ) -> rest.category == 0) restrictions)
+
+                extractedRedRestrictionsTimes : List ( WeekTime, WeekTime )
+                extractedRedRestrictionsTimes =
+                    List.map (\( _, rest ) -> ( rest.start_time, rest.end_time )) (List.filter (\( _, rest ) -> rest.category == 1) restrictions)
+
+                extractedOrangeRestrictionsTimes : List ( WeekTime, WeekTime )
+                extractedOrangeRestrictionsTimes =
+                    List.map (\( _, rest ) -> ( rest.start_time, rest.end_time )) (List.filter (\( _, rest ) -> rest.category == 2) restrictions)
+
+                extractedYellowRestrictionsTimes : List ( WeekTime, WeekTime )
+                extractedYellowRestrictionsTimes =
+                    List.map (\( _, rest ) -> ( rest.start_time, rest.end_time )) (List.filter (\( _, rest ) -> rest.category == 3) restrictions)
+
+                -- Color a slot based on the restrictions and occupations. Note: Restrictions and Occupations are mutually exclusive.
+                colorWeekLi : WeekTime -> String
+                colorWeekLi weektime =
+                    if List.any (weekTimeIsBetween weektime) extractedOccupiedTimes then
+                        "red"
+
+                    else if List.any (weekTimeIsBetween weektime) extractedGreenRestrictionsTimes then
+                        "green"
+
+                    else if List.any (weekTimeIsBetween weektime) extractedRedRestrictionsTimes then
+                        "red"
+
+                    else if List.any (weekTimeIsBetween weektime) extractedOrangeRestrictionsTimes then
+                        "orange"
+
+                    else if List.any (weekTimeIsBetween weektime) extractedYellowRestrictionsTimes then
+                        "yellow"
+
+                    else
+                        ""
+
                 -- Create empty slots for a line of a schedule
                 lineWeekLi =
-                    \index hour -> List.map (\weekday -> li [] [ dnd.droppable ( RoomEvent 1, WeekTime weekday hour (getMinute index) ) [ style "height" "100%", style "width" "100%" ] [] ]) displayedWeekDays
+                    \index hour -> List.map (\weekday -> li [ style "background-color" (colorWeekLi (WeekTime weekday hour (getMinute index))) ] [ dnd.droppable ( RoomEvent 1, WeekTime weekday hour (getMinute index) ) [ style "height" "100%", style "width" "100%" ] [] ]) displayedWeekDays
 
                 -- lineWeekLi = (\index hour -> List.map (\weekday -> li [] [ dnd.droppable ( RoomEvent 1, WeekTime weekday hour (getMinute index) ) [ style "height" "100%", style "width" "100%" ] [  Debug.toString weekday ++ " " ++ Debug.toString hour ++ ":" ++ Debug.toString (getMinute index) |> text ] ]) displayedWeekDays)
             in

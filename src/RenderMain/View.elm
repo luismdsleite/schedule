@@ -9,6 +9,7 @@ import RenderMain.Model exposing (Model(..))
 import RenderMain.Msg exposing (Msg(..))
 import RenderMain.Schedule exposing (..)
 import ScheduleObjects.Id exposing (ID)
+import ScheduleObjects.Occupation exposing (Occupation)
 
 
 view : Model -> Html Msg
@@ -21,7 +22,7 @@ view (Model data filters draggable) =
         renderScheduleAbbr =
             renderSchedule tableWidth draggable
 
-        -- Here we render the filters, turning them from (Int -> Event -> Bool) into a List (Int, Event)
+        -- Here we render the filters, turning them from (EventID -> Event -> Bool) into a List (EventID, Event)
         roomList =
             Dict.filter filters.room data.events |> Dict.toList
 
@@ -30,6 +31,12 @@ view (Model data filters draggable) =
 
         blockList =
             Dict.filter filters.block data.events |> Dict.toList
+
+        occupationsList =
+            Dict.filter filters.occupations data.occupations |> Dict.toList
+
+        restrictionList =
+            Dict.filter filters.restrictions data.restrictions |> Dict.toList
 
         displayOnDrag : ID -> Html Msg
         displayOnDrag id =
@@ -42,7 +49,7 @@ view (Model data filters draggable) =
             , renderRooms data.rooms
             , renderEvents (Dict.toList data.events) data.rooms data.lecturers
             ]
-        , div [ class "grids-container" ] [ renderScheduleAbbr blockList ("Bloco:" ++ filters.blockName), renderScheduleAbbr roomList ("Sala:" ++ filters.roomName), renderScheduleAbbr lectList ("Docente:" ++ filters.lectName) ]
+        , div [ class "grids-container" ] [ renderScheduleAbbr blockList [] [] ("Bloco:" ++ filters.blockName), renderScheduleAbbr roomList occupationsList [] ("Sala:" ++ filters.roomName), renderScheduleAbbr lectList [] restrictionList ("Docente:" ++ filters.lectName) ]
         , DnD.dragged
             draggable
             displayOnDrag
