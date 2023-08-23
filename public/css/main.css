@@ -48,11 +48,13 @@ img {
 
 .list-item{
   display: flex;
-  justify-content: space-around;
+  /* justify-content: space-around; */
   overflow-y: hidden;
   overflow-x: clip;
   height: 10%;
+  text-align: start;
   cursor:pointer;
+  margin-left: 0.5vw;
 }
 
 .listbox-area {
