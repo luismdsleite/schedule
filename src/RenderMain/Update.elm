@@ -118,7 +118,7 @@ updateOnItemClick msg (Model data filters draggable) =
         getRoomAbbr roomid =
             case Dict.get roomid data.rooms of
                 Just r ->
-                    r.abbr
+                    r.name
 
                 Nothing ->
                     filters.roomName
@@ -135,7 +135,7 @@ updateOnItemClick msg (Model data filters draggable) =
         getLectAbbr lectid =
             case Dict.get lectid data.lecturers of
                 Just r ->
-                    r.abbr
+                    r.name
 
                 Nothing ->
                     filters.lectName
@@ -150,7 +150,7 @@ updateOnItemClick msg (Model data filters draggable) =
     in
     case msg of
         OnBlockClick ( _, block ) ->
-            ( Model data { filters | block = block.cond, blockName = block.nameAbbr } draggable, Effect.none )
+            ( Model data { filters | block = block.cond, blockName = block.name } draggable, Effect.none )
 
         -- Get all events with a certain Room ID and with it update the Room Filter and Abbr.
         OnRoomClick id ->
@@ -173,31 +173,31 @@ updateOnItemClick msg (Model data filters draggable) =
                     Dict.get id data.events
 
                 -- Updating Room Filter / Abbr
-                ( updatedRoomFilter, updatedRoomName ) =
+                ( updatedRoomFilter, updatedRoomName, updatedOccupationsFilter ) =
                     case eventGet of
                         Just event ->
                             case event.room of
                                 Just roomid ->
-                                    ( createNewRoomFilter roomid, getRoomAbbr roomid )
+                                    ( createNewRoomFilter roomid, getRoomAbbr roomid, createNewOccFilter roomid )
 
                                 Nothing ->
-                                    ( filters.room, filters.roomName )
+                                    ( filters.room, filters.roomName, filters.occupations )
 
                         _ ->
-                            ( filters.room, filters.roomName )
+                            ( filters.room, filters.roomName, filters.occupations )
 
                 -- Updating Lecturer Filter / Abbr
-                ( updatedLectFilter, updatedLectName ) =
+                ( updatedLectFilter, updatedLectName, updatedRestrictionsFilter ) =
                     case eventGet of
                         Just event ->
                             case event.lecturer of
                                 Just lectid ->
-                                    ( createNewLectFilter lectid, getLectAbbr lectid )
+                                    ( createNewLectFilter lectid, getLectAbbr lectid, createNewRestFilter lectid )
 
                                 Nothing ->
-                                    ( filters.lect, filters.lectName )
+                                    ( filters.lect, filters.lectName, filters.restrictions )
 
                         _ ->
-                            ( filters.lect, filters.lectName )
+                            ( filters.lect, filters.lectName, filters.restrictions )
             in
-            ( Model data { filters | room = updatedRoomFilter, lect = updatedLectFilter, roomName = updatedRoomName, lectName = updatedLectName } draggable, Effect.none )
+            ( Model data { filters | room = updatedRoomFilter, lect = updatedLectFilter, roomName = updatedRoomName, lectName = updatedLectName, occupations = updatedOccupationsFilter, restrictions = updatedRestrictionsFilter } draggable, Effect.none )

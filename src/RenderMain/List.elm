@@ -16,12 +16,32 @@ import ScheduleObjects.Room exposing (Room, RoomID)
 import ScheduleObjects.WeekTimeConverters exposing (..)
 
 
+eventTupleComparator : ( Int, Event ) -> ( Int, Event ) -> Order
+eventTupleComparator ( _, event1 ) ( _, event2 ) =
+    compare event1.subjectAbbr event2.subjectAbbr
+
+
+roomTupleComparator : ( Int, Room ) -> ( Int, Room ) -> Order
+roomTupleComparator ( _, room1 ) ( _, room2 ) =
+    compare room1.abbr room2.abbr
+
+
+lectTupleComparator : ( Int, Lecturer ) -> ( Int, Lecturer ) -> Order
+lectTupleComparator ( _, lect1 ) ( _, lect2 ) =
+    compare lect1.abbr lect2.abbr
+
+
+blockTupleComparator : ( Int, Block ) -> ( Int, Block ) -> Order
+blockTupleComparator ( _, block1 ) ( _, block2 ) =
+    compare block1.nameAbbr block2.nameAbbr
+
+
 {-| Renders all the events into a list
 -}
 renderEvents : List ( Int, Event ) -> Dict RoomID Room -> Dict LecturerID Lecturer -> Html Msg
 renderEvents events rooms lecturers =
     ul [ ariaLabel "Cadeiras", class "list custom-scrollbar" ]
-        (List.map (renderEvent rooms lecturers) events)
+        (List.map (renderEvent rooms lecturers) (List.sortWith eventTupleComparator events))
 
 
 {-| Transforms an event into a list item
@@ -75,7 +95,7 @@ renderRooms : Dict RoomID Room -> Html Msg
 renderRooms rooms =
     let
         roomsList =
-            Dict.toList rooms
+            Dict.toList rooms |> List.sortWith roomTupleComparator
     in
     ul [ ariaLabel "Salas", class "list custom-scrollbar" ]
         (List.map renderRoom roomsList)
@@ -90,7 +110,7 @@ renderLecturers : Dict LecturerID Lecturer -> Html Msg
 renderLecturers lecturers =
     let
         lecturersList =
-            Dict.toList lecturers
+            Dict.toList lecturers |> List.sortWith lectTupleComparator
     in
     ul [ ariaLabel "Docentes", class "list custom-scrollbar" ]
         (List.map renderLecturer lecturersList)
@@ -105,7 +125,7 @@ renderBlocks : Dict BlockID Block -> Html Msg
 renderBlocks blocks =
     let
         blocksList =
-            Dict.toList blocks
+            Dict.toList blocks |> List.sortWith blockTupleComparator
     in
     ul [ ariaLabel "Blocos", class "list custom-scrollbar" ] (List.map renderBlock blocksList)
 
