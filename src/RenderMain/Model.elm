@@ -5,6 +5,7 @@ module RenderMain.Model exposing (Model(..), init)
 import Effect exposing (Effect)
 import RenderMain.Msg exposing (Draggable, Msg(..), dnd)
 import ScheduleObjects.Data exposing (Data)
+import ScheduleObjects.Event exposing (Event, EventID)
 import ScheduleObjects.Filters exposing (ScheduleFilter)
 
 
@@ -18,7 +19,7 @@ import ScheduleObjects.Filters exposing (ScheduleFilter)
 
 
 type Model
-    = Model Data ScheduleFilter Draggable
+    = Model Data ScheduleFilter Draggable ( EventID, Event )
 
 
 init : Data -> ( Model, Effect Msg )
@@ -26,6 +27,7 @@ init data =
     ( Model data
         (ScheduleFilter (\_ _ -> False) (\_ _ -> False) (\_ _ -> False) (\_ _ -> False) (\_ _ -> False) "" "" "")
         dnd.model
+        ( -1, Event "" "" Nothing Nothing Nothing Nothing )
     , Effect.none
     )
 

@@ -4,16 +4,15 @@ import Dict
 import DnD
 import Html exposing (..)
 import Html.Attributes exposing (..)
-import RenderMain.List exposing (renderBlocks, renderEvents, renderLecturers, renderRooms)
+import RenderMain.List exposing (renderAvailableRooms, renderBlocks, renderEvents, renderLecturers, renderRooms)
 import RenderMain.Model exposing (Model(..))
 import RenderMain.Msg exposing (Msg(..))
 import RenderMain.Schedule exposing (..)
 import ScheduleObjects.Id exposing (ID)
-import ScheduleObjects.Occupation exposing (Occupation)
 
 
 view : Model -> Html Msg
-view (Model data filters draggable) =
+view (Model data filters draggable eventToCheckRooms) =
     let
         tableWidth =
             90 / (3 |> toFloat) |> floor
@@ -48,6 +47,7 @@ view (Model data filters draggable) =
             , renderLecturers data.lecturers
             , renderRooms data.rooms
             , renderEvents (Dict.toList data.events) data.rooms data.lecturers
+            , renderAvailableRooms eventToCheckRooms data.rooms (Dict.values data.events)
             ]
         , div [ class "grids-container" ] [ renderScheduleAbbr blockList [] [] ("Bloco:" ++ filters.blockName), renderScheduleAbbr roomList occupationsList [] ("Sala:" ++ filters.roomName), renderScheduleAbbr lectList [] restrictionList ("Docente:" ++ filters.lectName) ]
         , DnD.dragged

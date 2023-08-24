@@ -5,5 +5,5 @@ import RenderMain.Msg exposing (Msg, dnd)
 
 
 subscriptions : Model -> Sub Msg
-subscriptions (Model _ _ draggable) =
+subscriptions (Model _ _ draggable _) =
     dnd.subscriptions draggable

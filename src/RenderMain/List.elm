@@ -1,4 +1,4 @@
-module RenderMain.List exposing (renderBlocks, renderEvents, renderLecturers, renderRooms)
+module RenderMain.List exposing (renderAvailableRooms, renderBlocks, renderEvents, renderLecturers, renderRooms)
 
 {-| Responsible for displaying a list of a certain resource (e.g. list of rooms).
 -}
@@ -10,9 +10,10 @@ import Html.Attributes.Aria exposing (ariaLabel)
 import Html.Events exposing (onClick)
 import RenderMain.Msg exposing (Msg(..), OnItemClick(..))
 import ScheduleObjects.Block exposing (Block, BlockID)
-import ScheduleObjects.Event exposing (Event)
+import ScheduleObjects.Event exposing (Event, EventID)
 import ScheduleObjects.Lecturer exposing (Lecturer, LecturerID)
 import ScheduleObjects.Room exposing (Room, RoomID)
+import ScheduleObjects.WeekTime exposing (WeekTime)
 import ScheduleObjects.WeekTimeConverters exposing (..)
 
 
@@ -133,3 +134,64 @@ renderBlocks blocks =
 renderBlock : ( Int, Block ) -> Html Msg
 renderBlock ( id, block ) =
     li [ class "list-item", onClick (ItemClick (OnBlockClick ( id, block ))), attribute "title" block.name ] [ div [ class "custom-scrollbar", class "list-text" ] [ text block.nameAbbr ] ]
+
+
+{-| Given a certain event, a list of all rooms and a list of all events, it returns what rooms are available to host that event.
+-}
+renderAvailableRooms : ( EventID, Event ) -> Dict RoomID Room -> List Event -> Html Msg
+renderAvailableRooms ( eventId, event ) rooms events =
+    let
+        timeslots =
+            case event.start_time of
+                Just start ->
+                    case event.end_time of
+                        Just end ->
+                            computeTimeSlots start end []
+
+                        -- ERROR: Event has no end time!
+                        Nothing ->
+                            []
+
+                -- ERROR: Event has no start time!
+                Nothing ->
+                    []
+
+        isRoomAvailable : RoomID -> Room -> Bool
+        isRoomAvailable roomId _ =
+            let
+                eventsOfRoom : List Event
+                eventsOfRoom =
+                    List.filter (\ev -> ev.room == Just roomId) events
+
+                isTimeSlotOccupied : WeekTime -> Bool
+                isTimeSlotOccupied tslot =
+                    List.any
+                        (\ev ->
+                            case ev.start_time of
+                                Just start ->
+                                    case ev.end_time of
+                                        Just end ->
+                                            weekTimeIsBetween tslot ( start, end )
+
+                                        -- ERROR: Event has no end time!
+                                        Nothing ->
+                                            False
+
+                                -- ERROR: Event has no start time!
+                                Nothing ->
+                                    False
+                        )
+                        eventsOfRoom
+            in
+            List.all (not << isTimeSlotOccupied) timeslots
+
+        availableRooms =
+            Dict.filter isRoomAvailable rooms |> Dict.toList |> List.sortWith roomTupleComparator
+    in
+    ul [ ariaLabel ("Salas Lives para " ++ event.subjectAbbr), class "list custom-scrollbar" ]
+        (List.map (renderAvailableRoom eventId) availableRooms)
+
+
+renderAvailableRoom : EventID -> ( RoomID, Room ) -> Html Msg
+renderAvailableRoom evId ( roomId, room ) =
+    li [ class "list-item", onClick (ItemClick (ChangeEventRoomClick evId roomId)), attribute "title" room.name ] [ div [ class "custom-scrollbar", class "list-text" ] [ text room.abbr ] ]

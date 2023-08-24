@@ -1,5 +1,6 @@
 module RenderMain.Update exposing (..)
 
+import Browser.Dom exposing (Error(..))
 import Dict
 import DnD
 import Effect exposing (Effect)
@@ -18,13 +19,13 @@ import Time
 {-| Update Block / Event / Room / Lecturer filters based on the msg received.
 -}
 update : Msg -> Model -> ( Model, Effect Msg )
-update msg (Model data filters draggable) =
+update msg (Model data filters draggable eventToCheckRooms) =
     case msg of
         ItemClick clickMsg ->
-            updateOnItemClick clickMsg (Model data filters draggable)
+            updateOnItemClick clickMsg (Model data filters draggable eventToCheckRooms)
 
         DnDMsg dndmsg ->
-            ( Model data filters (DnD.update dndmsg draggable), Effect.none )
+            ( Model data filters (DnD.update dndmsg draggable) eventToCheckRooms, Effect.none )
 
         OnDrop ( _, weekTime ) eventID ->
             let
@@ -82,10 +83,10 @@ update msg (Model data filters draggable) =
                         --     Dict.insert eventID newEv data.events
                     in
                     -- ( Model { data | events = newEvents } filters draggable, Effect.none )
-                    ( Model data filters draggable, Effect.fromCmd <| Encoders.updateEvent ( eventID, newEv ) )
+                    ( Model data filters draggable eventToCheckRooms, Effect.fromCmd <| Encoders.updateEvent ( eventID, newEv ) )
 
                 Nothing ->
-                    ( Model data filters draggable, Effect.none )
+                    ( Model data filters draggable eventToCheckRooms, Effect.none )
 
         UpdateEvent result ->
             case result of
@@ -94,14 +95,14 @@ update msg (Model data filters draggable) =
                         newEvents =
                             Dict.insert evID ev data.events
                     in
-                    ( Model { data | events = newEvents } filters draggable, Effect.none )
+                    ( Model { data | events = newEvents } filters draggable eventToCheckRooms, Effect.none )
 
                 Err _ ->
-                    ( Model data filters draggable, Effect.none )
+                    ( Model data filters draggable eventToCheckRooms, Effect.none )
 
 
 updateOnItemClick : OnItemClick -> Model -> ( Model, Effect Msg )
-updateOnItemClick msg (Model data filters draggable) =
+updateOnItemClick msg (Model data filters draggable eventToCheckRooms) =
     let
         {- We Create a function to fetch a new Room/Lecturer filter and abbreviation based on a Room/Lecturer ID.
            If the Room/Lecturer to update is already the one being displayed then dont perform any action.
@@ -150,15 +151,15 @@ updateOnItemClick msg (Model data filters draggable) =
     in
     case msg of
         OnBlockClick ( _, block ) ->
-            ( Model data { filters | block = block.cond, blockName = block.name } draggable, Effect.none )
+            ( Model data { filters | block = block.cond, blockName = block.name } draggable eventToCheckRooms, Effect.none )
 
         -- Get all events with a certain Room ID and with it update the Room Filter and Abbr.
         OnRoomClick id ->
-            ( Model data { filters | room = createNewRoomFilter id, roomName = getRoomAbbr id, occupations = createNewOccFilter id } draggable, Effect.none )
+            ( Model data { filters | room = createNewRoomFilter id, roomName = getRoomAbbr id, occupations = createNewOccFilter id } draggable eventToCheckRooms, Effect.none )
 
         -- Get all events with a certain Lecturer ID and with it update the Lecturer Filter.
         OnLecturerClick id ->
-            ( Model data { filters | lect = createNewLectFilter id, lectName = getLectAbbr id, restrictions = createNewRestFilter id } draggable, Effect.none )
+            ( Model data { filters | lect = createNewLectFilter id, lectName = getLectAbbr id, restrictions = createNewRestFilter id } draggable eventToCheckRooms, Effect.none )
 
         {-
            For an Event click we need to change both the room Filter and the Lecturer Filter.
@@ -199,5 +200,33 @@ updateOnItemClick msg (Model data filters draggable) =
 
                         _ ->
                             ( filters.lect, filters.lectName, filters.restrictions )
+
+                updatedAvailableRooms =
+                    case eventGet of
+                        Just event ->
+                            ( id, event )
+
+                        Nothing ->
+                            eventToCheckRooms
             in
-            ( Model data { filters | room = updatedRoomFilter, lect = updatedLectFilter, roomName = updatedRoomName, lectName = updatedLectName, occupations = updatedOccupationsFilter, restrictions = updatedRestrictionsFilter } draggable, Effect.none )
+            ( Model data { filters | room = updatedRoomFilter, lect = updatedLectFilter, roomName = updatedRoomName, lectName = updatedLectName, occupations = updatedOccupationsFilter, restrictions = updatedRestrictionsFilter } draggable updatedAvailableRooms, Effect.none )
+
+        ChangeEventRoomClick evId roomId ->
+            let
+                eventGet =
+                    Dict.get evId data.events
+
+                -- If it exists then update the room field of the event else do nothing.
+                sideEffect =
+                    case eventGet of
+                        Just event ->
+                            let
+                                updatedEv =
+                                    { event | room = Just roomId }
+                            in
+                            Effect.fromCmd <| Encoders.updateEvent ( evId, updatedEv )
+
+                        Nothing ->
+                            Effect.none
+            in
+            ( Model data filters draggable eventToCheckRooms, sideEffect )

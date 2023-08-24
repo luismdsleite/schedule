@@ -5,6 +5,7 @@ import Http
 import ScheduleObjects.Block exposing (Block)
 import ScheduleObjects.Event exposing (Event, EventID)
 import ScheduleObjects.Id exposing (ID)
+import ScheduleObjects.Room exposing (RoomID)
 import ScheduleObjects.WeekTime exposing (WeekTime)
 
 
@@ -20,6 +21,7 @@ type OnItemClick
     | OnLecturerClick Int
     | OnEventClick Int
     | OnBlockClick ( Int, Block )
+    | ChangeEventRoomClick EventID RoomID
 
 
 type alias Draggable =

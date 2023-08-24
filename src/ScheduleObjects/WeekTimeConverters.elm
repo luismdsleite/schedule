@@ -179,3 +179,22 @@ weekTimeIsBetween givenTime ( start, end ) =
             givenTime.hour * 60 + givenTime.minute
     in
     weekdayCond && givenMinutes >= startMinutes && givenMinutes < endMinutes
+
+
+{-| Computes a list of WeekTime between a start and end time.
+-}
+computeTimeSlots : WeekTime -> WeekTime -> List WeekTime -> List WeekTime
+computeTimeSlots startTime endTime result =
+    if startTime.hour == endTime.hour && startTime.minute == endTime.minute then
+        result
+
+    else
+        let
+            newStartTime =
+                if startTime.minute == 0 then
+                    { startTime | minute = 30 }
+
+                else
+                    { startTime | hour = startTime.hour + 1, minute = 0 }
+        in
+        computeTimeSlots newStartTime endTime (startTime :: result)
