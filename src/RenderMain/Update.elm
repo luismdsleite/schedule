@@ -1,14 +1,17 @@
 module RenderMain.Update exposing (..)
 
 import Browser.Dom exposing (Error(..))
+import DeployEnv exposing (serverUrl)
 import Dict
 import DnD
 import Effect exposing (Effect)
 import Encoders
+import Http
 import RenderMain.DisplayEvents exposing (..)
 import RenderMain.Model exposing (Model(..))
 import RenderMain.Msg exposing (..)
-import ScheduleObjects.Event exposing (Event)
+import ScheduleObjects.Data exposing (Token)
+import ScheduleObjects.Event exposing (Event, EventID)
 import ScheduleObjects.Id exposing (ID)
 import ScheduleObjects.Occupation exposing (Occupation, OccupationID)
 import ScheduleObjects.Restriction exposing (Restriction, RestrictionID)
@@ -83,7 +86,7 @@ update msg (Model data filters draggable eventToCheckRooms) =
                         --     Dict.insert eventID newEv data.events
                     in
                     -- ( Model { data | events = newEvents } filters draggable, Effect.none )
-                    ( Model data filters draggable eventToCheckRooms, Effect.fromCmd <| Encoders.updateEvent ( eventID, newEv ) data.token )
+                    ( Model data filters draggable eventToCheckRooms, Effect.fromCmd <| updateEvent ( eventID, newEv ) data.token )
 
                 Nothing ->
                     ( Model data filters draggable eventToCheckRooms, Effect.none )
@@ -224,9 +227,42 @@ updateOnItemClick msg (Model data filters draggable eventToCheckRooms) =
                                 updatedEv =
                                     { event | room = Just roomId }
                             in
-                            Effect.fromCmd <| Encoders.updateEvent ( evId, updatedEv ) data.token
+                            Effect.fromCmd <| updateEvent ( evId, updatedEv ) data.token
 
                         Nothing ->
                             Effect.none
             in
             ( Model data filters draggable eventToCheckRooms, sideEffect )
+
+
+
+------------------------ HTTP ------------------------
+
+
+updateEvent : ( EventID, Event ) -> Token -> Cmd Msg
+updateEvent ( id, event ) token =
+    Http.request
+        { method = "PUT"
+        , headers = [ Http.header "Authorization" ("Bearer " ++ token), Http.header "Content-Type" "application/json" ]
+        , url = serverUrl ++ "events\\" ++ String.fromInt id
+        , body = Http.jsonBody (Encoders.putEvent ( id, event ))
+        , expect = Http.expectWhatever (handleResponse ( id, event ))
+        , timeout = Nothing
+        , tracker = Nothing
+        }
+
+
+{-| When we update an event there are 2 possible options:
+
+1.  The event is updated successfully, in this case we do a GET request to get the updated event
+2.  The event is not updated, in this case we do nothing
+
+-}
+handleResponse : ( EventID, Event ) -> Result Http.Error () -> RenderMain.Msg.Msg
+handleResponse ( evID, ev ) response =
+    case response of
+        Ok _ ->
+            RenderMain.Msg.UpdateEvent (Ok ( evID, ev ))
+
+        Err err ->
+            RenderMain.Msg.UpdateEvent (Err err)
