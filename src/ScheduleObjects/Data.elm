@@ -1,4 +1,4 @@
-module ScheduleObjects.Data exposing (Data)
+module ScheduleObjects.Data exposing (Data, Token)
 
 import Dict exposing (Dict)
 import ScheduleObjects.Block exposing (Block)
@@ -10,6 +10,10 @@ import ScheduleObjects.Restriction exposing (Restriction, RestrictionID)
 import ScheduleObjects.Room exposing (Room, RoomID)
 
 
+type alias Token =
+    String
+
+
 type alias Data =
     { rooms : Dict RoomID Room
     , lecturers : Dict ID Lecturer
@@ -17,4 +21,5 @@ type alias Data =
     , blocks : Dict ID Block
     , occupations : Dict OccupationID Occupation
     , restrictions : Dict RestrictionID Restriction
+    , token : Token
     }

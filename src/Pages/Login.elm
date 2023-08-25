@@ -1,19 +1,15 @@
-module Pages.NewRoom exposing (Model, Msg, page)
+module Pages.Login exposing (Model, Msg, page)
 
 import Effect exposing (Effect)
-import Gen.Params.NewRoom exposing (Params)
+import Gen.Params.Login exposing (Params)
 import Page
 import Request
 import Shared
 import View exposing (View)
-import Page
 
 
 page : Shared.Model -> Request.With Params -> Page.With Model Msg
 page shared req =
-    let
-        a = Debug.log "ddd" "I was Executed"
-    in
     Page.advanced
         { init = init
         , update = update
@@ -27,12 +23,14 @@ page shared req =
 
 
 type alias Model =
-    {}
+    { username : Maybe String
+    , password : Maybe String
+    }
 
 
 init : ( Model, Effect Msg )
 init =
-    ( {}, Effect.none )
+    ( { username = Nothing, password = Nothing }, Effect.none )
 
 
 
@@ -65,4 +63,4 @@ subscriptions model =
 
 view : Model -> View Msg
 view model =
-    View.placeholder "NewRoom"
+    View.placeholder "Login"

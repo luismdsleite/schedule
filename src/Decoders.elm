@@ -1,4 +1,4 @@
-module Decoders exposing (blockParser, eventParser, lectParser, objectsToDictParser, occupationParser, restrictionParser, roomParser)
+module Decoders exposing (blockParser, eventParser, getBlockAndId, getEventAndID, lectParser, objectsToDictParser, occupationParser, restrictionParser, roomParser, tokenParser)
 
 {-| Json Decoders used to interact with the servers REST API
 -}
@@ -173,16 +173,16 @@ minuteDecoder =
                     [ _, minuteStr ] ->
                         case String.toInt minuteStr of
                             Nothing ->
-                                Debug.log "1" JD.fail "Invalid time format, expected HH:MM"
+                                JD.fail "Invalid time format, expected HH:MM"
 
                             Just int ->
                                 JD.succeed int
 
                     _ ->
-                        JD.fail <| Debug.log "2" "Invalid time format, expected HH:MM"
+                        JD.fail <| "Invalid time format, expected HH:MM"
             )
 
 
-blockDecoder : Block -> Decoder Block
-blockDecoder =
-    JD.succeed
+tokenParser : Decoder String
+tokenParser =
+    JD.field "access_token" JD.string

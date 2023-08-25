@@ -4,6 +4,16 @@ module DeployEnv exposing (serverUrl)
 -}
 
 
+url : String
+url =
+    "https://192.168.1.217:8008"
+
+
+routePrefix : String
+routePrefix =
+    "/api/v1/"
+
+
 serverUrl : String
 serverUrl =
-    "https://192.168.1.217:8008/api/v1/"
+    url ++ routePrefix

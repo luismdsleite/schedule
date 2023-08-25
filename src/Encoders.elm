@@ -4,18 +4,18 @@ import DeployEnv exposing (serverUrl)
 import Http
 import Json.Encode as Encode
 import RenderMain.Msg exposing (Msg(..))
+import ScheduleObjects.Data exposing (Token)
 import ScheduleObjects.Event exposing (Event, EventID)
-import ScheduleObjects.Id exposing (ID)
 import ScheduleObjects.Lecturer exposing (Lecturer, LecturerID)
 import ScheduleObjects.Room exposing (Room, RoomID)
 import ScheduleObjects.WeekTimeConverters exposing (weekdayToNumber)
 
 
-updateEvent : ( EventID, Event ) -> Cmd Msg
-updateEvent ( id, event ) =
+updateEvent : ( EventID, Event ) -> Token -> Cmd Msg
+updateEvent ( id, event ) token =
     Http.request
         { method = "PUT"
-        , headers = [ Http.header "Content-Type" "application/json" ]
+        , headers = [ Http.header "Authorization" ("Bearer " ++ token), Http.header "Content-Type" "application/json" ]
         , url = serverUrl ++ "events\\" ++ String.fromInt id
         , body = Http.jsonBody (putEvent ( id, event ))
         , expect = Http.expectWhatever (handleResponse ( id, event ))
@@ -108,4 +108,12 @@ putEvent ( id, event ) =
         , ( "StartTime", convertToTime event.start_time )
         , ( "EndTime", convertToTime event.end_time )
         , ( "WeekDay", weekDay )
+        ]
+
+
+login : String -> String -> Encode.Value
+login username password =
+    Encode.object
+        [ ( "username", Encode.string username )
+        , ( "password", Encode.string password )
         ]

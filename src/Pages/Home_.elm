@@ -1,38 +1,23 @@
 module Pages.Home_ exposing (Model, Msg, page)
 
-{-|
-
-1.  Loads data via GET requests. Fetches events, rooms, lecturers, block resources.
-2.  Updates to `Shared.Model` via `Shared.LoadedData` msg
-3.  Redirect to Pages.Example
-
--}
-
-import Array exposing (Array)
-import Decoders exposing (blockParser, eventParser, lectParser, objectsToDictParser, occupationParser, restrictionParser, roomParser)
+import Decoders exposing (tokenParser)
 import DeployEnv exposing (serverUrl)
-import Dict exposing (Dict)
 import Effect exposing (Effect)
-import Gen.Params.Home_ exposing (Params)
-import Html
+import Encoders exposing (login)
+import Gen.Params.Login exposing (Params)
+import Html exposing (..)
+import Html.Attributes exposing (..)
+import Html.Events exposing (onClick, onInput)
 import Http
-import Json.Decode exposing (Decoder)
 import Page
 import Request
-import ScheduleObjects.Block exposing (Block)
-import ScheduleObjects.Data exposing (Data)
-import ScheduleObjects.Event exposing (Event, EventID)
-import ScheduleObjects.Id exposing (ID)
-import ScheduleObjects.Lecturer exposing (Lecturer)
-import ScheduleObjects.Occupation exposing (Occupation, OccupationID)
-import ScheduleObjects.Restriction exposing (Restriction)
-import ScheduleObjects.Room exposing (Room)
 import Shared
+import Url exposing (Protocol(..))
 import View exposing (View)
 
 
 page : Shared.Model -> Request.With Params -> Page.With Model Msg
-page _ _ =
+page shared req =
     Page.advanced
         { init = init
         , update = update
@@ -41,36 +26,20 @@ page _ _ =
         }
 
 
-{-| This page has 3 possible states:
-
-    - Loading: We are still waiting for 1 or more GET request. To know if a specific resource was already received, we store a `Array Bool` that represents the state of each resource.
-    - Failed: One of the requests failed.
-    - Loaded: We received all request and can start the `Shared.LoadedData` msg.
-
--}
-type Model
-    = Loading Data (Array Bool)
-    | Loaded Data
-    | Failed String
-
-
 
 -- INIT
 
 
+type alias Model =
+    { username : String
+    , password : String
+    , error : String
+    }
+
+
 init : ( Model, Effect Msg )
 init =
-    let
-        emptyData =
-            Data Dict.empty Dict.empty Dict.empty Dict.empty Dict.empty Dict.empty
-
-        noneReceived =
-            Array.fromList [ False, False, False, False, False, False ]
-
-        getRequests =
-            [ getEvents, getLecturers, getRooms, getBlocks, getOccupations, getRestrictions ]
-    in
-    ( Loading emptyData noneReceived, Effect.batch getRequests )
+    ( { username = "", password = "", error = "" }, Effect.none )
 
 
 
@@ -78,184 +47,35 @@ init =
 
 
 type Msg
-    = GotRooms (Result Http.Error (Dict ID Room))
-    | GotLecturers (Result Http.Error (Dict ID Lecturer))
-    | GotEvents (Result Http.Error (Dict ID Event))
-    | GotBlocks (Result Http.Error (Dict ID Block))
-    | GotOccupations (Result Http.Error (Dict ID Occupation))
-    | GotRestrictions (Result Http.Error (Dict ID Restriction))
-    | LoadedData Data
+    = GotToken (Result Http.Error String)
+    | GotError String
+    | SendLoginRequest String String
+    | SetUsername String
+    | SetPassword String
 
 
 update : Msg -> Model -> ( Model, Effect Msg )
 update msg model =
     case msg of
-        GotRooms result ->
+        GotToken result ->
             case result of
-                Err _ ->
-                    ( Failed "Unable to load Rooms", Effect.none )
+                Ok token ->
+                    ( model, Effect.fromShared (Shared.GotToken token) )
 
-                Ok rooms ->
-                    case model of
-                        Loading data state ->
-                            let
-                                updatedData =
-                                    { data | rooms = rooms }
-                            in
-                            if Array.foldl (&&) True (Array.set 0 True state) then
-                                update (LoadedData data) (Loaded updatedData)
+                Err err ->
+                    ( { model | error = "Invalid username or password" }, Effect.none )
 
-                            else
-                                ( Loading updatedData (Array.set 0 True state), Effect.none )
+        GotError str ->
+            ( { model | error = str }, Effect.none )
 
-                        _ ->
-                            ( Failed "Unable to load Rooms", Effect.none )
+        SendLoginRequest username password ->
+            ( model, Effect.fromCmd (logIn username password) )
 
-        GotEvents result ->
-            case result of
-                Err _ ->
-                    ( Failed "Unable to load Events", Effect.none )
+        SetUsername username ->
+            ( { model | username = username }, Effect.none )
 
-                Ok events ->
-                    case model of
-                        Loading data state ->
-                            let
-                                updatedData =
-                                    { data | events = events }
-                            in
-                            if Array.foldl (&&) True (Array.set 1 True state) then
-                                update (LoadedData updatedData) (Loaded updatedData)
-
-                            else
-                                ( Loading updatedData (Array.set 1 True state), Effect.none )
-
-                        _ ->
-                            ( Failed "Unable to load Events", Effect.none )
-
-        GotLecturers result ->
-            case result of
-                Err _ ->
-                    ( Failed "Unable to load Lecturers", Effect.none )
-
-                Ok lecturers ->
-                    case model of
-                        Loading data state ->
-                            let
-                                updatedData =
-                                    { data | lecturers = lecturers }
-                            in
-                            if Array.foldl (&&) True (Array.set 2 True state) then
-                                update (LoadedData updatedData) (Loaded updatedData)
-
-                            else
-                                ( Loading updatedData (Array.set 2 True state), Effect.none )
-
-                        _ ->
-                            ( Failed "Unable to load Lecturers", Effect.none )
-
-        GotBlocks result ->
-            case result of
-                Err _ ->
-                    ( Failed "Unable to load Blocks", Effect.none )
-
-                Ok blocks ->
-                    case model of
-                        Loading data state ->
-                            let
-                                updatedData =
-                                    { data | blocks = blocks }
-                            in
-                            if Array.foldl (&&) True (Array.set 3 True state) then
-                                update (LoadedData updatedData) (Loaded updatedData)
-
-                            else
-                                ( Loading updatedData (Array.set 3 True state), Effect.none )
-
-                        _ ->
-                            ( Failed "Unable to load Blocks", Effect.none )
-
-        GotOccupations result ->
-            case result of
-                Err _ ->
-                    ( Failed "Unable to load Occupations", Effect.none )
-
-                Ok occupations ->
-                    case model of
-                        Loading data state ->
-                            let
-                                updatedData =
-                                    { data | occupations = occupations }
-                            in
-                            if Array.foldl (&&) True (Array.set 4 True state) then
-                                update (LoadedData updatedData) (Loaded updatedData)
-
-                            else
-                                ( Loading updatedData (Array.set 4 True state), Effect.none )
-
-                        _ ->
-                            ( Failed "Unable to load Occupations", Effect.none )
-
-        LoadedData data ->
-            ( model, Effect.fromShared (Shared.LoadedData data) )
-
-        GotRestrictions result ->
-            case result of
-                Err _ ->
-                    ( Failed "Unable to load Restrictions", Effect.none )
-
-                Ok restrictions ->
-                    case model of
-                        Loading data state ->
-                            let
-                                updatedData =
-                                    { data | restrictions = restrictions }
-                            in
-                            if Array.foldl (&&) True (Array.set 5 True state) then
-                                update (LoadedData updatedData) (Loaded updatedData)
-
-                            else
-                                ( Loading updatedData (Array.set 5 True state), Effect.none )
-
-                        _ ->
-                            ( Failed "Unable to load Restrictions", Effect.none )
-
-
-getResource : String -> Decoder a -> (Result Http.Error (Dict ID a) -> msg) -> Cmd msg
-getResource resource resourceParser resultToMsg =
-    Http.get
-        { url = serverUrl ++ resource
-        , expect = Http.expectJson resultToMsg (objectsToDictParser resourceParser)
-        }
-
-
-getRooms : Effect Msg
-getRooms =
-    Effect.fromCmd (getResource "rooms" roomParser GotRooms)
-
-
-getLecturers : Effect Msg
-getLecturers =
-    Effect.fromCmd (getResource "lecturers" lectParser GotLecturers)
-
-
-getEvents : Effect Msg
-getEvents =
-    Effect.fromCmd (getResource "events" eventParser GotEvents)
-
-
-getBlocks : Effect Msg
-getBlocks =
-    Effect.fromCmd (getResource "blocks" blockParser GotBlocks)
-
-
-getOccupations : Effect Msg
-getOccupations =
-    Effect.fromCmd (getResource "occupations" occupationParser GotOccupations)
-
-
-getRestrictions : Effect Msg
-getRestrictions =
-    Effect.fromCmd (getResource "restrictions" restrictionParser GotRestrictions)
+        SetPassword password ->
+            ( { model | password = password }, Effect.none )
 
 
 
@@ -263,7 +83,7 @@ getRestrictions =
 
 
 subscriptions : Model -> Sub Msg
-subscriptions _ =
+subscriptions model =
     Sub.none
 
 
@@ -273,19 +93,42 @@ subscriptions _ =
 
 view : Model -> View Msg
 view model =
-    case model of
-        Loading _ _ ->
-            generateHtml "Loading" "Loading"
-
-        Failed str ->
-            generateHtml "Failed" str
-
-        Loaded _ ->
-            generateHtml "Loaded" "Loaded"
-
-
-generateHtml : String -> String -> View Msg
-generateHtml title body =
-    { title = title
-    , body = [ Html.text body ]
+    { title = "Login"
+    , body =
+        [ div
+            [ id "form" ]
+            [ h2 [ class "text-center" ] [ text "Log In" ]
+            , div [ class "showError" ]
+                [ div [ class "alert alert-danger" ] [ text model.error ]
+                ]
+            , div [ class "form-group row" ]
+                [ div [ class "col-md-offset-2 col-md-8" ]
+                    [ label [ for "username" ] [ text "Username:" ]
+                    , input [ id "username", type_ "text", class "form-control", Html.Attributes.value model.username, onInput SetUsername ] []
+                    ]
+                ]
+            , div [ class "form-group row" ]
+                [ div [ class "col-md-offset-2 col-md-8" ]
+                    [ label [ for "password" ] [ text "Password:" ]
+                    , input [ id "password", type_ "password", class "form-control", Html.Attributes.value model.password, onInput SetPassword ] []
+                    ]
+                ]
+            , div [ class "text-center" ]
+                [ button [ class "btn btn-link", onClick (SendLoginRequest model.username model.password) ] [ text "Register" ]
+                ]
+            ]
+        ]
     }
+
+
+logIn : String -> String -> Cmd Msg
+logIn username password =
+    Http.request
+        { method = "POST"
+        , headers = [ Http.header "Content-Type" "application/json" ]
+        , url = serverUrl ++ "login"
+        , body = Http.jsonBody (login username password)
+        , expect = Http.expectJson GotToken tokenParser
+        , timeout = Nothing
+        , tracker = Nothing
+        }

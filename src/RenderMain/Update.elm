@@ -83,7 +83,7 @@ update msg (Model data filters draggable eventToCheckRooms) =
                         --     Dict.insert eventID newEv data.events
                     in
                     -- ( Model { data | events = newEvents } filters draggable, Effect.none )
-                    ( Model data filters draggable eventToCheckRooms, Effect.fromCmd <| Encoders.updateEvent ( eventID, newEv ) )
+                    ( Model data filters draggable eventToCheckRooms, Effect.fromCmd <| Encoders.updateEvent ( eventID, newEv ) data.token )
 
                 Nothing ->
                     ( Model data filters draggable eventToCheckRooms, Effect.none )
@@ -224,7 +224,7 @@ updateOnItemClick msg (Model data filters draggable eventToCheckRooms) =
                                 updatedEv =
                                     { event | room = Just roomId }
                             in
-                            Effect.fromCmd <| Encoders.updateEvent ( evId, updatedEv )
+                            Effect.fromCmd <| Encoders.updateEvent ( evId, updatedEv ) data.token
 
                         Nothing ->
                             Effect.none
