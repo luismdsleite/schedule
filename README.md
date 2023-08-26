@@ -1,31 +1,35 @@
 # schedule
-Front-end page built with [elm-spa](https://elm-spa.dev).
 
 An important practical application at FCUP concerns the preparation of weekly timetables for students, professors and rooms. There is an application being used at DCC for this, but the interface is rather poor, making timetable preparation a painful task.  The aim of this project is to provide a well designed graphical users interface for timetabling, with the specific application at FCUP in view.  Usability should be enlarged for all the departments, with swift resource sharing.  Ideally, this project will deliver a complete prototype.
 
-## dependencies
+![screenshot](./images/screenshot.png)
 
-- [nodejs](https://nodejs.org/en) 
-- [elm](https://elm-lang.org/)
-- [elm-spa](https://github.com/ryannhg/elm-spa) 
+## Dependencies
 
-## running locally
+[![elm](https://img.shields.io/badge/Elm-0.19.1-brightgreen.svg)](https://elm-lang.org/)
+
+__[elm-land](https://github.com/elm-land)__ 
+ 
+
+## Dev Server
 
 ```bash
-elm-spa server  # starts this app at http:/localhost:1234
+SERVER_URL=$SERVER_URL elm-land server  # starts this app at http:/localhost:1234
 ``` 
+`SERVER_URL`= Url of the backend host + api entrypoint e.g. https://192.168.1.217:8008/api/v1/
 
-## deployment 
-The deployment configuration can be altered [here](src/DeployEnv.elm).
+## Production
 
-### other commands
+Build the application
+```bash
+SERVER_URL=$SERVER_URL elm-land build
+```
+`SERVER_URL`= Url of the backend host + api entrypoint e.g. https://192.168.1.217:8008/api/v1/
+
+Output is stored in the `dist/` directory.
+
+### Example with npm http-server
 
 ```bash
-elm-spa add    # add a new page to the application
-elm-spa build  # production build
-elm-spa watch  # runs build as you code (without the server)
+http-server dist/ --port 8080 -P "http://localhost:8080?" 
 ```
-
-## learn more
-
-You can learn more at [elm-spa.dev](https://elm-spa.dev)
