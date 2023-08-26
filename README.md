@@ -39,7 +39,7 @@ SERVER_URL=$SERVER_URL elm-land build
 
 Output is stored in the `dist/` directory.
 
-Better instruction on deployment can be found __[here](https://elm.land/guide/deploying.html#deploying-to-production)__ at the elm-land site.
+Better instructions on deployment can be found __[here](https://elm.land/guide/deploying.html#deploying-to-production)__ at the elm-land site.
 
 ### Example with npm http-server
 
