@@ -1,21 +1,20 @@
 module Pages.Main exposing (Model, Msg, page)
 
-import Gen.Params.Main exposing (Params)
 import Html
-import Page
+import Page exposing (Page)
 import RenderMain.Model exposing (init)
 import RenderMain.Msg
 import RenderMain.Subscription exposing (subscriptions)
 import RenderMain.Update exposing (update)
 import RenderMain.View exposing (view)
-import Request
+import Route exposing (Route)
 import Shared
 import View exposing (View)
 
 
-page : Shared.Model -> Request.With Params -> Page.With Model Msg
-page shared req =
-    Page.advanced
+page : Shared.Model -> Route () -> Page Model Msg
+page shared route =
+    Page.new
         { init = init shared
         , update = update
         , view = generateHtml "Main" view

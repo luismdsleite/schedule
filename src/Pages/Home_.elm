@@ -1,25 +1,23 @@
 module Pages.Home_ exposing (Model, Msg, page)
 
 import Decoders exposing (tokenParser)
-import DeployEnv exposing (serverUrl)
 import Effect exposing (Effect)
 import Encoders exposing (login)
-import Gen.Params.Login exposing (Params)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onClick, onInput)
 import Http
-import Page
-import Request
+import Page exposing (Page)
+import Route exposing (Route)
 import Shared
 import Url exposing (Protocol(..))
 import View exposing (View)
 
 
-page : Shared.Model -> Request.With Params -> Page.With Model Msg
-page shared req =
-    Page.advanced
-        { init = init
+page : Shared.Model -> Route () -> Page Model Msg
+page shared _ =
+    Page.new
+        { init = init shared.backendUrl
         , update = update
         , view = view
         , subscriptions = subscriptions
@@ -34,12 +32,13 @@ type alias Model =
     { username : String
     , password : String
     , error : String
+    , loginUrl : String
     }
 
 
-init : ( Model, Effect Msg )
-init =
-    ( { username = "", password = "", error = "" }, Effect.none )
+init : String -> () -> ( Model, Effect Msg )
+init loginUrl () =
+    ( { username = "", password = "", error = "", loginUrl=loginUrl }, Effect.none )
 
 
 
@@ -60,7 +59,7 @@ update msg model =
         GotToken result ->
             case result of
                 Ok token ->
-                    ( model, Effect.fromShared (Shared.GotToken token) )
+                    ( model, Effect.loadToken token )
 
                 Err err ->
                     ( { model | error = "Invalid username or password" }, Effect.none )
@@ -69,7 +68,7 @@ update msg model =
             ( { model | error = str }, Effect.none )
 
         SendLoginRequest username password ->
-            ( model, Effect.fromCmd (logIn username password) )
+            ( model, Effect.sendCmd (logIn username password model.loginUrl) )
 
         SetUsername username ->
             ( { model | username = username }, Effect.none )
@@ -121,12 +120,12 @@ view model =
     }
 
 
-logIn : String -> String -> Cmd Msg
-logIn username password =
+logIn : String -> String -> String-> Cmd Msg
+logIn username password url =
     Http.request
         { method = "POST"
         , headers = [ Http.header "Content-Type" "application/json" ]
-        , url = serverUrl ++ "login"
+        , url = url ++ "login"
         , body = Http.jsonBody (login username password)
         , expect = Http.expectJson GotToken tokenParser
         , timeout = Nothing

@@ -1,69 +1,89 @@
 module Shared exposing
-    ( Flags
-    , Model
-    , Msg(..)
-    , init
-    , subscriptions
-    , update
+    ( Flags, decoder
+    , Model, Msg
+    , init, update, subscriptions
     )
 
+{-|
+
+@docs Flags, decoder
+@docs Model, Msg
+@docs init, update, subscriptions
+
+-}
+
 import Dict
-import ElmSpa.Request exposing (Request)
-import Gen.Route
-import Json.Decode as Json
-import Request exposing (Request)
+import Effect exposing (Effect)
+import Json.Decode
+import Route exposing (Route)
+import Route.Path
 import ScheduleObjects.Data exposing (Data)
+import Shared.Model
+import Shared.Msg
+
+
+
+-- FLAGS
 
 
 type alias Flags =
-    Json.Value
+    { server_url : String }
+
+
+decoder : Json.Decode.Decoder Flags
+decoder =
+    Json.Decode.map Flags
+        (Json.Decode.field "server_url" Json.Decode.string)
+
+
+
+-- INIT
 
 
 type alias Model =
-    Data
+    Shared.Model.Model
 
 
-type Msg
-    = GotToken String
-    | LoadedData Data
+init : Result Json.Decode.Error Flags -> Route () -> ( Model, Effect Msg )
+init flagsResult route =
+    case flagsResult of
+        Ok flags ->
+            ( Data Dict.empty Dict.empty Dict.empty Dict.empty Dict.empty Dict.empty "" flags.server_url
+            , Effect.pushRoute { path = Route.Path.Home_, query = Dict.empty, hash = Nothing }
+            )
+
+        Err _ ->
+            ( Data Dict.empty Dict.empty Dict.empty Dict.empty Dict.empty Dict.empty "" ""
+            , Effect.pushRoute { path = Route.Path.Home_, query = Dict.empty, hash = Nothing }
+            )
 
 
-init : Request -> Flags -> ( Model, Cmd Msg )
-init req _ =
-    ( Data Dict.empty Dict.empty Dict.empty Dict.empty Dict.empty Dict.empty "", Request.pushRoute Gen.Route.Home_ req )
+
+-- UPDATE
 
 
+type alias Msg =
+    Shared.Msg.Msg
 
--- ( Data Dict.empty Dict.empty Dict.empty Dict.empty Dict.empty Dict.empty, Request.pushRoute Gen.Route.Home_ req )
 
-
-update : Request -> Msg -> Model -> ( Model, Cmd Msg )
-update req msg model =
+update : Route () -> Msg -> Model -> ( Model, Effect Msg )
+update route msg model =
     case msg of
-        GotToken token ->
-            ( { model | token = token }, Request.pushRoute Gen.Route.Load req )
+        Shared.Msg.GotToken token ->
+            ( { model | token = token }
+            , Effect.pushRoute { path = Route.Path.Load, query = Dict.empty, hash = Nothing }
+            )
 
-        LoadedData data ->
-            ( data, Request.pushRoute Gen.Route.Main req )
-
-
-
--- UpdateEventResult response ->
---     case response of
---         Ok ( id, updatedEvent ) ->
---             let
---                 newEvents =
---                     model.events |> Dict.insert id updatedEvent
---             in
---             ( { model | events = newEvents }, Cmd.none )
---         Err ( id, unmodifiedEvent ) ->
---             let
---                 newEvents =
---                     model.events |> Dict.insert id unmodifiedEvent
---             in
---             ( { model | events = newEvents }, Cmd.none )
+        Shared.Msg.GotData data ->
+            ( data
+            , Effect.pushRoute { path = Route.Path.Main, query = Dict.empty, hash = Nothing }
+            )
 
 
-subscriptions : Request -> Model -> Sub Msg
-subscriptions _ _ =
+
+-- SUBSCRIPTIONS
+
+
+subscriptions : Route () -> Model -> Sub Msg
+subscriptions route model =
     Sub.none

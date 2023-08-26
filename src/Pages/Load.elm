@@ -10,15 +10,13 @@ module Pages.Load exposing (Model, Msg, page)
 
 import Array exposing (Array)
 import Decoders exposing (blockParser, eventParser, lectParser, objectsToDictParser, occupationParser, restrictionParser, roomParser)
-import DeployEnv exposing (serverUrl)
 import Dict exposing (Dict)
 import Effect exposing (Effect)
-import Gen.Params.Home_ exposing (Params)
 import Html
 import Http
 import Json.Decode exposing (Decoder)
-import Page
-import Request
+import Page exposing (Page)
+import Route exposing (Route)
 import ScheduleObjects.Block exposing (Block)
 import ScheduleObjects.Data exposing (Data, Token)
 import ScheduleObjects.Event exposing (Event)
@@ -31,10 +29,10 @@ import Shared
 import View exposing (View)
 
 
-page : Shared.Model -> Request.With Params -> Page.With Model Msg
-page sharedModel _ =
-    Page.advanced
-        { init = init sharedModel.token
+page : Shared.Model -> Route () -> Page Model Msg
+page shared route =
+    Page.new
+        { init = init shared.backendUrl shared.token
         , update = update
         , view = view
         , subscriptions = subscriptions
@@ -58,18 +56,19 @@ type Model
 -- INIT
 
 
-init : Token -> ( Model, Effect Msg )
-init token =
+init : String -> Token -> () -> ( Model, Effect Msg )
+init backendUrl token () =
     let
         emptyData =
-            Data Dict.empty Dict.empty Dict.empty Dict.empty Dict.empty Dict.empty token
+            Data Dict.empty Dict.empty Dict.empty Dict.empty Dict.empty Dict.empty token backendUrl
 
         noneReceived =
             Array.fromList [ False, False, False, False, False, False ]
 
         getRequests =
-            List.map (\req -> req token)
+            List.map (\req -> req backendUrl)
                 [ getEvents, getLecturers, getRooms, getBlocks, getOccupations, getRestrictions ]
+                |> List.map (\req -> req token)
     in
     ( Loading emptyData noneReceived, Effect.batch getRequests )
 
@@ -218,15 +217,15 @@ update msg model =
                             ( Failed "Unable to load Restrictions", Effect.none )
 
         LoadedData data ->
-            ( model, Effect.fromShared (Shared.LoadedData data) )
+            ( model, Effect.loadData data )
 
 
-getResource : String -> Decoder a -> (Result Http.Error (Dict ID a) -> msg) -> Token -> Cmd msg
-getResource resource resourceParser resultToMsg token =
+getResource : String -> Decoder a -> (Result Http.Error (Dict ID a) -> msg) -> String -> Token -> Cmd msg
+getResource resource resourceParser resultToMsg backendUrl token =
     Http.request
         { method = "GET"
         , headers = [ Http.header "Authorization" ("Bearer " ++ token) ]
-        , url = serverUrl ++ resource
+        , url = backendUrl ++ resource
         , body = Http.emptyBody
         , expect = Http.expectJson resultToMsg (objectsToDictParser resourceParser)
         , timeout = Nothing
@@ -243,34 +242,34 @@ getResource resource resourceParser resultToMsg token =
 --         }
 
 
-getRooms : Token -> Effect Msg
-getRooms token =
-    Effect.fromCmd (getResource "rooms" roomParser GotRooms token)
+getRooms : String -> Token -> Effect Msg
+getRooms backendUrl token =
+    Effect.sendCmd (getResource "rooms" roomParser GotRooms backendUrl token)
 
 
-getLecturers : Token -> Effect Msg
-getLecturers token =
-    Effect.fromCmd (getResource "lecturers" lectParser GotLecturers token)
+getLecturers : String -> Token -> Effect Msg
+getLecturers backendUrl token =
+    Effect.sendCmd (getResource "lecturers" lectParser GotLecturers backendUrl token)
 
 
-getEvents : Token -> Effect Msg
-getEvents token =
-    Effect.fromCmd (getResource "events" eventParser GotEvents token)
+getEvents : String -> Token -> Effect Msg
+getEvents backendUrl token =
+    Effect.sendCmd (getResource "events" eventParser GotEvents backendUrl token)
 
 
-getBlocks : Token -> Effect Msg
-getBlocks token =
-    Effect.fromCmd (getResource "blocks" blockParser GotBlocks token)
+getBlocks : String -> Token -> Effect Msg
+getBlocks backendUrl token =
+    Effect.sendCmd (getResource "blocks" blockParser GotBlocks backendUrl token)
 
 
-getOccupations : Token -> Effect Msg
-getOccupations token =
-    Effect.fromCmd (getResource "occupations" occupationParser GotOccupations token)
+getOccupations : String -> Token -> Effect Msg
+getOccupations backendUrl token =
+    Effect.sendCmd (getResource "occupations" occupationParser GotOccupations backendUrl token)
 
 
-getRestrictions : Token -> Effect Msg
-getRestrictions token =
-    Effect.fromCmd (getResource "restrictions" restrictionParser GotRestrictions token)
+getRestrictions : String -> Token -> Effect Msg
+getRestrictions backendUrl token =
+    Effect.sendCmd (getResource "restrictions" restrictionParser GotRestrictions backendUrl token)
 
 
 

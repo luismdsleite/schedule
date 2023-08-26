@@ -1,7 +1,5 @@
 module Encoders exposing (..)
 
-import DeployEnv exposing (serverUrl)
-import Http
 import Json.Encode as Encode
 import ScheduleObjects.Event exposing (Event, EventID)
 import ScheduleObjects.Lecturer exposing (Lecturer, LecturerID)

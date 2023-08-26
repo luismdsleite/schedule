@@ -1,7 +1,6 @@
 module RenderMain.Update exposing (..)
 
 import Browser.Dom exposing (Error(..))
-import DeployEnv exposing (serverUrl)
 import Dict
 import DnD
 import Effect exposing (Effect)
@@ -86,7 +85,7 @@ update msg (Model data filters draggable eventToCheckRooms) =
                         --     Dict.insert eventID newEv data.events
                     in
                     -- ( Model { data | events = newEvents } filters draggable, Effect.none )
-                    ( Model data filters draggable eventToCheckRooms, Effect.fromCmd <| updateEvent ( eventID, newEv ) data.token )
+                    ( Model data filters draggable eventToCheckRooms, Effect.sendCmd <| updateEvent ( eventID, newEv ) data.backendUrl data.token  )
 
                 Nothing ->
                     ( Model data filters draggable eventToCheckRooms, Effect.none )
@@ -227,7 +226,7 @@ updateOnItemClick msg (Model data filters draggable eventToCheckRooms) =
                                 updatedEv =
                                     { event | room = Just roomId }
                             in
-                            Effect.fromCmd <| updateEvent ( evId, updatedEv ) data.token
+                            Effect.sendCmd <| updateEvent ( evId, updatedEv ) data.backendUrl data.token
 
                         Nothing ->
                             Effect.none
@@ -239,12 +238,12 @@ updateOnItemClick msg (Model data filters draggable eventToCheckRooms) =
 ------------------------ HTTP ------------------------
 
 
-updateEvent : ( EventID, Event ) -> Token -> Cmd Msg
-updateEvent ( id, event ) token =
+updateEvent : ( EventID, Event ) -> String ->  Token -> Cmd Msg
+updateEvent ( id, event ) backendUrl token =
     Http.request
         { method = "PUT"
         , headers = [ Http.header "Authorization" ("Bearer " ++ token), Http.header "Content-Type" "application/json" ]
-        , url = serverUrl ++ "events\\" ++ String.fromInt id
+        , url = backendUrl ++ "events\\" ++ String.fromInt id
         , body = Http.jsonBody (Encoders.putEvent ( id, event ))
         , expect = Http.expectWhatever (handleResponse ( id, event ))
         , timeout = Nothing

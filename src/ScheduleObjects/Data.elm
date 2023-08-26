@@ -22,4 +22,5 @@ type alias Data =
     , occupations : Dict OccupationID Occupation
     , restrictions : Dict RestrictionID Restriction
     , token : Token
+    , backendUrl : String
     }

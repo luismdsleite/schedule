@@ -18,10 +18,6 @@ import ScheduleObjects.WeekTimeConverters exposing (..)
 renderSchedule : Int -> Draggable -> List ( EventID, Event ) -> List ( OccupationID, Occupation ) -> List ( RestrictionID, Restriction ) -> String -> Html Msg
 renderSchedule tableWidth draggable events occupations restrictions title =
     let
-        -- nothing22 =
-        --     Debug.log "--------------" title
-        -- nothing33 =
-        --     Debug.log "List of (ID,Event)" events
         widthStr =
             String.append (tableWidth |> String.fromInt) "%"
 

@@ -39,7 +39,7 @@ view (Model data filters draggable eventToCheckRooms) =
 
         displayOnDrag : ID -> Html Msg
         displayOnDrag id =
-            div [] [ id |> Debug.toString |> text ]
+            div [] [ id |> String.fromInt |> text ]
     in
     div []
         [ div [ class "listbox-area" ]

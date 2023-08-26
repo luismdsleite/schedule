@@ -22,8 +22,8 @@ type Model
     = Model Data ScheduleFilter Draggable ( EventID, Event )
 
 
-init : Data -> ( Model, Effect Msg )
-init data =
+init : Data -> () -> ( Model, Effect Msg )
+init data () =
     ( Model data
         (ScheduleFilter (\_ _ -> False) (\_ _ -> False) (\_ _ -> False) (\_ _ -> False) (\_ _ -> False) "" "" "")
         dnd.model

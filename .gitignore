@@ -1,6 +1,7 @@
+/dist
+/.elm-land
+/.env
+/elm-stuff
+/node_modules
 .DS_Store
-.elm-spa
-elm-stuff
-node_modules
-dist
-
+*.pem
