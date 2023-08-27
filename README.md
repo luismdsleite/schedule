@@ -19,8 +19,7 @@ This repository contains only the frontend of the application, the backend can b
 
 [![elm](https://img.shields.io/badge/Elm-0.19.1-brightgreen.svg)](https://elm-lang.org/)
 
-__[elm-land](https://github.com/elm-land)__ 
- 
+[![elm-land](https://img.shields.io/badge/elm--land-0.19.2-brightgreen.svg)](https://github.com/elm-land)
 
 ## Dev Server
 
