@@ -6,18 +6,9 @@ This repository contains only the frontend of the application, the backend can b
 
 ![screenshot](./images/screenshot.png)
 
-## Table Of Contents
-- [schedule](#schedule)
-  - [Table Of Contents](#table-of-contents)
-  - [Dependencies](#dependencies)
-  - [Dev Server](#dev-server)
-  - [Production](#production)
-    - [Example with npm http-server](#example-with-npm-http-server)
-
-
 ## Dependencies
 
-[![elm](https://img.shields.io/badge/Elm-0.19.1-brightgreen.svg)](https://elm-lang.org/)
+[![elm](https://img.shields.io/badge/Elm-0.19.1-brightgreen.svg?logo=elm)](https://elm-lang.org/)
 
 [![elm-land](https://img.shields.io/badge/elm--land-0.19.2-brightgreen.svg)](https://github.com/elm-land)
 
