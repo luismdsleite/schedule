@@ -38,7 +38,7 @@ type alias Model =
 
 init : String -> () -> ( Model, Effect Msg )
 init loginUrl () =
-    ( { username = "", password = "", error = "", loginUrl=loginUrl }, Effect.none )
+    ( { username = "", password = "", error = "", loginUrl = loginUrl }, Effect.none )
 
 
 
@@ -113,14 +113,14 @@ view model =
                     ]
                 ]
             , div [ class "text-center" ]
-                [ button [ class "btn btn-link", onClick (SendLoginRequest model.username model.password) ] [ text "Register" ]
+                [ button [ class "btn btn-link", onClick (SendLoginRequest model.username model.password) ] [ text "Login" ]
                 ]
             ]
         ]
     }
 
 
-logIn : String -> String -> String-> Cmd Msg
+logIn : String -> String -> String -> Cmd Msg
 logIn username password url =
     Http.request
         { method = "POST"
