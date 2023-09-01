@@ -47,7 +47,7 @@ view (Model data filters draggable eventToCheckRooms) =
             , renderLecturers data.lecturers
             , renderRooms data.rooms
             , renderEvents (Dict.toList data.events) data.rooms data.lecturers
-            , renderAvailableRooms eventToCheckRooms data.rooms (Dict.values data.events)
+            , renderAvailableRooms eventToCheckRooms data.rooms (Dict.values data.events) (Dict.values data.occupations)
             ]
         , div [ class "grids-container" ] [ renderScheduleAbbr blockList [] [] ("Bloco:" ++ filters.blockName), renderScheduleAbbr roomList occupationsList [] ("Sala:" ++ filters.roomName), renderScheduleAbbr lectList [] restrictionList ("Docente:" ++ filters.lectName) ]
         , DnD.dragged

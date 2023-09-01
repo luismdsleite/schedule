@@ -12,6 +12,7 @@ import RenderMain.Msg exposing (Msg(..), OnItemClick(..))
 import ScheduleObjects.Block exposing (Block, BlockID)
 import ScheduleObjects.Event exposing (Event, EventID)
 import ScheduleObjects.Lecturer exposing (Lecturer, LecturerID)
+import ScheduleObjects.Occupation exposing (Occupation)
 import ScheduleObjects.Room exposing (Room, RoomID)
 import ScheduleObjects.WeekTime exposing (WeekTime)
 import ScheduleObjects.WeekTimeConverters exposing (..)
@@ -138,8 +139,8 @@ renderBlock ( id, block ) =
 
 {-| Given a certain event, a list of all rooms and a list of all events, it returns what rooms are available to host that event.
 -}
-renderAvailableRooms : ( EventID, Event ) -> Dict RoomID Room -> List Event -> Html Msg
-renderAvailableRooms ( eventId, event ) rooms events =
+renderAvailableRooms : ( EventID, Event ) -> Dict RoomID Room -> List Event -> List Occupation -> Html Msg
+renderAvailableRooms ( eventId, event ) rooms events occupations =
     let
         timeslots =
             case event.start_time of
@@ -163,6 +164,11 @@ renderAvailableRooms ( eventId, event ) rooms events =
                 eventsOfRoom =
                     List.filter (\ev -> ev.room == Just roomId) events
 
+                occupationsOfRoom : List Occupation
+                occupationsOfRoom =
+                    List.filter (\occ -> occ.room == roomId) occupations
+
+                -- Checks if a certain time slot is occupied by an event or an occupation
                 isTimeSlotOccupied : WeekTime -> Bool
                 isTimeSlotOccupied tslot =
                     List.any
@@ -182,6 +188,9 @@ renderAvailableRooms ( eventId, event ) rooms events =
                                     False
                         )
                         eventsOfRoom
+                        || List.any
+                            (\occ -> weekTimeIsBetween tslot ( occ.start_time, occ.end_time ))
+                            occupationsOfRoom
             in
             List.all (not << isTimeSlotOccupied) timeslots
 
