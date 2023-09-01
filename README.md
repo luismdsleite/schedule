@@ -36,3 +36,4 @@ Better instructions on deployment can be found __[here](https://elm.land/guide/d
 ```bash
 http-server dist/ --port 8080 -P "http://localhost:8080?" 
 ```
+NOTE: All Elm Land apps are compiled as "single-page applications" in the dist folder. This means no matter what page is requested, that request will need to be directed to a single file: `dist/index.html`. In this example this is done with the `-P` flag.	
