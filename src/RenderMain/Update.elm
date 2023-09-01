@@ -85,7 +85,7 @@ update msg (Model data filters draggable eventToCheckRooms) =
                         --     Dict.insert eventID newEv data.events
                     in
                     -- ( Model { data | events = newEvents } filters draggable, Effect.none )
-                    ( Model data filters draggable eventToCheckRooms, Effect.sendCmd <| updateEvent ( eventID, newEv ) data.backendUrl data.token  )
+                    ( Model data filters draggable eventToCheckRooms, Effect.sendCmd <| updateEvent ( eventID, newEv ) data.backendUrl data.token )
 
                 Nothing ->
                     ( Model data filters draggable eventToCheckRooms, Effect.none )
@@ -96,8 +96,16 @@ update msg (Model data filters draggable eventToCheckRooms) =
                     let
                         newEvents =
                             Dict.insert evID ev data.events
+
+                        updatedEventToCheckRooms =
+                            -- If the timeslots for the event we are searching for available rooms are modified, we must update the 'eventToCheckRooms' variable.
+                            if Tuple.first eventToCheckRooms == evID then
+                                ( evID, ev )
+
+                            else
+                                eventToCheckRooms
                     in
-                    ( Model { data | events = newEvents } filters draggable eventToCheckRooms, Effect.none )
+                    ( Model { data | events = newEvents } filters draggable updatedEventToCheckRooms, Effect.none )
 
                 Err _ ->
                     ( Model data filters draggable eventToCheckRooms, Effect.none )
@@ -238,7 +246,7 @@ updateOnItemClick msg (Model data filters draggable eventToCheckRooms) =
 ------------------------ HTTP ------------------------
 
 
-updateEvent : ( EventID, Event ) -> String ->  Token -> Cmd Msg
+updateEvent : ( EventID, Event ) -> String -> Token -> Cmd Msg
 updateEvent ( id, event ) backendUrl token =
     Http.request
         { method = "PUT"
