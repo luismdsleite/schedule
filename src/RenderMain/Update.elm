@@ -63,19 +63,19 @@ update msg (Model data filters draggable eventToCheckRooms) =
                         newEndTime =
                             --| Target slot is of the format "xx:30" and the event occupies an EVEN number of slots.
                             if weekTime.minute == 30 && (modBy 2 slotsOccupied == 0) then
-                                WeekTime startingTime.weekday (weekTime.hour + (slotsOccupied // 2)) 30
+                                WeekTime weekTime.weekday (weekTime.hour + (slotsOccupied // 2)) 30
 
                             else if weekTime.minute == 30 && (modBy 2 slotsOccupied == 1) then
                                 -- Target slot is of the format "xx:30" and the event occupies an ODD number of slots.
-                                WeekTime startingTime.weekday (weekTime.hour + (slotsOccupied // 2) + 1) 0
+                                WeekTime weekTime.weekday (weekTime.hour + (slotsOccupied // 2) + 1) 0
 
                             else if weekTime.minute == 0 && (modBy 2 slotsOccupied == 0) then
                                 -- Target slot is of the format "xx:00" and the event occupies an EVEN number of slots.
-                                WeekTime startingTime.weekday (weekTime.hour + (slotsOccupied // 2)) 0
+                                WeekTime weekTime.weekday (weekTime.hour + (slotsOccupied // 2)) 0
 
                             else
                                 -- Target slot is of the format "xx:00" and the event occupies an ODD number of slots.
-                                WeekTime startingTime.weekday (weekTime.hour + (slotsOccupied // 2)) 30
+                                WeekTime weekTime.weekday (weekTime.hour + (slotsOccupied // 2)) 30
 
                         newEv =
                             -- { ev | start_time = Just weekTime }
