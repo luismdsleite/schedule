@@ -3,7 +3,6 @@
 // The value returned here will be passed as flags 
 // into your `Shared.init` function.
 export const flags = ({ env }) => {
-    console.log(env)
     return {
         server_url: env.SERVER_URL
     }
