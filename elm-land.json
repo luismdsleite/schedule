@@ -40,6 +40,10 @@
         {
           "rel": "stylesheet",
           "href": "/main.css"
+        },
+        {
+          "rel": "stylesheet",
+          "href": "/icons.css"
         }
       ],
       "script": []

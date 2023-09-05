@@ -1,36 +1,53 @@
-module Encoders exposing (..)
+module Encoders exposing (login, putEvent, putLecturer, putRoom)
 
 import Json.Encode as Encode
 import ScheduleObjects.Event exposing (Event, EventID)
+import ScheduleObjects.Id exposing (ID)
 import ScheduleObjects.Lecturer exposing (Lecturer, LecturerID)
 import ScheduleObjects.Room exposing (Room, RoomID)
 import ScheduleObjects.WeekTimeConverters exposing (weekdayToNumber)
 
 
-putRoom : ( RoomID, Room ) -> Encode.Value
-putRoom ( id, room ) =
-    Encode.object
-        [ ( "Id", Encode.int id )
-        , ( "Hide", Encode.int 0 )
-        , ( "Name", Encode.string room.name )
-        , ( "NameAbbr", Encode.string room.abbr )
-        , ( "Number", Encode.string room.number )
-        ]
+idProperty : Maybe ID -> List ( String, Encode.Value )
+idProperty maybeId =
+    case maybeId of
+        Just id ->
+            [ ( "Id", Encode.int id ) ]
+
+        Nothing ->
+            []
 
 
-putLecturer : ( LecturerID, Lecturer ) -> Encode.Value
-putLecturer ( id, lect ) =
-    Encode.object
-        [ ( "Id", Encode.int id )
-        , ( "Hide", Encode.int 0 )
-        , ( "Name", Encode.string lect.name )
-        , ( "NameAbbr", Encode.string lect.abbr )
-        , ( "Number", Encode.string lect.office )
-        ]
+{-| Encoder for a Room. Can optionally also encode a RoomID
+-}
+putRoom : Maybe RoomID -> Room -> Encode.Value
+putRoom maybeId room =
+    Encode.object <|
+        idProperty maybeId
+            ++ [ ( "Hide", Encode.int 0 )
+               , ( "Name", Encode.string room.name )
+               , ( "NameAbbr", Encode.string room.abbr )
+               , ( "Number", Encode.string room.number )
+               ]
 
 
-putEvent : ( EventID, Event ) -> Encode.Value
-putEvent ( id, event ) =
+{-| Encoder for a Lecturer. Can optionally also encode a LecturerID
+-}
+putLecturer : Maybe LecturerID -> Lecturer -> Encode.Value
+putLecturer maybeId lect =
+    Encode.object <|
+        idProperty maybeId
+            ++ [ ( "Hide", Encode.int 0 )
+               , ( "Name", Encode.string lect.name )
+               , ( "NameAbbr", Encode.string lect.abbr )
+               , ( "Number", Encode.string lect.office )
+               ]
+
+
+{-| Encoder for an Event. Can optionally also encode an EventID
+-}
+putEvent : Maybe EventID -> Event -> Encode.Value
+putEvent maybeId event =
     let
         nullInCaseOfNothing funct maybe =
             case maybe of
@@ -56,17 +73,17 @@ putEvent ( id, event ) =
                 Nothing ->
                     Encode.null
     in
-    Encode.object
-        [ ( "Id", Encode.int id )
-        , ( "Hide", Encode.int 0 )
-        , ( "RoomId", nullInCaseOfNothing Encode.int event.room )
-        , ( "LecturerId", nullInCaseOfNothing Encode.int event.lecturer )
-        , ( "Subject", Encode.string event.subject )
-        , ( "SubjectAbbr", Encode.string event.subjectAbbr )
-        , ( "StartTime", convertToTime event.start_time )
-        , ( "EndTime", convertToTime event.end_time )
-        , ( "WeekDay", weekDay )
-        ]
+    Encode.object <|
+        idProperty maybeId
+            ++ [ ( "Hide", Encode.int 0 )
+               , ( "RoomId", nullInCaseOfNothing Encode.int event.room )
+               , ( "LecturerId", nullInCaseOfNothing Encode.int event.lecturer )
+               , ( "Subject", Encode.string event.subject )
+               , ( "SubjectAbbr", Encode.string event.subjectAbbr )
+               , ( "StartTime", convertToTime event.start_time )
+               , ( "EndTime", convertToTime event.end_time )
+               , ( "WeekDay", weekDay )
+               ]
 
 
 login : String -> String -> Encode.Value

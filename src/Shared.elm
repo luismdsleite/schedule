@@ -79,6 +79,23 @@ update route msg model =
             , Effect.pushRoute { path = Route.Path.Main, query = Dict.empty, hash = Nothing }
             )
 
+        Shared.Msg.UpdateData req maybeRoute ->
+            let
+                effect =
+                    case maybeRoute of
+                        Just r ->
+                            Effect.pushRoute r
+
+                        Nothing ->
+                            Effect.none
+            in
+            case req of
+                Shared.Msg.UpdateEvent ( evID, ev ) ->
+                    ( { model | events = Dict.insert evID ev model.events }
+                    , effect
+                      -- , Effect.pushRoute { path = route.path, query = Dict.insert "teste1" "teste" Dict.empty, hash = Nothing }
+                    )
+
 
 
 -- SUBSCRIPTIONS

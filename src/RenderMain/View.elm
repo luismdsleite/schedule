@@ -12,12 +12,12 @@ import ScheduleObjects.Id exposing (ID)
 
 
 view : Model -> Html Msg
-view (Model data filters draggable eventToCheckRooms) =
+view (Model data filters draggable selectedItems) =
     let
         tableWidth =
             90 / (3 |> toFloat) |> floor
 
-        -- To shorten the function call
+        -- To shorten the function call;
         renderScheduleAbbr =
             renderSchedule tableWidth draggable
 
@@ -46,8 +46,8 @@ view (Model data filters draggable eventToCheckRooms) =
             [ renderBlocks data.blocks
             , renderLecturers data.lecturers
             , renderRooms data.rooms
-            , renderEvents (Dict.toList data.events) data.rooms data.lecturers
-            , renderAvailableRooms eventToCheckRooms data.rooms (Dict.values data.events) (Dict.values data.occupations)
+            , renderEvents (Dict.toList data.events) data.rooms data.lecturers selectedItems.event
+            , renderAvailableRooms selectedItems.event data.rooms (Dict.values data.events) (Dict.values data.occupations)
             ]
         , div [ class "grids-container" ] [ renderScheduleAbbr blockList [] [] ("Bloco:" ++ filters.blockName), renderScheduleAbbr roomList occupationsList [] ("Sala:" ++ filters.roomName), renderScheduleAbbr lectList [] restrictionList ("Docente:" ++ filters.lectName) ]
         , DnD.dragged

@@ -8,7 +8,7 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Attributes.Aria exposing (ariaLabel)
 import Html.Events exposing (onClick)
-import RenderMain.Msg exposing (Msg(..), OnItemClick(..))
+import RenderMain.Msg exposing (EditMenu(..), Msg(..), OnItemClick(..))
 import ScheduleObjects.Block exposing (Block, BlockID)
 import ScheduleObjects.Event exposing (Event, EventID)
 import ScheduleObjects.Lecturer exposing (Lecturer, LecturerID)
@@ -38,12 +38,24 @@ blockTupleComparator ( _, block1 ) ( _, block2 ) =
     compare block1.nameAbbr block2.nameAbbr
 
 
-{-| Renders all the events into a list
+{-| Renders all the events into a list.
+
+TODO: add remove icon, div [ class "gg-remove" ]
+
 -}
-renderEvents : List ( Int, Event ) -> Dict RoomID Room -> Dict LecturerID Lecturer -> Html Msg
-renderEvents events rooms lecturers =
-    ul [ ariaLabel "Cadeiras", class "list custom-scrollbar" ]
-        (List.map (renderEvent rooms lecturers) (List.sortWith eventTupleComparator events))
+renderEvents : List ( Int, Event ) -> Dict RoomID Room -> Dict LecturerID Lecturer -> Maybe ( EventID, Event ) -> Html Msg
+renderEvents events rooms lecturers selectedEvent =
+    let
+        modifyIcon =
+            case selectedEvent of
+                Just ( id, _ ) ->
+                    div [ class "gg-pen", onClick (EditMenu (EditEvent id)) ] []
+
+                Nothing ->
+                    div [ style "display" "none" ] []
+    in
+    ul [ class "list custom-scrollbar" ]
+        (ul [ ariaLabel "Cadeiras", class "list-title" ] [ modifyIcon, div [ class "gg-add" ] [] ] :: List.map (renderEvent rooms lecturers) (List.sortWith eventTupleComparator events))
 
 
 {-| Transforms an event into a list item
@@ -81,18 +93,20 @@ renderEvent rooms lecturers ( eventID, event ) =
                 Nothing ->
                     Lecturer "----" "----" [] [] [] ""
     in
-    li [ class "list-item", onClick (ItemClick (OnEventClick eventID)) ]
+    li [ class "list-item", onClick (ItemClick (OnEventClick ( eventID, event ))) ]
         [ div [ class "custom-scrollbar", class "list-text", style "width" "10%", attribute "title" event.subjectAbbr ] [ text event.subjectAbbr ]
-        , div [ class "custom-scrollbar", class "list-text", style "width" "35%", attribute "title" event.subject ] [ text event.subject ]
-        , div [ class "custom-scrollbar", class "list-text", style "width" "5%" ] [ text (convertWeekDay event.start_time) ]
-        , div [ class "custom-scrollbar", class "list-text", style "width" "10%" ] [ text (convertWeekTimeHourAndMinute event.start_time) ]
-        , div [ class "custom-scrollbar", class "list-text", style "width" "10%" ] [ text (convertWeekTimeHourAndMinute event.end_time) ]
-        , div [ class "custom-scrollbar", class "list-text", style "width" "10%", attribute "title" room.abbr ] [ text room.abbr ]
-        , div [ class "custom-scrollbar", class "list-text", style "width" "10%" ] [ text (String.fromInt room.capacity) ]
-        , div [ class "custom-scrollbar", class "list-text", style "width" "10%" ] [ text lecturer.abbr ]
+        , div [ class "custom-scrollbar", class "list-text", style "width" "35%", attribute "title" event.subject, style "margin-left" "1%" ] [ text event.subject ]
+        , div [ class "custom-scrollbar", class "list-text", style "width" "5%", style "margin-left" "1%" ] [ text (convertWeekDay event.start_time) ]
+        , div [ class "custom-scrollbar", class "list-text", style "width" "10%", style "margin-left" "1%" ] [ text (convertWeekTimeHourAndMinute event.start_time) ]
+        , div [ class "custom-scrollbar", class "list-text", style "width" "10%", style "margin-left" "1%" ] [ text (convertWeekTimeHourAndMinute event.end_time) ]
+        , div [ class "custom-scrollbar", class "list-text", style "width" "15%", attribute "title" room.abbr, style "margin-left" "1%" ] [ text room.abbr ]
+        , div [ class "custom-scrollbar", class "list-text", style "width" "5%", style "margin-left" "1%" ] [ text (String.fromInt room.capacity) ]
+        , div [ class "custom-scrollbar", class "list-text", style "width" "10%", style "margin-left" "1%" ] [ text lecturer.abbr ]
         ]
 
 
+{-| TODO: ADD ⚠️ emote to rooms with conflicts
+-}
 renderRooms : Dict RoomID Room -> Html Msg
 renderRooms rooms =
     let
@@ -105,9 +119,11 @@ renderRooms rooms =
 
 renderRoom : ( Int, Room ) -> Html Msg
 renderRoom ( int, room ) =
-    li [ class "list-item", onClick (ItemClick (OnRoomClick int)), attribute "title" room.name ] [ div [ class "custom-scrollbar", class "list-text" ] [ text room.abbr ] ]
+    li [ class "list-item", onClick (ItemClick (OnRoomClick ( int, room ))), attribute "title" room.name ] [ div [ class "custom-scrollbar", class "list-text" ] [ text room.abbr ] ]
 
 
+{-| TODO: ADD ⚠️ emote to lecturers with conflicts
+-}
 renderLecturers : Dict LecturerID Lecturer -> Html Msg
 renderLecturers lecturers =
     let
@@ -120,7 +136,7 @@ renderLecturers lecturers =
 
 renderLecturer : ( Int, Lecturer ) -> Html Msg
 renderLecturer ( int, lecturer ) =
-    li [ class "list-item", onClick (ItemClick (OnLecturerClick int)), attribute "title" lecturer.name ] [ div [ class "custom-scrollbar", class "list-text" ] [ text lecturer.abbr ] ]
+    li [ class "list-item", onClick (ItemClick (OnLecturerClick ( int, lecturer ))), attribute "title" lecturer.name ] [ div [ class "custom-scrollbar", class "list-text" ] [ text lecturer.abbr ] ]
 
 
 renderBlocks : Dict BlockID Block -> Html Msg
@@ -137,10 +153,20 @@ renderBlock ( id, block ) =
     li [ class "list-item", onClick (ItemClick (OnBlockClick ( id, block ))), attribute "title" block.name ] [ div [ class "custom-scrollbar", class "list-text" ] [ text block.nameAbbr ] ]
 
 
+renderAvailableRooms : Maybe ( EventID, Event ) -> Dict RoomID Room -> List Event -> List Occupation -> Html Msg
+renderAvailableRooms maybe rooms events occupations =
+    case maybe of
+        Just ( eventId, event ) ->
+            renderAvailableRooms_ ( eventId, event ) rooms events occupations
+
+        Nothing ->
+            ul [ ariaLabel "Salas Livres", class "list custom-scrollbar" ] []
+
+
 {-| Given a certain event, a list of all rooms and a list of all events, it returns what rooms are available to host that event.
 -}
-renderAvailableRooms : ( EventID, Event ) -> Dict RoomID Room -> List Event -> List Occupation -> Html Msg
-renderAvailableRooms ( eventId, event ) rooms events occupations =
+renderAvailableRooms_ : ( EventID, Event ) -> Dict RoomID Room -> List Event -> List Occupation -> Html Msg
+renderAvailableRooms_ ( eventId, event ) rooms events occupations =
     let
         timeslots =
             case event.start_time of
@@ -197,10 +223,10 @@ renderAvailableRooms ( eventId, event ) rooms events occupations =
         availableRooms =
             Dict.filter isRoomAvailable rooms |> Dict.toList |> List.sortWith roomTupleComparator
     in
-    ul [ ariaLabel ("Salas Lives para " ++ event.subjectAbbr), class "list custom-scrollbar" ]
+    ul [ ariaLabel ("Salas Livres para " ++ event.subjectAbbr), class "list custom-scrollbar" ]
         (List.map (renderAvailableRoom eventId) availableRooms)
 
 
 renderAvailableRoom : EventID -> ( RoomID, Room ) -> Html Msg
 renderAvailableRoom evId ( roomId, room ) =
-    li [ class "list-item", onClick (ItemClick (ChangeEventRoomClick evId roomId)), attribute "title" room.name ] [ div [ class "custom-scrollbar", class "list-text" ] [ text room.abbr ] ]
+    li [ class "list-item", onClick (ItemClick (ChangeEventRoomClick evId roomId)), attribute "title" room.name ] [ div [ class "custom-scrollbar", class "list-text" ] [ text (room.abbr ++ "\t(" ++ String.fromInt room.capacity ++ ")") ] ]

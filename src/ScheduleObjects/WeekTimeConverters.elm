@@ -51,6 +51,16 @@ toPortugueseWeekday weekday =
             "Dom"
 
 
+toPortugueseMaybeWeekday : Maybe Time.Weekday -> String
+toPortugueseMaybeWeekday weekday =
+    case weekday of
+        Nothing ->
+            "-----"
+
+        Just val ->
+            toPortugueseWeekday val
+
+
 toCssClassWeekDay : Time.Weekday -> String
 toCssClassWeekDay weekday =
     case weekday of
@@ -76,13 +86,6 @@ toCssClassWeekDay weekday =
             "sun"
 
 
-{-| The Hours and Minutes are represented as an `Int` as part of the `WeekTime` record. This function converts them into a `String`
-
-    convertHourAndMinute 9 0 == "09:00"
-
-    convertHourAndMinute 10 30 == "10:30"
-
--}
 convertWeekTimeHourAndMinute : Maybe WeekTime -> String
 convertWeekTimeHourAndMinute time =
     case time of
@@ -93,6 +96,13 @@ convertWeekTimeHourAndMinute time =
             convertHourAndMinute val.hour val.minute
 
 
+{-| The Hours and Minutes are represented as an `Int` as part of the `WeekTime` record. This function converts them into a `String`
+
+    convertHourAndMinute 9 0 == "09:00"
+
+    convertHourAndMinute 10 30 == "10:30"
+
+-}
 convertHourAndMinute : Int -> Int -> String
 convertHourAndMinute hour minute =
     let

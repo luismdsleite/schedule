@@ -4,7 +4,7 @@ module Effect exposing
     , sendCmd, sendMsg
     , pushRoute, replaceRoute, loadExternalUrl
     , map, toCmd
-    , loadData, loadToken
+    , loadData, loadToken, updateEvent
     )
 
 {-|
@@ -23,6 +23,7 @@ import Dict exposing (Dict)
 import Route exposing (Route)
 import Route.Path
 import ScheduleObjects.Data exposing (Data)
+import ScheduleObjects.Event exposing (Event, EventID)
 import Shared.Model
 import Shared.Msg
 import Task
@@ -189,3 +190,18 @@ loadToken token =
 loadData : Data -> Effect msg
 loadData data =
     SendSharedMsg (Shared.Msg.GotData data)
+
+
+{-| Update an event in the shared model. Optionally you can also give a route to go into (Effect.pushRoute) after the event has been updated.
+-}
+updateEvent :
+    ( EventID, Event )
+    ->
+        Maybe
+            { path : Route.Path.Path
+            , query : Dict String String
+            , hash : Maybe String
+            }
+    -> Effect msg
+updateEvent ( evID, ev ) maybeRoute =
+    SendSharedMsg (Shared.Msg.UpdateData (Shared.Msg.UpdateEvent ( evID, ev )) maybeRoute)
