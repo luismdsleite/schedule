@@ -284,6 +284,18 @@ updateOnMenuEdit msg (Model data filters draggable selectedItems) =
         EditBlock blockID ->
             ( Model data filters draggable selectedItems, Effect.none )
 
+        AddEvent ->
+            ( Model data filters draggable selectedItems, Effect.pushRoute { path = Route.Path.AddEvent, query = Dict.empty, hash = Nothing } )
+
+        AddLect ->
+            ( Model data filters draggable selectedItems, Effect.none )
+
+        AddRoom ->
+            ( Model data filters draggable selectedItems, Effect.none )
+
+        AddBlock ->
+            ( Model data filters draggable selectedItems, Effect.none )
+
 
 
 ------------------------ HTTP ------------------------

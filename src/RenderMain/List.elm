@@ -55,7 +55,7 @@ renderEvents events rooms lecturers selectedEvent =
                     div [ style "display" "none" ] []
     in
     ul [ class "list custom-scrollbar" ]
-        (ul [ ariaLabel "Cadeiras", class "list-title" ] [ modifyIcon, div [ class "gg-add" ] [] ] :: List.map (renderEvent rooms lecturers) (List.sortWith eventTupleComparator events))
+        (ul [ ariaLabel "Cadeiras", class "list-title" ] [ modifyIcon, div [ class "gg-add", onClick (EditMenu AddEvent) ] [] ] :: List.map (renderEvent rooms lecturers) (List.sortWith eventTupleComparator events))
 
 
 {-| Transforms an event into a list item

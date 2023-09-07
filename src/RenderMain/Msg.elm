@@ -54,6 +54,10 @@ TODO: add this to the Msg type
 -}
 type EditMenu
     = EditEvent EventID
+    | AddEvent
     | EditRoom RoomID
+    | AddRoom
     | EditLect LecturerID
+    | AddLect
     | EditBlock BlockID
+    | AddBlock
