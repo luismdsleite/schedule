@@ -5,7 +5,7 @@ import ScheduleObjects.Event exposing (Event, EventID)
 import ScheduleObjects.Id exposing (ID)
 import ScheduleObjects.Lecturer exposing (Lecturer, LecturerID)
 import ScheduleObjects.Room exposing (Room, RoomID)
-import ScheduleObjects.WeekTimeConverters exposing (weekdayToNumber)
+import ScheduleObjects.WeekTimeConverters exposing (convertHourAndMinute, weekdayToNumber)
 
 
 idProperty : Maybe ID -> List ( String, Encode.Value )
@@ -68,7 +68,7 @@ putEvent maybeId event =
         convertToTime time =
             case time of
                 Just v ->
-                    Encode.string (String.fromInt v.hour ++ ":" ++ String.fromInt v.minute)
+                    Encode.string (convertHourAndMinute v.hour v.minute)
 
                 Nothing ->
                     Encode.null
