@@ -317,13 +317,13 @@ view : Model -> View Msg
 view (Model data ( evId, ev ) weekdayList hourStartList hourEndList roomList lectList) =
     { title = "Edit Event"
     , body =
-        [ input [ class "input-box", style "width" "100%", value ev.subjectAbbr, onInput SubjectAbbrChange ] []
-        , input [ class "input-box", style "width" "100%", value ev.subject, onInput SubjectChange ] []
+        [ input [ class "input-box", style "width" "100%", value ev.subjectAbbr, onInput SubjectAbbrChange, Html.Attributes.placeholder "Abbreviatura" ] []
+        , input [ class "input-box", style "width" "100%", value ev.subject, onInput SubjectChange, Html.Attributes.placeholder "Nome Da Cadeira" ] []
         , div [ style "width" "100%", style "display" "grid", style "grid-template-columns" "95% 5%" ] [ Html.map SelectWeekday (Html.Styled.toUnstyled <| renderWeekdaySelect weekdayList), div [ class "gg-remove", onClick ClearTime ] [] ]
-        , Html.map SelectStartHour (Html.Styled.toUnstyled <| renderHourSelect hourStartList)
-        , Html.map SelectEndHour (Html.Styled.toUnstyled <| renderHourSelect hourEndList)
-        , div [ style "width" "100%", style "display" "grid", style "grid-template-columns" "95% 5%" ] [ Html.map SelectRoom (Html.Styled.toUnstyled <| renderAbbrSelect roomList data.rooms), div [ class "gg-remove", onClick ClearRoom ] [] ]
-        , div [ style "width" "100%", style "display" "grid", style "grid-template-columns" "95% 5%" ] [ Html.map SelectLect (Html.Styled.toUnstyled <| renderAbbrSelect lectList data.lecturers), div [ class "gg-remove", onClick ClearLect ] [] ]
+        , Html.map SelectStartHour (Html.Styled.toUnstyled <| renderHourSelect hourStartList "Hora de Início")
+        , Html.map SelectEndHour (Html.Styled.toUnstyled <| renderHourSelect hourEndList "Hora de Fim")
+        , div [ style "width" "100%", style "display" "grid", style "grid-template-columns" "95% 5%" ] [ Html.map SelectRoom (Html.Styled.toUnstyled <| renderAbbrSelect roomList data.rooms "Sala" ), div [ class "gg-remove", onClick ClearRoom ] [] ]
+        , div [ style "width" "100%", style "display" "grid", style "grid-template-columns" "95% 5%" ] [ Html.map SelectLect (Html.Styled.toUnstyled <| renderAbbrSelect lectList data.lecturers "Docente" ), div [ class "gg-remove", onClick ClearLect ] [] ]
         , button [ style "margin-right" "2%", class "button", onClick Return ] [ text "Retornar" ]
         , button [ style "margin-left" "2%", class "button", onClick UpdateEventRequest ] [ text "Submeter" ]
         ]
@@ -336,15 +336,17 @@ renderWeekdaySelect weekdayList =
         ((Select.single <| Maybe.map (\weekday -> basicMenuItem { item = weekday, label = toPortugueseWeekday weekday }) weekdayList.selectedWeekday)
             |> Select.state weekdayList.selectState
             |> Select.menuItems weekdayList.items
+            |> Select.placeholder "Dia da Semana"
         )
 
 
-renderHourSelect : HourList -> Html.Styled.Html (Select.Msg ( Int, Int ))
-renderHourSelect hourList =
+renderHourSelect : HourList -> String -> Html.Styled.Html (Select.Msg ( Int, Int ))
+renderHourSelect hourList placeholder =
     Select.view
         ((Select.single <| Maybe.map (\( hour, minute ) -> basicMenuItem { item = ( hour, minute ), label = convertHourAndMinute hour minute }) hourList.selectedHour)
             |> Select.state hourList.selectState
             |> Select.menuItems hourList.items
+            |> Select.placeholder placeholder
         )
 
 
@@ -358,11 +360,12 @@ getAbbr abbrID rooms =
             ""
 
 
-renderAbbrSelect itemList items =
+renderAbbrSelect itemList items placeholder =
     Select.view
         ((Select.single <| Maybe.map (\abbrID -> basicMenuItem { item = abbrID, label = getAbbr abbrID items }) itemList.selectedItem)
             |> Select.state itemList.selectState
             |> Select.menuItems itemList.items
+            |> Select.placeholder placeholder
         )
 
 
