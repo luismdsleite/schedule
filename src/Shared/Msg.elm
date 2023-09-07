@@ -28,3 +28,4 @@ type Msg
 
 type UpdateType
     = UpdateEvent ( EventID, Event )
+    | DeleteEvent EventID

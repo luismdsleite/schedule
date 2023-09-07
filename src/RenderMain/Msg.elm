@@ -49,9 +49,6 @@ type DropEvent
     | BlockEvent ID
 
 
-{-| Menu that pops up when u try to edit/remove/add events/rooms/lecturers/blocks
-TODO: add this to the Msg type
--}
 type EditMenu
     = EditEvent EventID
     | AddEvent

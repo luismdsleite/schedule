@@ -4,7 +4,7 @@ module Effect exposing
     , sendCmd, sendMsg
     , pushRoute, replaceRoute, loadExternalUrl
     , map, toCmd
-    , loadData, loadToken, updateEvent
+    , deleteEvent, loadData, loadToken, updateEvent
     )
 
 {-|
@@ -205,3 +205,8 @@ updateEvent :
     -> Effect msg
 updateEvent ( evID, ev ) maybeRoute =
     SendSharedMsg (Shared.Msg.UpdateData (Shared.Msg.UpdateEvent ( evID, ev )) maybeRoute)
+
+
+deleteEvent : EventID -> Maybe { path : Route.Path.Path, query : Dict String String, hash : Maybe String } -> Effect msg
+deleteEvent evID mayberoute =
+    SendSharedMsg (Shared.Msg.UpdateData (Shared.Msg.DeleteEvent evID) mayberoute)

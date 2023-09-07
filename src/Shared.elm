@@ -96,6 +96,11 @@ update route msg model =
                       -- , Effect.pushRoute { path = route.path, query = Dict.insert "teste1" "teste" Dict.empty, hash = Nothing }
                     )
 
+                Shared.Msg.DeleteEvent evID ->
+                    ( { model | events = Dict.remove evID model.events }
+                    , effect
+                    )
+
 
 
 -- SUBSCRIPTIONS
