@@ -8,7 +8,7 @@ import ScheduleObjects.WeekTime exposing (WeekTime)
 
 
 type alias Lecturer =
-    { name : String, abbr : String, goodTime : List WeekTime, difficultTime : List WeekTime, unavailableTime : List WeekTime, office : String }
+    { name : String, abbr : String, office : String }
 
 
 type alias LecturerID =
