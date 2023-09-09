@@ -27,6 +27,7 @@ putRoom maybeId room =
             ++ [ ( "Hide", Encode.int 0 )
                , ( "Name", Encode.string room.name )
                , ( "NameAbbr", Encode.string room.abbr )
+               , ( "Capacity", Encode.int room.capacity )
                , ( "Number", Encode.string room.number )
                ]
 
