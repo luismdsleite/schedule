@@ -110,7 +110,7 @@ update msg (Model ( roomID, room ) backendUrl token deleteConfirmation errorMsg)
                     ( Model ( roomID, room ) backendUrl token deleteConfirmation errorMsg, Effect.deleteRoom roomID (Just { path = Route.Path.Main, query = Dict.empty, hash = Nothing }) )
 
                 Err (Http.BadStatus 500) ->
-                    ( Model ( roomID, room ) backendUrl token deleteConfirmation "Erro no servidor. Verifique se ainda existem eventos (incluindo os eventos escondidos) associados a esta sala.", Effect.none )
+                    ( Model ( roomID, room ) backendUrl token deleteConfirmation "Erro no servidor. Verifique se ainda existem cadeiras (incluindo cadeiras escondidas) associadas a esta sala.", Effect.none )
 
                 Err err ->
                     ( Model ( roomID, room ) backendUrl token deleteConfirmation (Decoders.errorToString err), Effect.none )
