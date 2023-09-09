@@ -17,7 +17,7 @@ page shared route =
     Page.new
         { init = init shared
         , update = update
-        , view = generateHtml "Schedules" view
+        , view = generateHtml "Horarios" view
         , subscriptions = subscriptions
         }
 

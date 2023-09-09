@@ -109,7 +109,7 @@ subscriptions model =
 
 view : Model -> View Msg
 view (Model room backendUrl token errorMsg) =
-    { title = "Add Room"
+    { title = "Criar Sala"
     , body =
         [ input [ class "input-box", style "width" "100%", value room.abbr, onInput AbbrChange, Html.Attributes.placeholder "Abbreviatura" ] []
         , input [ class "input-box", style "width" "100%", value room.name, onInput NameChange, Html.Attributes.placeholder "Nome Da Sala" ] []

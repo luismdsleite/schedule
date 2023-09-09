@@ -333,7 +333,7 @@ subscriptions model =
 
 view : Model -> View Msg
 view (Model data ( evId, ev ) weekdayList hourStartList hourEndList roomList lectList deleteConfirmation errorMsg) =
-    { title = "Edit Event"
+    { title = "Editar Cadeira"
     , body =
         [ input [ class "input-box", style "width" "100%", value ev.subjectAbbr, onInput SubjectAbbrChange, Html.Attributes.placeholder "Abbreviatura" ] []
         , input [ class "input-box", style "width" "100%", value ev.subject, onInput SubjectChange, Html.Attributes.placeholder "Nome Da Cadeira" ] []
