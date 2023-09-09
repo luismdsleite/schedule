@@ -105,16 +105,26 @@ renderEvent rooms lecturers ( eventID, event ) =
         ]
 
 
-{-| TODO: ADD ⚠️ emote to rooms with conflicts
+{-| TODO: ADD ⚠️ emote to rooms with conflicts.
 -}
-renderRooms : Dict RoomID Room -> Html Msg
-renderRooms rooms =
+renderRooms : Dict RoomID Room -> Maybe ( RoomID, Room ) -> Html Msg
+renderRooms rooms selectedRoom =
     let
         roomsList =
             Dict.toList rooms |> List.sortWith roomTupleComparator
+
+        modifyIcon =
+            case selectedRoom of
+                Just ( id, _ ) ->
+                    div [ class "gg-pen", onClick (EditMenu (EditRoom id)) ] []
+
+                Nothing ->
+                    div [ style "display" "none" ] []
     in
-    ul [ ariaLabel "Salas", class "list custom-scrollbar" ]
-        (List.map renderRoom roomsList)
+    ul [ class "list custom-scrollbar" ]
+        (ul [ ariaLabel "Salas", class "list-title" ] [ modifyIcon, div [ class "gg-add", onClick (EditMenu AddRoom) ] [] ]
+            :: List.map renderRoom roomsList
+        )
 
 
 renderRoom : ( Int, Room ) -> Html Msg

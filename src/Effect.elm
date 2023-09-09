@@ -4,7 +4,7 @@ module Effect exposing
     , sendCmd, sendMsg
     , pushRoute, replaceRoute, loadExternalUrl
     , map, toCmd
-    , deleteEvent, loadData, loadToken, updateEvent
+    , deleteEvent, deleteRoom, loadData, loadToken, updateEvent, updateRoom
     )
 
 {-|
@@ -24,6 +24,7 @@ import Route exposing (Route)
 import Route.Path
 import ScheduleObjects.Data exposing (Data)
 import ScheduleObjects.Event exposing (Event, EventID)
+import ScheduleObjects.Room exposing (Room, RoomID)
 import Shared.Model
 import Shared.Msg
 import Task
@@ -210,3 +211,21 @@ updateEvent ( evID, ev ) maybeRoute =
 deleteEvent : EventID -> Maybe { path : Route.Path.Path, query : Dict String String, hash : Maybe String } -> Effect msg
 deleteEvent evID mayberoute =
     SendSharedMsg (Shared.Msg.UpdateData (Shared.Msg.DeleteEvent evID) mayberoute)
+
+
+updateRoom :
+    ( RoomID, Room )
+    ->
+        Maybe
+            { path : Route.Path.Path
+            , query : Dict String String
+            , hash : Maybe String
+            }
+    -> Effect msg
+updateRoom ( roomID, room ) maybeRoute =
+    SendSharedMsg (Shared.Msg.UpdateData (Shared.Msg.UpdateRoom ( roomID, room )) maybeRoute)
+
+
+deleteRoom : RoomID -> Maybe { path : Route.Path.Path, query : Dict String String, hash : Maybe String } -> Effect msg
+deleteRoom roomID mayberoute =
+    SendSharedMsg (Shared.Msg.UpdateData (Shared.Msg.DeleteRoom roomID) mayberoute)

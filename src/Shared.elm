@@ -96,8 +96,18 @@ update route msg model =
                       -- , Effect.pushRoute { path = route.path, query = Dict.insert "teste1" "teste" Dict.empty, hash = Nothing }
                     )
 
+                Shared.Msg.UpdateRoom ( roomID, room ) ->
+                    ( { model | rooms = Dict.insert roomID room model.rooms }
+                    , effect
+                    )
+
                 Shared.Msg.DeleteEvent evID ->
                     ( { model | events = Dict.remove evID model.events }
+                    , effect
+                    )
+
+                Shared.Msg.DeleteRoom roomID ->
+                    ( { model | rooms = Dict.remove roomID model.rooms }
                     , effect
                     )
 

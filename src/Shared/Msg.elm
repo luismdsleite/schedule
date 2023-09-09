@@ -4,6 +4,7 @@ import Dict exposing (Dict)
 import Route.Path
 import ScheduleObjects.Data exposing (Data)
 import ScheduleObjects.Event exposing (Event, EventID)
+import ScheduleObjects.Room exposing (Room, RoomID)
 
 
 {-| Normally, this value would live in "Shared.elm"
@@ -28,4 +29,6 @@ type Msg
 
 type UpdateType
     = UpdateEvent ( EventID, Event )
+    | UpdateRoom ( RoomID, Room )
     | DeleteEvent EventID
+    | DeleteRoom RoomID

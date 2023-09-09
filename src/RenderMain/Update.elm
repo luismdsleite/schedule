@@ -279,7 +279,7 @@ updateOnMenuEdit msg (Model data filters draggable selectedItems) =
             ( Model data filters draggable selectedItems, Effect.none )
 
         EditRoom roomID ->
-            ( Model data filters draggable selectedItems, Effect.none )
+            ( Model data filters draggable selectedItems, Effect.pushRoute { path = Route.Path.EditRoom_Id_ { id = String.fromInt roomID }, query = Dict.empty, hash = Nothing } )
 
         EditBlock blockID ->
             ( Model data filters draggable selectedItems, Effect.none )
@@ -291,7 +291,7 @@ updateOnMenuEdit msg (Model data filters draggable selectedItems) =
             ( Model data filters draggable selectedItems, Effect.none )
 
         AddRoom ->
-            ( Model data filters draggable selectedItems, Effect.none )
+            ( Model data filters draggable selectedItems, Effect.pushRoute { path = Route.Path.AddRoom, query = Dict.empty, hash = Nothing } )
 
         AddBlock ->
             ( Model data filters draggable selectedItems, Effect.none )

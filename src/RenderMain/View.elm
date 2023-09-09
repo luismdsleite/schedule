@@ -45,7 +45,7 @@ view (Model data filters draggable selectedItems) =
         [ div [ class "listbox-area" ]
             [ renderBlocks data.blocks
             , renderLecturers data.lecturers
-            , renderRooms data.rooms
+            , renderRooms data.rooms selectedItems.room
             , renderEvents (Dict.toList data.events) data.rooms data.lecturers selectedItems.event
             , renderAvailableRooms selectedItems.event data.rooms (Dict.values data.events) (Dict.values data.occupations)
             ]
