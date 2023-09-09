@@ -61,8 +61,11 @@ update msg model =
                 Ok token ->
                     ( model, Effect.loadToken token )
 
+                Err (Http.BadStatus 401) ->
+                    ( { model | error = "nome de utilizador ou senha inválidos" }, Effect.none )
+
                 Err err ->
-                    ( { model | error = "Invalid username or password" }, Effect.none )
+                    ( { model | error = Decoders.errorToString err }, Effect.none )
 
         GotError str ->
             ( { model | error = str }, Effect.none )

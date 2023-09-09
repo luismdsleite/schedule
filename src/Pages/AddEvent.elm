@@ -1,5 +1,6 @@
 module Pages.AddEvent exposing (Model, Msg, page)
 
+import Decoders
 import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Encoders
@@ -40,7 +41,7 @@ page shared route =
 
 
 type Model
-    = Model Data Event WeekDayList HourList HourList AbbrList AbbrList
+    = Model Data Event WeekDayList HourList HourList AbbrList AbbrList String
 
 
 type alias WeekDayList =
@@ -74,7 +75,7 @@ init data () =
         event =
             Event "" "" Nothing Nothing Nothing Nothing
     in
-    ( Model data event (initWeekDayList Nothing) (initHourList Nothing "StartHour") (initHourList Nothing "EndHour") (initAbbrList event.room (Dict.toList data.rooms) "Room") (initAbbrList event.lecturer (Dict.toList data.lecturers) "Lecturer")
+    ( Model data event (initWeekDayList Nothing) (initHourList Nothing "StartHour") (initHourList Nothing "EndHour") (initAbbrList event.room (Dict.toList data.rooms) "Room") (initAbbrList event.lecturer (Dict.toList data.lecturers) "Lecturer") ""
     , Effect.none
     )
 
@@ -136,13 +137,13 @@ type Msg
 
 
 update : Msg -> Model -> ( Model, Effect Msg )
-update msg (Model data ev weekdayList hourStartList hourEndList roomList lectList) =
+update msg (Model data ev weekdayList hourStartList hourEndList roomList lectList errorMsg) =
     case msg of
         SubjectAbbrChange str ->
-            ( Model data { ev | subjectAbbr = str } weekdayList hourStartList hourEndList roomList lectList, Effect.none )
+            ( Model data { ev | subjectAbbr = str } weekdayList hourStartList hourEndList roomList lectList errorMsg, Effect.none )
 
         SubjectChange str ->
-            ( Model data { ev | subject = str } weekdayList hourStartList hourEndList roomList lectList, Effect.none )
+            ( Model data { ev | subject = str } weekdayList hourStartList hourEndList roomList lectList errorMsg, Effect.none )
 
         SelectWeekday selectMsg ->
             let
@@ -169,10 +170,10 @@ update msg (Model data ev weekdayList hourStartList hourEndList roomList lectLis
                                         Nothing ->
                                             { weekday = weekday, hour = 9, minute = 0 }
                             in
-                            Model data { ev | start_time = Just newStart_time, end_time = Just newEnd_time } { weekdayList | selectedWeekday = Just weekday, selectState = updatedSelectState } { hourStartList | selectedHour = Just ( newStart_time.hour, newStart_time.minute ) } { hourEndList | selectedHour = Just ( newEnd_time.hour, newEnd_time.minute ) } roomList lectList
+                            Model data { ev | start_time = Just newStart_time, end_time = Just newEnd_time } { weekdayList | selectedWeekday = Just weekday, selectState = updatedSelectState } { hourStartList | selectedHour = Just ( newStart_time.hour, newStart_time.minute ) } { hourEndList | selectedHour = Just ( newEnd_time.hour, newEnd_time.minute ) } roomList lectList errorMsg
 
                         _ ->
-                            Model data ev { weekdayList | selectState = updatedSelectState } hourStartList hourEndList roomList lectList
+                            Model data ev { weekdayList | selectState = updatedSelectState } hourStartList hourEndList roomList lectList errorMsg
             in
             ( newModel
             , Effect.sendCmd (Cmd.map SelectWeekday selectCmds)
@@ -195,10 +196,10 @@ update msg (Model data ev weekdayList hourStartList hourEndList roomList lectLis
                                         Nothing ->
                                             ( Just (WeekTime Time.Mon hour minute), Just (WeekTime Time.Mon 19 30) )
                             in
-                            Model data { ev | start_time = newStartTime, end_time = newEndTime } weekdayList { hourStartList | selectState = updatedSelectState, selectedHour = Just ( hour, minute ) } hourEndList roomList lectList
+                            Model data { ev | start_time = newStartTime, end_time = newEndTime } weekdayList { hourStartList | selectState = updatedSelectState, selectedHour = Just ( hour, minute ) } hourEndList roomList lectList errorMsg
 
                         _ ->
-                            Model data ev weekdayList { hourStartList | selectState = updatedSelectState } hourEndList roomList lectList
+                            Model data ev weekdayList { hourStartList | selectState = updatedSelectState } hourEndList roomList lectList errorMsg
             in
             ( newModel
             , Effect.sendCmd (Cmd.map SelectStartHour selectCmds)
@@ -221,10 +222,10 @@ update msg (Model data ev weekdayList hourStartList hourEndList roomList lectLis
                                         Nothing ->
                                             ( Just (WeekTime Time.Mon 8 0), Just (WeekTime Time.Mon hour minute) )
                             in
-                            Model data { ev | start_time = newStartTime, end_time = newEndTime } weekdayList hourStartList { hourEndList | selectState = updatedSelectState, selectedHour = Just ( hour, minute ) } roomList lectList
+                            Model data { ev | start_time = newStartTime, end_time = newEndTime } weekdayList hourStartList { hourEndList | selectState = updatedSelectState, selectedHour = Just ( hour, minute ) } roomList lectList errorMsg
 
                         _ ->
-                            Model data ev weekdayList hourStartList { hourEndList | selectState = updatedSelectState } roomList lectList
+                            Model data ev weekdayList hourStartList { hourEndList | selectState = updatedSelectState } roomList lectList errorMsg
             in
             ( newModel, Effect.sendCmd (Cmd.map SelectStartHour selectCmds) )
 
@@ -236,15 +237,15 @@ update msg (Model data ev weekdayList hourStartList hourEndList roomList lectLis
                 newModel =
                     case maybeAction of
                         Just (Select roomID) ->
-                            Model data { ev | room = Just roomID } weekdayList hourStartList hourEndList { roomList | selectState = updatedSelectState, selectedItem = Just roomID } lectList
+                            Model data { ev | room = Just roomID } weekdayList hourStartList hourEndList { roomList | selectState = updatedSelectState, selectedItem = Just roomID } lectList errorMsg
 
                         _ ->
-                            Model data ev weekdayList hourStartList hourEndList { roomList | selectState = updatedSelectState } lectList
+                            Model data ev weekdayList hourStartList hourEndList { roomList | selectState = updatedSelectState } lectList errorMsg
             in
             ( newModel, Effect.sendCmd (Cmd.map SelectRoom selectCmds) )
 
         ClearRoom ->
-            ( Model data { ev | room = Nothing } weekdayList hourStartList hourEndList { roomList | selectedItem = Nothing } lectList, Effect.none )
+            ( Model data { ev | room = Nothing } weekdayList hourStartList hourEndList { roomList | selectedItem = Nothing } lectList errorMsg, Effect.none )
 
         SelectLect selectMsg ->
             let
@@ -254,21 +255,21 @@ update msg (Model data ev weekdayList hourStartList hourEndList roomList lectLis
                 newModel =
                     case maybeAction of
                         Just (Select lectID) ->
-                            Model data { ev | lecturer = Just lectID } weekdayList hourStartList hourEndList roomList { lectList | selectState = updatedSelectState, selectedItem = Just lectID }
+                            Model data { ev | lecturer = Just lectID } weekdayList hourStartList hourEndList roomList { lectList | selectState = updatedSelectState, selectedItem = Just lectID } errorMsg
 
                         _ ->
-                            Model data ev weekdayList hourStartList hourEndList roomList { lectList | selectState = updatedSelectState }
+                            Model data ev weekdayList hourStartList hourEndList roomList { lectList | selectState = updatedSelectState } errorMsg
             in
             ( newModel, Effect.sendCmd (Cmd.map SelectRoom selectCmds) )
 
         ClearLect ->
-            ( Model data { ev | lecturer = Nothing } weekdayList hourStartList hourEndList roomList { lectList | selectedItem = Nothing }, Effect.none )
+            ( Model data { ev | lecturer = Nothing } weekdayList hourStartList hourEndList roomList { lectList | selectedItem = Nothing } errorMsg, Effect.none )
 
         ClearTime ->
-            ( Model data { ev | start_time = Nothing, end_time = Nothing } { weekdayList | selectedWeekday = Nothing } { hourStartList | selectedHour = Nothing } { hourEndList | selectedHour = Nothing } roomList lectList, Effect.none )
+            ( Model data { ev | start_time = Nothing, end_time = Nothing } { weekdayList | selectedWeekday = Nothing } { hourStartList | selectedHour = Nothing } { hourEndList | selectedHour = Nothing } roomList lectList errorMsg, Effect.none )
 
         UpdateEventRequest ->
-            ( Model data ev weekdayList hourStartList hourEndList roomList lectList, Effect.sendCmd (updateEvent ev data.backendUrl data.token) )
+            ( Model data ev weekdayList hourStartList hourEndList roomList lectList errorMsg, Effect.sendCmd (updateEvent ev data.backendUrl data.token) )
 
         UpdateEventResult result ->
             case result of
@@ -280,13 +281,13 @@ update msg (Model data ev weekdayList hourStartList hourEndList roomList lectLis
                             , hash = Nothing
                             }
                     in
-                    ( Model { data | events = Dict.insert id ev data.events } ev weekdayList hourStartList hourEndList roomList lectList, Effect.updateEvent ( id, ev ) (Just route) )
+                    ( Model { data | events = Dict.insert id ev data.events } ev weekdayList hourStartList hourEndList roomList lectList errorMsg, Effect.updateEvent ( id, ev ) (Just route) )
 
                 Err err ->
-                    ( Model data ev weekdayList hourStartList hourEndList roomList lectList, Effect.none )
+                    ( Model data ev weekdayList hourStartList hourEndList roomList lectList (Decoders.errorToString err), Effect.none )
 
         Return ->
-            ( Model data ev weekdayList hourStartList hourEndList roomList lectList, Effect.pushRoute { path = Route.Path.Main, query = Dict.empty, hash = Nothing } )
+            ( Model data ev weekdayList hourStartList hourEndList roomList lectList errorMsg, Effect.pushRoute { path = Route.Path.Main, query = Dict.empty, hash = Nothing } )
 
 
 
@@ -303,7 +304,7 @@ subscriptions model =
 
 
 view : Model -> View Msg
-view (Model data ev weekdayList hourStartList hourEndList roomList lectList) =
+view (Model data ev weekdayList hourStartList hourEndList roomList lectList errorMsg) =
     { title = "Edit Event"
     , body =
         [ input [ class "input-box", style "width" "100%", value ev.subjectAbbr, onInput SubjectAbbrChange, Html.Attributes.placeholder "Abbreviatura" ] []
@@ -315,6 +316,7 @@ view (Model data ev weekdayList hourStartList hourEndList roomList lectList) =
         , div [ style "width" "100%", style "display" "grid", style "grid-template-columns" "95% 5%" ] [ Html.map SelectLect (Html.Styled.toUnstyled <| renderAbbrSelect lectList data.lecturers "Docente"), div [ class "gg-remove", onClick ClearLect ] [] ]
         , button [ style "margin-right" "2%", class "button", onClick Return ] [ text "Retornar" ]
         , button [ style "margin-left" "2%", class "button", onClick UpdateEventRequest ] [ text "Submeter" ]
+        , div [ style "width" "100%" ] [ text errorMsg ]
         ]
     }
 

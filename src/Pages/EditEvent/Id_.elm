@@ -1,5 +1,6 @@
 module Pages.EditEvent.Id_ exposing (Model, Msg, page)
 
+import Decoders
 import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Encoders
@@ -39,7 +40,7 @@ page shared route =
 
 
 type Model
-    = Model Data ( EventID, Event ) WeekDayList HourList HourList AbbrList AbbrList Bool
+    = Model Data ( EventID, Event ) WeekDayList HourList HourList AbbrList AbbrList Bool String
 
 
 type alias WeekDayList =
@@ -87,7 +88,7 @@ init data eventIDParam () =
         endHour =
             event.end_time |> Maybe.map (\a -> ( a.hour, a.minute ))
     in
-    ( Model data ( eventID, event ) (initWeekDayList weekDay) (initHourList startHour "StartHour") (initHourList endHour "EndHour") (initAbbrList event.room (Dict.toList data.rooms) "Room") (initAbbrList event.lecturer (Dict.toList data.lecturers) "Lecturer") False, Effect.none )
+    ( Model data ( eventID, event ) (initWeekDayList weekDay) (initHourList startHour "StartHour") (initHourList endHour "EndHour") (initAbbrList event.room (Dict.toList data.rooms) "Room") (initAbbrList event.lecturer (Dict.toList data.lecturers) "Lecturer") False "", Effect.none )
 
 
 initWeekDayList : Maybe Time.Weekday -> WeekDayList
@@ -149,13 +150,13 @@ type Msg
 
 
 update : Msg -> Model -> ( Model, Effect Msg )
-update msg (Model data ( evId, ev ) weekdayList hourStartList hourEndList roomList lectList deleteConfirmation) =
+update msg (Model data ( evId, ev ) weekdayList hourStartList hourEndList roomList lectList deleteConfirmation errorMsg) =
     case msg of
         SubjectAbbrChange str ->
-            ( Model data ( evId, { ev | subjectAbbr = str } ) weekdayList hourStartList hourEndList roomList lectList deleteConfirmation, Effect.none )
+            ( Model data ( evId, { ev | subjectAbbr = str } ) weekdayList hourStartList hourEndList roomList lectList deleteConfirmation errorMsg, Effect.none )
 
         SubjectChange str ->
-            ( Model data ( evId, { ev | subject = str } ) weekdayList hourStartList hourEndList roomList lectList deleteConfirmation, Effect.none )
+            ( Model data ( evId, { ev | subject = str } ) weekdayList hourStartList hourEndList roomList lectList deleteConfirmation errorMsg, Effect.none )
 
         SelectWeekday selectMsg ->
             let
@@ -182,10 +183,10 @@ update msg (Model data ( evId, ev ) weekdayList hourStartList hourEndList roomLi
                                         Nothing ->
                                             { weekday = weekday, hour = 9, minute = 0 }
                             in
-                            Model data ( evId, { ev | start_time = Just newStart_time, end_time = Just newEnd_time } ) { weekdayList | selectedWeekday = Just weekday, selectState = updatedSelectState } { hourStartList | selectedHour = Just ( newStart_time.hour, newStart_time.minute ) } { hourEndList | selectedHour = Just ( newEnd_time.hour, newEnd_time.minute ) } roomList lectList deleteConfirmation
+                            Model data ( evId, { ev | start_time = Just newStart_time, end_time = Just newEnd_time } ) { weekdayList | selectedWeekday = Just weekday, selectState = updatedSelectState } { hourStartList | selectedHour = Just ( newStart_time.hour, newStart_time.minute ) } { hourEndList | selectedHour = Just ( newEnd_time.hour, newEnd_time.minute ) } roomList lectList deleteConfirmation errorMsg
 
                         _ ->
-                            Model data ( evId, ev ) { weekdayList | selectState = updatedSelectState } hourStartList hourEndList roomList lectList deleteConfirmation
+                            Model data ( evId, ev ) { weekdayList | selectState = updatedSelectState } hourStartList hourEndList roomList lectList deleteConfirmation errorMsg
             in
             ( newModel
             , Effect.sendCmd (Cmd.map SelectWeekday selectCmds)
@@ -208,10 +209,10 @@ update msg (Model data ( evId, ev ) weekdayList hourStartList hourEndList roomLi
                                         Nothing ->
                                             ( Just (WeekTime Time.Mon hour minute), Just (WeekTime Time.Mon 19 30) )
                             in
-                            Model data ( evId, { ev | start_time = newStartTime, end_time = newEndTime } ) weekdayList { hourStartList | selectState = updatedSelectState, selectedHour = Just ( hour, minute ) } hourEndList roomList lectList deleteConfirmation
+                            Model data ( evId, { ev | start_time = newStartTime, end_time = newEndTime } ) weekdayList { hourStartList | selectState = updatedSelectState, selectedHour = Just ( hour, minute ) } hourEndList roomList lectList deleteConfirmation errorMsg
 
                         _ ->
-                            Model data ( evId, ev ) weekdayList { hourStartList | selectState = updatedSelectState } hourEndList roomList lectList deleteConfirmation
+                            Model data ( evId, ev ) weekdayList { hourStartList | selectState = updatedSelectState } hourEndList roomList lectList deleteConfirmation errorMsg
             in
             ( newModel
             , Effect.sendCmd (Cmd.map SelectStartHour selectCmds)
@@ -234,10 +235,10 @@ update msg (Model data ( evId, ev ) weekdayList hourStartList hourEndList roomLi
                                         Nothing ->
                                             ( Just (WeekTime Time.Mon 8 0), Just (WeekTime Time.Mon hour minute) )
                             in
-                            Model data ( evId, { ev | start_time = newStartTime, end_time = newEndTime } ) weekdayList hourStartList { hourEndList | selectState = updatedSelectState, selectedHour = Just ( hour, minute ) } roomList lectList deleteConfirmation
+                            Model data ( evId, { ev | start_time = newStartTime, end_time = newEndTime } ) weekdayList hourStartList { hourEndList | selectState = updatedSelectState, selectedHour = Just ( hour, minute ) } roomList lectList deleteConfirmation errorMsg
 
                         _ ->
-                            Model data ( evId, ev ) weekdayList hourStartList { hourEndList | selectState = updatedSelectState } roomList lectList deleteConfirmation
+                            Model data ( evId, ev ) weekdayList hourStartList { hourEndList | selectState = updatedSelectState } roomList lectList deleteConfirmation errorMsg
             in
             ( newModel, Effect.sendCmd (Cmd.map SelectStartHour selectCmds) )
 
@@ -249,15 +250,15 @@ update msg (Model data ( evId, ev ) weekdayList hourStartList hourEndList roomLi
                 newModel =
                     case maybeAction of
                         Just (Select roomID) ->
-                            Model data ( evId, { ev | room = Just roomID } ) weekdayList hourStartList hourEndList { roomList | selectState = updatedSelectState, selectedItem = Just roomID } lectList deleteConfirmation
+                            Model data ( evId, { ev | room = Just roomID } ) weekdayList hourStartList hourEndList { roomList | selectState = updatedSelectState, selectedItem = Just roomID } lectList deleteConfirmation errorMsg
 
                         _ ->
-                            Model data ( evId, ev ) weekdayList hourStartList hourEndList { roomList | selectState = updatedSelectState } lectList deleteConfirmation
+                            Model data ( evId, ev ) weekdayList hourStartList hourEndList { roomList | selectState = updatedSelectState } lectList deleteConfirmation errorMsg
             in
             ( newModel, Effect.sendCmd (Cmd.map SelectRoom selectCmds) )
 
         ClearRoom ->
-            ( Model data ( evId, { ev | room = Nothing } ) weekdayList hourStartList hourEndList { roomList | selectedItem = Nothing } lectList deleteConfirmation, Effect.none )
+            ( Model data ( evId, { ev | room = Nothing } ) weekdayList hourStartList hourEndList { roomList | selectedItem = Nothing } lectList deleteConfirmation errorMsg, Effect.none )
 
         SelectLect selectMsg ->
             let
@@ -267,21 +268,21 @@ update msg (Model data ( evId, ev ) weekdayList hourStartList hourEndList roomLi
                 newModel =
                     case maybeAction of
                         Just (Select lectID) ->
-                            Model data ( evId, { ev | lecturer = Just lectID } ) weekdayList hourStartList hourEndList roomList { lectList | selectState = updatedSelectState, selectedItem = Just lectID } deleteConfirmation
+                            Model data ( evId, { ev | lecturer = Just lectID } ) weekdayList hourStartList hourEndList roomList { lectList | selectState = updatedSelectState, selectedItem = Just lectID } deleteConfirmation errorMsg
 
                         _ ->
-                            Model data ( evId, ev ) weekdayList hourStartList hourEndList roomList { lectList | selectState = updatedSelectState } deleteConfirmation
+                            Model data ( evId, ev ) weekdayList hourStartList hourEndList roomList { lectList | selectState = updatedSelectState } deleteConfirmation errorMsg
             in
             ( newModel, Effect.sendCmd (Cmd.map SelectRoom selectCmds) )
 
         ClearLect ->
-            ( Model data ( evId, { ev | lecturer = Nothing } ) weekdayList hourStartList hourEndList roomList { lectList | selectedItem = Nothing } deleteConfirmation, Effect.none )
+            ( Model data ( evId, { ev | lecturer = Nothing } ) weekdayList hourStartList hourEndList roomList { lectList | selectedItem = Nothing } deleteConfirmation errorMsg, Effect.none )
 
         ClearTime ->
-            ( Model data ( evId, { ev | start_time = Nothing, end_time = Nothing } ) { weekdayList | selectedWeekday = Nothing } { hourStartList | selectedHour = Nothing } { hourEndList | selectedHour = Nothing } roomList lectList deleteConfirmation, Effect.none )
+            ( Model data ( evId, { ev | start_time = Nothing, end_time = Nothing } ) { weekdayList | selectedWeekday = Nothing } { hourStartList | selectedHour = Nothing } { hourEndList | selectedHour = Nothing } roomList lectList deleteConfirmation errorMsg, Effect.none )
 
         UpdateEventRequest ->
-            ( Model data ( evId, ev ) weekdayList hourStartList hourEndList roomList lectList deleteConfirmation, Effect.sendCmd (updateEvent ( evId, ev ) data.backendUrl data.token) )
+            ( Model data ( evId, ev ) weekdayList hourStartList hourEndList roomList lectList deleteConfirmation errorMsg, Effect.sendCmd (updateEvent ( evId, ev ) data.backendUrl data.token) )
 
         UpdateEventResult result ->
             case result of
@@ -293,28 +294,28 @@ update msg (Model data ( evId, ev ) weekdayList hourStartList hourEndList roomLi
                             , hash = Nothing
                             }
                     in
-                    ( Model { data | events = Dict.insert id event data.events } ( id, event ) weekdayList hourStartList hourEndList roomList lectList deleteConfirmation, Effect.updateEvent ( id, event ) (Just route) )
+                    ( Model { data | events = Dict.insert id event data.events } ( id, event ) weekdayList hourStartList hourEndList roomList lectList deleteConfirmation errorMsg, Effect.updateEvent ( id, event ) (Just route) )
 
                 Err err ->
-                    ( Model data ( evId, ev ) weekdayList hourStartList hourEndList roomList lectList deleteConfirmation, Effect.none )
+                    ( Model data ( evId, ev ) weekdayList hourStartList hourEndList roomList lectList deleteConfirmation (Decoders.errorToString err), Effect.none )
 
         DeleteEventRequest ->
             if deleteConfirmation then
-                ( Model data ( evId, ev ) weekdayList hourStartList hourEndList roomList lectList deleteConfirmation, Effect.sendCmd (deleteEvent evId data.backendUrl data.token) )
+                ( Model data ( evId, ev ) weekdayList hourStartList hourEndList roomList lectList deleteConfirmation errorMsg, Effect.sendCmd (deleteEvent evId data.backendUrl data.token) )
 
             else
-                ( Model data ( evId, ev ) weekdayList hourStartList hourEndList roomList lectList True, Effect.none )
+                ( Model data ( evId, ev ) weekdayList hourStartList hourEndList roomList lectList True errorMsg, Effect.none )
 
         DeleteEventResult result ->
             case result of
                 Ok _ ->
-                    ( Model { data | events = Dict.remove evId data.events } ( evId, ev ) weekdayList hourStartList hourEndList roomList lectList deleteConfirmation, Effect.deleteEvent evId (Just { path = Route.Path.Main, query = Dict.empty, hash = Nothing }) )
+                    ( Model { data | events = Dict.remove evId data.events } ( evId, ev ) weekdayList hourStartList hourEndList roomList lectList deleteConfirmation errorMsg, Effect.deleteEvent evId (Just { path = Route.Path.Main, query = Dict.empty, hash = Nothing }) )
 
-                Err _ ->
-                    ( Model data ( evId, ev ) weekdayList hourStartList hourEndList roomList lectList deleteConfirmation, Effect.none )
+                Err err ->
+                    ( Model data ( evId, ev ) weekdayList hourStartList hourEndList roomList lectList deleteConfirmation (Decoders.errorToString err), Effect.none )
 
         Return ->
-            ( Model data ( evId, ev ) weekdayList hourStartList hourEndList roomList lectList deleteConfirmation, Effect.pushRoute { path = Route.Path.Main, query = Dict.empty, hash = Nothing } )
+            ( Model data ( evId, ev ) weekdayList hourStartList hourEndList roomList lectList deleteConfirmation errorMsg, Effect.pushRoute { path = Route.Path.Main, query = Dict.empty, hash = Nothing } )
 
 
 
@@ -331,7 +332,7 @@ subscriptions model =
 
 
 view : Model -> View Msg
-view (Model data ( evId, ev ) weekdayList hourStartList hourEndList roomList lectList deleteConfirmation) =
+view (Model data ( evId, ev ) weekdayList hourStartList hourEndList roomList lectList deleteConfirmation errorMsg) =
     { title = "Edit Event"
     , body =
         [ input [ class "input-box", style "width" "100%", value ev.subjectAbbr, onInput SubjectAbbrChange, Html.Attributes.placeholder "Abbreviatura" ] []
@@ -352,6 +353,7 @@ view (Model data ( evId, ev ) weekdayList hourStartList hourEndList roomList lec
                     "Eliminar"
                 )
             ]
+        , div [ style "width" "100%" ] [ text errorMsg ]
         ]
     }
 

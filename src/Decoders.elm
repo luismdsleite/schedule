@@ -1,9 +1,10 @@
-module Decoders exposing (blockParser, eventParser, getBlockAndId, getEventAndID, lectParser, objectsToDictParser, occupationParser, restrictionParser, roomParser, tokenParser)
+module Decoders exposing (blockParser, errorToString, eventParser, getBlockAndId, getEventAndID, lectParser, objectsToDictParser, occupationParser, restrictionParser, roomParser, tokenParser)
 
 {-| Json Decoders used to interact with the servers REST API
 -}
 
 import Dict exposing (Dict)
+import Http
 import Json.Decode as JD exposing (Decoder)
 import Json.Decode.Extra as JDE
 import List
@@ -186,3 +187,28 @@ minuteDecoder =
 tokenParser : Decoder String
 tokenParser =
     JD.field "access_token" JD.string
+
+
+errorToString : Http.Error -> String
+errorToString error =
+    case error of
+        Http.BadUrl url ->
+            "URL " ++ url ++ " é invalido"
+
+        Http.Timeout ->
+            "Não foi possivel contactar o servidor, tente mais tarde"
+
+        Http.NetworkError ->
+            "Não foi possivel contactar o servidor, verifique a sua ligação à internet"
+
+        Http.BadStatus 500 ->
+            "O servidor teve um problema, tente mais tarde"
+
+        Http.BadStatus 400 ->
+            "Verifique a sua informação e tente novamente"
+
+        Http.BadStatus int ->
+            "Unknown error (" ++ String.fromInt int ++ ")"
+
+        Http.BadBody errorMessage ->
+            errorMessage
