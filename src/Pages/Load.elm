@@ -92,8 +92,8 @@ update msg model =
     case msg of
         GotRooms result ->
             case result of
-                Err _ ->
-                    ( Failed "Unable to load Rooms", Effect.none )
+                Err err ->
+                    ( Failed (Decoders.errorToString err), Effect.none )
 
                 Ok rooms ->
                     case model of
@@ -108,13 +108,13 @@ update msg model =
                             else
                                 ( Loading updatedData (Array.set 0 True state), Effect.none )
 
-                        _ ->
-                            ( Failed "Unable to load Rooms", Effect.none )
+                        state ->
+                            ( state, Effect.none )
 
         GotEvents result ->
             case result of
-                Err _ ->
-                    ( Failed "Unable to load Events", Effect.none )
+                Err err ->
+                    ( Failed (Decoders.errorToString err), Effect.none )
 
                 Ok events ->
                     case model of
@@ -129,13 +129,13 @@ update msg model =
                             else
                                 ( Loading updatedData (Array.set 1 True state), Effect.none )
 
-                        _ ->
-                            ( Failed "Unable to load Events", Effect.none )
+                        state ->
+                            ( state, Effect.none )
 
         GotLecturers result ->
             case result of
-                Err _ ->
-                    ( Failed "Unable to load Lecturers", Effect.none )
+                Err err ->
+                    ( Failed (Decoders.errorToString err), Effect.none )
 
                 Ok lecturers ->
                     case model of
@@ -150,13 +150,13 @@ update msg model =
                             else
                                 ( Loading updatedData (Array.set 2 True state), Effect.none )
 
-                        _ ->
-                            ( Failed "Unable to load Lecturers", Effect.none )
+                        state ->
+                            ( state, Effect.none )
 
         GotBlocks result ->
             case result of
-                Err _ ->
-                    ( Failed "Unable to load Blocks", Effect.none )
+                Err err ->
+                    ( Failed (Decoders.errorToString err), Effect.none )
 
                 Ok blocks ->
                     case model of
@@ -171,13 +171,13 @@ update msg model =
                             else
                                 ( Loading updatedData (Array.set 3 True state), Effect.none )
 
-                        _ ->
-                            ( Failed "Unable to load Blocks", Effect.none )
+                        state ->
+                            ( state, Effect.none )
 
         GotOccupations result ->
             case result of
-                Err _ ->
-                    ( Failed "Unable to load Occupations", Effect.none )
+                Err err ->
+                    ( Failed (Decoders.errorToString err), Effect.none )
 
                 Ok occupations ->
                     case model of
@@ -192,13 +192,13 @@ update msg model =
                             else
                                 ( Loading updatedData (Array.set 4 True state), Effect.none )
 
-                        _ ->
-                            ( Failed "Unable to load Occupations", Effect.none )
+                        state ->
+                            ( state, Effect.none )
 
         GotRestrictions result ->
             case result of
-                Err _ ->
-                    ( Failed "Unable to load Restrictions", Effect.none )
+                Err err ->
+                    ( Failed (Decoders.errorToString err), Effect.none )
 
                 Ok restrictions ->
                     case model of
@@ -213,8 +213,8 @@ update msg model =
                             else
                                 ( Loading updatedData (Array.set 5 True state), Effect.none )
 
-                        _ ->
-                            ( Failed "Unable to load Restrictions", Effect.none )
+                        state ->
+                            ( state, Effect.none )
 
         LoadedData data ->
             ( model, Effect.loadData data )
@@ -231,15 +231,6 @@ getResource resource resourceParser resultToMsg backendUrl token =
         , timeout = Nothing
         , tracker = Nothing
         }
-
-
-
--- getResource : String -> Decoder a -> (Result Http.Error (Dict ID a) -> msg) -> Cmd msg
--- getResource resource resourceParser resultToMsg =
---     Http.get
---         { url = serverUrl ++ resource
---         , expect = Http.expectJson resultToMsg (objectsToDictParser resourceParser)
---         }
 
 
 getRooms : String -> Token -> Effect Msg
