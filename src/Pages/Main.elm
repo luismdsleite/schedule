@@ -22,10 +22,6 @@ page shared route =
         }
 
 
-
--- |> Page.withOnUrlChanged (UrlChange shared)
-
-
 generateHtml : String -> (Model -> Html.Html Msg) -> Model -> View Msg
 generateHtml title view model =
     { title = title

@@ -6,6 +6,7 @@ import DnD
 import Effect exposing (Effect)
 import Encoders
 import Http
+import Maybe.Extra
 import RenderMain.DisplayEvents exposing (..)
 import RenderMain.Model exposing (Model(..))
 import RenderMain.Msg exposing (..)
@@ -39,10 +40,10 @@ update msg (Model data filters draggable selectedItems) =
                 Just ev ->
                     let
                         startingTime =
-                            Maybe.withDefault (WeekTime Time.Mon endingHour endingMinute) ev.start_time
+                            Maybe.Extra.withDefaultLazy (\() -> WeekTime Time.Mon endingHour endingMinute) ev.start_time
 
                         endingTime =
-                            Maybe.withDefault (WeekTime Time.Mon endingHour endingMinute) ev.end_time
+                            Maybe.Extra.withDefaultLazy (\() -> WeekTime Time.Mon endingHour endingMinute) ev.end_time
 
                         isTopSwitch =
                             if startingTime.minute == 30 then
@@ -276,25 +277,25 @@ updateOnMenuEdit msg (Model data filters draggable selectedItems) =
             ( Model data filters draggable selectedItems, Effect.pushRoute { path = Route.Path.EditEvent_Id_ { id = String.fromInt evID }, query = Dict.empty, hash = Nothing } )
 
         EditLect lectID ->
-            ( Model data filters draggable selectedItems, Effect.none )
+            ( Model data filters draggable selectedItems, Effect.pushRoute { path = Route.Path.EditLect_Id_ { id = String.fromInt lectID }, query = Dict.empty, hash = Nothing } )
 
         EditRoom roomID ->
             ( Model data filters draggable selectedItems, Effect.pushRoute { path = Route.Path.EditRoom_Id_ { id = String.fromInt roomID }, query = Dict.empty, hash = Nothing } )
 
         EditBlock blockID ->
-            ( Model data filters draggable selectedItems, Effect.none )
+            ( Model data filters draggable selectedItems, Effect.pushRoute { path = Route.Path.EditBlock_Id_ { id = String.fromInt blockID }, query = Dict.empty, hash = Nothing } )
 
         AddEvent ->
             ( Model data filters draggable selectedItems, Effect.pushRoute { path = Route.Path.AddEvent, query = Dict.empty, hash = Nothing } )
 
         AddLect ->
-            ( Model data filters draggable selectedItems, Effect.none )
+            ( Model data filters draggable selectedItems, Effect.pushRoute { path = Route.Path.AddLect, query = Dict.empty, hash = Nothing } )
 
         AddRoom ->
             ( Model data filters draggable selectedItems, Effect.pushRoute { path = Route.Path.AddRoom, query = Dict.empty, hash = Nothing } )
 
         AddBlock ->
-            ( Model data filters draggable selectedItems, Effect.none )
+            ( Model data filters draggable selectedItems, Effect.pushRoute { path = Route.Path.AddBlock, query = Dict.empty, hash = Nothing } )
 
 
 

@@ -8,6 +8,7 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onClick, onInput)
 import Http
+import Maybe.Extra
 import Page exposing (Page)
 import Route exposing (Route)
 import Route.Path
@@ -40,10 +41,10 @@ init data roomIDParam () =
     let
         roomID =
             String.toInt roomIDParam
-                |> Maybe.withDefault -1
+                |> Maybe.Extra.withDefaultLazy (\_ -> -1)
 
         room =
-            Dict.get roomID data.rooms |> Maybe.withDefault (Room "" "" 0 "")
+            Dict.get roomID data.rooms |> Maybe.Extra.withDefaultLazy (\() -> Room "" "" 0 "")
     in
     ( Model ( roomID, room ) data.backendUrl data.token False "", Effect.none )
 
@@ -84,7 +85,7 @@ update msg (Model ( roomID, room ) backendUrl token deleteConfirmation errorMsg)
 
         UpdateRoomResult result ->
             case result of
-                Ok ( id, updtedRoom ) ->
+                Ok ( id, updatedRoom ) ->
                     let
                         route =
                             { path = Route.Path.Main
@@ -92,7 +93,7 @@ update msg (Model ( roomID, room ) backendUrl token deleteConfirmation errorMsg)
                             , hash = Nothing
                             }
                     in
-                    ( Model ( id, updtedRoom ) backendUrl token deleteConfirmation errorMsg, Effect.updateRoom ( id, updtedRoom ) (Just route) )
+                    ( Model ( id, updatedRoom ) backendUrl token deleteConfirmation errorMsg, Effect.updateRoom ( id, updatedRoom ) (Just route) )
 
                 Err err ->
                     ( Model ( roomID, room ) backendUrl token deleteConfirmation (Decoders.errorToString err), Effect.none )
@@ -138,7 +139,7 @@ view (Model ( roomID, room ) backendUrl token deleteConfirmation errorMsg) =
     , body =
         [ input [ class "input-box", style "width" "100%", value room.abbr, onInput AbbrChange, Html.Attributes.placeholder "Abbreviatura" ] []
         , input [ class "input-box", style "width" "100%", value room.name, onInput NameChange, Html.Attributes.placeholder "Nome Da Sala" ] []
-        , input [ class "input-box", style "width" "100%", value <| String.fromInt room.capacity, onInput (CapacityChange << Maybe.withDefault room.capacity << String.toInt), Html.Attributes.placeholder "Capacidade" ] []
+        , input [ class "input-box", style "width" "100%", value <| String.fromInt room.capacity, onInput (CapacityChange << Maybe.Extra.withDefaultLazy (\() -> room.capacity) << String.toInt), Html.Attributes.placeholder "Capacidade" ] []
         , input [ class "input-box", style "width" "100%", value room.number, onInput NumberChange, Html.Attributes.placeholder "Número" ] []
         , button [ style "margin-right" "2%", class "button", onClick Return ] [ text "Retornar" ]
         , button [ class "button", onClick UpdateRoomRequest ] [ text "Submeter" ]

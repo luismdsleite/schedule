@@ -16,15 +16,18 @@ This repository contains only the frontend of the application, the backend can b
 
 ```bash
 SERVER_URL=$SERVER_URL elm-land server  # starts this app at http:/localhost:1234
-``` 
+```
+
 `SERVER_URL`= Url of the backend host + api entrypoint e.g. https://192.168.1.217:8008/api/v1/
 
 ## Production
 
 Build the application
+
 ```bash
 SERVER_URL=$SERVER_URL elm-land build
 ```
+
 `SERVER_URL`= Url of the backend host + api entrypoint e.g. https://192.168.1.217:8008/api/v1/
 
 Output is stored in the `dist/` directory.
@@ -36,4 +39,11 @@ Better instructions on deployment can be found __[here](https://elm.land/guide/d
 ```bash
 http-server dist/ --port 8080 -P "http://localhost:8080?" 
 ```
-NOTE: All Elm Land apps are compiled as "single-page applications" in the dist folder. This means no matter what page is requested, that request will need to be directed to a single file: `dist/index.html`. In this example this is done with the `-P` flag.	
+
+NOTE: All Elm Land apps are compiled as "single-page applications" in the dist folder. This means no matter what page is requested, that request will need to be directed to a single file: `dist/index.html`. In this example this is done with the `-P` flag.    
+
+# TO-DO
+
+- [ ] Add ⚠️ emote to rooms and professors with conflicts.
+- [ ] Use `text-decoration: underline;` to show what rooms/events/lects/blocks are hidden.
+- [ ] Replace old lists in main with the ones used in the other pages

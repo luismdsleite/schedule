@@ -8,6 +8,7 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Attributes.Aria exposing (ariaLabel)
 import Html.Events exposing (onClick)
+import Maybe.Extra exposing (isJust)
 import RenderMain.Msg exposing (EditMenu(..), Msg(..), OnItemClick(..))
 import ScheduleObjects.Block exposing (Block, BlockID)
 import ScheduleObjects.Event exposing (Event, EventID)
@@ -39,9 +40,6 @@ blockTupleComparator ( _, block1 ) ( _, block2 ) =
 
 
 {-| Renders all the events into a list.
-
-TODO: add remove icon, div [ class "gg-remove" ]
-
 -}
 renderEvents : List ( Int, Event ) -> Dict RoomID Room -> Dict LecturerID Lecturer -> Maybe ( EventID, Event ) -> Html Msg
 renderEvents events rooms lecturers selectedEvent =
@@ -87,11 +85,11 @@ renderEvent rooms lecturers ( eventID, event ) =
 
                         -- ERROR: RoomID is missing from the database!
                         Nothing ->
-                            Lecturer "----" "----" [] [] [] ""
+                            Lecturer "----" "----" ""
 
                 -- Event still has no room assigned
                 Nothing ->
-                    Lecturer "----" "----" [] [] [] ""
+                    Lecturer "----" "----" ""
     in
     li [ class "list-item", onClick (ItemClick (OnEventClick ( eventID, event ))) ]
         [ div [ class "custom-scrollbar", class "list-text", style "width" "10%", attribute "title" event.subjectAbbr ] [ text event.subjectAbbr ]
@@ -134,14 +132,22 @@ renderRoom ( int, room ) =
 
 {-| TODO: ADD ⚠️ emote to lecturers with conflicts
 -}
-renderLecturers : Dict LecturerID Lecturer -> Html Msg
-renderLecturers lecturers =
+renderLecturers : Dict LecturerID Lecturer -> Maybe ( LecturerID, Lecturer ) -> Html Msg
+renderLecturers lecturers selectedLect =
     let
         lecturersList =
             Dict.toList lecturers |> List.sortWith lectTupleComparator
+
+        modifyIcon =
+            case selectedLect of
+                Just ( id, _ ) ->
+                    div [ class "gg-pen", onClick (EditMenu (EditLect id)) ] []
+
+                Nothing ->
+                    div [ style "display" "none" ] []
     in
-    ul [ ariaLabel "Docentes", class "list custom-scrollbar" ]
-        (List.map renderLecturer lecturersList)
+    ul [ class "list custom-scrollbar" ]
+        (ul [ ariaLabel "Docentes", class "list-title" ] [ modifyIcon, div [ class "gg-add", onClick (EditMenu AddLect) ] [] ] :: List.map renderLecturer lecturersList)
 
 
 renderLecturer : ( Int, Lecturer ) -> Html Msg
@@ -149,13 +155,22 @@ renderLecturer ( int, lecturer ) =
     li [ class "list-item", onClick (ItemClick (OnLecturerClick ( int, lecturer ))), attribute "title" lecturer.name ] [ div [ class "custom-scrollbar", class "list-text" ] [ text lecturer.abbr ] ]
 
 
-renderBlocks : Dict BlockID Block -> Html Msg
-renderBlocks blocks =
+renderBlocks : Dict BlockID Block -> Maybe ( BlockID, Block ) -> Html Msg
+renderBlocks blocks selectedBlock =
     let
         blocksList =
             Dict.toList blocks |> List.sortWith blockTupleComparator
+
+        modifyIcon =
+            case selectedBlock of
+                Just ( id, _ ) ->
+                    div [ class "gg-pen", onClick (EditMenu (EditBlock id)) ] []
+
+                Nothing ->
+                    div [ style "display" "none" ] []
     in
-    ul [ ariaLabel "Blocos", class "list custom-scrollbar" ] (List.map renderBlock blocksList)
+    ul [ class "list custom-scrollbar" ]
+        (ul [ ariaLabel "Blocos", class "list-title" ] [ modifyIcon, div [ class "gg-add", onClick (EditMenu AddBlock) ] [] ] :: List.map renderBlock blocksList)
 
 
 renderBlock : ( Int, Block ) -> Html Msg
@@ -167,9 +182,13 @@ renderAvailableRooms : Maybe ( EventID, Event ) -> Dict RoomID Room -> List Even
 renderAvailableRooms maybe rooms events occupations =
     case maybe of
         Just ( eventId, event ) ->
-            renderAvailableRooms_ ( eventId, event ) rooms events occupations
+            if isJust event.start_time && isJust event.end_time then
+                renderAvailableRooms_ ( eventId, event ) rooms events occupations
 
-        Nothing ->
+            else
+                ul [ ariaLabel "Salas Livres", class "list custom-scrollbar" ] []
+
+        _ ->
             ul [ ariaLabel "Salas Livres", class "list custom-scrollbar" ] []
 
 

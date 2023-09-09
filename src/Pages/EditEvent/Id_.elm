@@ -9,6 +9,7 @@ import Html.Attributes exposing (..)
 import Html.Events exposing (onClick, onInput)
 import Html.Styled
 import Http
+import Maybe.Extra
 import Page exposing (Page)
 import Route exposing (Route)
 import Route.Path
@@ -77,7 +78,7 @@ init data eventIDParam () =
 
         event =
             Dict.get eventID data.events
-                |> Maybe.withDefault (Event "" "" Nothing Nothing Nothing Nothing)
+                |> Maybe.Extra.withDefaultLazy (\() -> Event "" "" Nothing Nothing Nothing Nothing)
 
         weekDay =
             event.start_time |> Maybe.map (\a -> a.weekday)

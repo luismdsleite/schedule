@@ -41,7 +41,7 @@ putLecturer maybeId lect =
             ++ [ ( "Hide", Encode.int 0 )
                , ( "Name", Encode.string lect.name )
                , ( "NameAbbr", Encode.string lect.abbr )
-               , ( "Number", Encode.string lect.office )
+               , ( "Office", Encode.string lect.office )
                ]
 
 

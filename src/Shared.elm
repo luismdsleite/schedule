@@ -93,11 +93,20 @@ update route msg model =
                 Shared.Msg.UpdateEvent ( evID, ev ) ->
                     ( { model | events = Dict.insert evID ev model.events }
                     , effect
-                      -- , Effect.pushRoute { path = route.path, query = Dict.insert "teste1" "teste" Dict.empty, hash = Nothing }
                     )
 
                 Shared.Msg.UpdateRoom ( roomID, room ) ->
                     ( { model | rooms = Dict.insert roomID room model.rooms }
+                    , effect
+                    )
+
+                Shared.Msg.UpdateLect ( lectID, lect ) ->
+                    ( { model | lecturers = Dict.insert lectID lect model.lecturers }
+                    , effect
+                    )
+
+                Shared.Msg.UpdateBlock ( blockID, block ) ->
+                    ( { model | blocks = Dict.insert blockID block model.blocks }
                     , effect
                     )
 
@@ -108,6 +117,16 @@ update route msg model =
 
                 Shared.Msg.DeleteRoom roomID ->
                     ( { model | rooms = Dict.remove roomID model.rooms }
+                    , effect
+                    )
+
+                Shared.Msg.DeleteLect lectID ->
+                    ( { model | lecturers = Dict.remove lectID model.lecturers }
+                    , effect
+                    )
+
+                Shared.Msg.DeleteBlock blockID ->
+                    ( { model | blocks = Dict.remove blockID model.blocks }
                     , effect
                     )
 

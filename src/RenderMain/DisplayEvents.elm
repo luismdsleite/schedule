@@ -5,6 +5,7 @@ module RenderMain.DisplayEvents exposing (DisplayEvent(..), createDisplayEvents,
 
 import Array exposing (Array)
 import Matrix exposing (..)
+import Maybe.Extra
 import ScheduleObjects.Event exposing (Event, EventID)
 import ScheduleObjects.WeekTime exposing (WeekTime)
 import Time exposing (..)
@@ -67,7 +68,7 @@ doesEvFitInCol ev colIndex colisionGrid =
 
     else
         -- Else check if there exists any event already in the same range
-        Maybe.withDefault False
+        Maybe.Extra.withDefaultLazy (\() -> False)
             (ev.start_time
                 |> Maybe.andThen
                     (\start_time ->
@@ -84,7 +85,7 @@ createDisplayEvents evList =
     let
         -- Outputs the lineEnd of the last event on the grid. This variable is used to define the grid size.
         gridLinesSize =
-            List.foldr (\( _, ev1 ) prevMax -> max prevMax (hash (Maybe.withDefault (WeekTime Time.Mon startingHour startingMinute) ev1.end_time))) 0 evList
+            List.foldr (\( _, ev1 ) prevMax -> max prevMax (hash (Maybe.Extra.withDefaultLazy (\() -> WeekTime Time.Mon startingHour startingMinute) ev1.end_time))) 0 evList
 
         gridColsSize =
             List.length evList

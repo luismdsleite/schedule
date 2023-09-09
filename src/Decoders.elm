@@ -8,6 +8,7 @@ import Http
 import Json.Decode as JD exposing (Decoder)
 import Json.Decode.Extra as JDE
 import List
+import Maybe.Extra
 import ScheduleObjects.Block exposing (Block)
 import ScheduleObjects.Event exposing (Event, EventID)
 import ScheduleObjects.Id exposing (ID)
@@ -38,12 +39,9 @@ roomParser =
 
 lectParser : Decoder Lecturer
 lectParser =
-    JD.map6 Lecturer
+    JD.map3 Lecturer
         (JD.field "Name" JD.string)
         (JD.field "NameAbbr" JD.string)
-        (JD.fail "Good Time Not Implemented" |> JDE.withDefault [])
-        (JD.fail "Difficult Time Not Implemented" |> JDE.withDefault [])
-        (JD.fail "Unavailable Time Not Implemented" |> JDE.withDefault [])
         (JD.field "Office" JD.string)
 
 
@@ -158,7 +156,7 @@ hourDecoder =
                 case String.split ":" timeString of
                     [ hourStr, _ ] ->
                         JD.succeed
-                            (String.toInt hourStr |> Maybe.withDefault 0)
+                            (String.toInt hourStr |> Maybe.Extra.withDefaultLazy (\() -> 0))
 
                     _ ->
                         JD.fail "Invalid time format, expected HH:MM"
