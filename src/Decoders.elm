@@ -1,4 +1,4 @@
-module Decoders exposing (blockParser, errorToString, eventParser, getBlockAndId, getEventAndID, lectParser, objectsToDictParser, occupationParser, restrictionParser, roomParser, tokenParser)
+module Decoders exposing (blockParser, errorToString, eventParser, getBlockAndId, getEventAndID, lectParser, objectsToDictParser, occupationParser, responseParser, restrictionParser, roomParser, tokenParser)
 
 {-| Json Decoders used to interact with the servers REST API
 -}
@@ -26,6 +26,11 @@ objectsToDictParser objectDecoder =
         |> JD.map Dict.fromList
     )
         |> JD.at [ "data" ]
+
+
+responseParser : Decoder a -> Decoder a
+responseParser decoder =
+    JD.field "data" decoder
 
 
 roomParser : Decoder Room
