@@ -1,11 +1,14 @@
-module Encoders exposing (login, putEvent, putLecturer, putRoom)
+module Encoders exposing (login, putBlock, putEvent, putLecturer, putRoom)
 
+import Dict exposing (Dict)
 import Json.Encode as Encode
+import ScheduleObjects.Block exposing (Block, BlockID)
 import ScheduleObjects.Event exposing (Event, EventID)
 import ScheduleObjects.Id exposing (ID)
 import ScheduleObjects.Lecturer exposing (Lecturer, LecturerID)
 import ScheduleObjects.Room exposing (Room, RoomID)
 import ScheduleObjects.WeekTimeConverters exposing (convertHourAndMinute, weekdayToNumber)
+import Tuple
 
 
 idProperty : Maybe ID -> List ( String, Encode.Value )
@@ -29,6 +32,19 @@ putRoom maybeId room =
                , ( "NameAbbr", Encode.string room.abbr )
                , ( "Capacity", Encode.int room.capacity )
                , ( "Number", Encode.string room.number )
+               ]
+
+
+{-| Encoder for a Block. Can optionally also encode a BlockID
+-}
+putBlock : Maybe ID -> Dict EventID Event -> Block -> Encode.Value
+putBlock maybeId events block =
+    Encode.object <|
+        idProperty maybeId
+            ++ [ ( "Hide", Encode.int 0 )
+               , ( "Name", Encode.string block.name )
+               , ( "NameAbbr", Encode.string block.nameAbbr )
+               , ( "AssociatedEventIds", Encode.list Encode.int (Dict.filter block.cond events |> Dict.toList |> List.map Tuple.first) )
                ]
 
 
