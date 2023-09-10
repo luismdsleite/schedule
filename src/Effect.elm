@@ -4,7 +4,7 @@ module Effect exposing
     , sendCmd, sendMsg
     , pushRoute, replaceRoute, loadExternalUrl
     , map, toCmd
-    , deleteEvent, deleteLect, deleteRoom, loadData, loadToken, updateEvent, updateLect, updateRoom
+    , deleteBlock, deleteEvent, deleteLect, deleteRoom, loadData, loadToken, updateBlock, updateEvent, updateLect, updateRoom
     )
 
 {-|
