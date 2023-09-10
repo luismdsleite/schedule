@@ -109,6 +109,7 @@ ul:before {
 
 .list-title {
   display: flex;
+  word-break: break-word;
   justify-content: center;
   gap: 10px;
   position: sticky;
