@@ -126,11 +126,8 @@ type Msg
     | SelectWeekday (Select.Msg Time.Weekday)
     | SelectStartHour (Select.Msg ( Int, Int ))
     | SelectEndHour (Select.Msg ( Int, Int ))
-    | ClearTime
     | SelectRoom (Select.Msg RoomID)
-    | ClearRoom
     | SelectLect (Select.Msg LecturerID)
-    | ClearLect
     | UpdateEventRequest
     | UpdateEventResult (Result Http.Error EventID)
     | Return
@@ -171,6 +168,9 @@ update msg (Model data ev weekdayList hourStartList hourEndList roomList lectLis
                                             { weekday = weekday, hour = 9, minute = 0 }
                             in
                             Model data { ev | start_time = Just newStart_time, end_time = Just newEnd_time } { weekdayList | selectedWeekday = Just weekday, selectState = updatedSelectState } { hourStartList | selectedHour = Just ( newStart_time.hour, newStart_time.minute ) } { hourEndList | selectedHour = Just ( newEnd_time.hour, newEnd_time.minute ) } roomList lectList errorMsg
+
+                        Just Clear ->
+                            Model data { ev | start_time = Nothing, end_time = Nothing } { weekdayList | selectedWeekday = Nothing, selectState = updatedSelectState } { hourStartList | selectedHour = Nothing } { hourEndList | selectedHour = Nothing } roomList lectList errorMsg
 
                         _ ->
                             Model data ev { weekdayList | selectState = updatedSelectState } hourStartList hourEndList roomList lectList errorMsg
@@ -239,13 +239,13 @@ update msg (Model data ev weekdayList hourStartList hourEndList roomList lectLis
                         Just (Select roomID) ->
                             Model data { ev | room = Just roomID } weekdayList hourStartList hourEndList { roomList | selectState = updatedSelectState, selectedItem = Just roomID } lectList errorMsg
 
+                        Just Clear ->
+                            Model data { ev | room = Nothing } weekdayList hourStartList hourEndList { roomList | selectState = updatedSelectState, selectedItem = Nothing } lectList errorMsg
+
                         _ ->
                             Model data ev weekdayList hourStartList hourEndList { roomList | selectState = updatedSelectState } lectList errorMsg
             in
             ( newModel, Effect.sendCmd (Cmd.map SelectRoom selectCmds) )
-
-        ClearRoom ->
-            ( Model data { ev | room = Nothing } weekdayList hourStartList hourEndList { roomList | selectedItem = Nothing } lectList errorMsg, Effect.none )
 
         SelectLect selectMsg ->
             let
@@ -257,16 +257,13 @@ update msg (Model data ev weekdayList hourStartList hourEndList roomList lectLis
                         Just (Select lectID) ->
                             Model data { ev | lecturer = Just lectID } weekdayList hourStartList hourEndList roomList { lectList | selectState = updatedSelectState, selectedItem = Just lectID } errorMsg
 
+                        Just Clear ->
+                            Model data { ev | lecturer = Nothing } weekdayList hourStartList hourEndList roomList { lectList | selectState = updatedSelectState, selectedItem = Nothing } errorMsg
+
                         _ ->
                             Model data ev weekdayList hourStartList hourEndList roomList { lectList | selectState = updatedSelectState } errorMsg
             in
             ( newModel, Effect.sendCmd (Cmd.map SelectRoom selectCmds) )
-
-        ClearLect ->
-            ( Model data { ev | lecturer = Nothing } weekdayList hourStartList hourEndList roomList { lectList | selectedItem = Nothing } errorMsg, Effect.none )
-
-        ClearTime ->
-            ( Model data { ev | start_time = Nothing, end_time = Nothing } { weekdayList | selectedWeekday = Nothing } { hourStartList | selectedHour = Nothing } { hourEndList | selectedHour = Nothing } roomList lectList errorMsg, Effect.none )
 
         UpdateEventRequest ->
             ( Model data ev weekdayList hourStartList hourEndList roomList lectList errorMsg, Effect.sendCmd (updateEvent ev data.backendUrl data.token) )
@@ -309,11 +306,11 @@ view (Model data ev weekdayList hourStartList hourEndList roomList lectList erro
     , body =
         [ input [ class "input-box", style "width" "100%", value ev.subjectAbbr, onInput SubjectAbbrChange, Html.Attributes.placeholder "Abbreviatura" ] []
         , input [ class "input-box", style "width" "100%", value ev.subject, onInput SubjectChange, Html.Attributes.placeholder "Nome Da Cadeira" ] []
-        , div [ style "width" "100%", style "display" "grid", style "grid-template-columns" "95% 5%" ] [ Html.map SelectWeekday (Html.Styled.toUnstyled <| renderWeekdaySelect weekdayList), div [ class "gg-remove", onClick ClearTime ] [] ]
+        , Html.map SelectWeekday (Html.Styled.toUnstyled <| renderWeekdaySelect weekdayList)
         , Html.map SelectStartHour (Html.Styled.toUnstyled <| renderHourSelect hourStartList "Hora de Início")
         , Html.map SelectEndHour (Html.Styled.toUnstyled <| renderHourSelect hourEndList "Hora de Fim")
-        , div [ style "width" "100%", style "display" "grid", style "grid-template-columns" "95% 5%" ] [ Html.map SelectRoom (Html.Styled.toUnstyled <| renderAbbrSelect roomList data.rooms "Sala"), div [ class "gg-remove", onClick ClearRoom ] [] ]
-        , div [ style "width" "100%", style "display" "grid", style "grid-template-columns" "95% 5%" ] [ Html.map SelectLect (Html.Styled.toUnstyled <| renderAbbrSelect lectList data.lecturers "Docente"), div [ class "gg-remove", onClick ClearLect ] [] ]
+        , Html.map SelectRoom (Html.Styled.toUnstyled <| renderAbbrSelect roomList data.rooms "Sala")
+        , Html.map SelectLect (Html.Styled.toUnstyled <| renderAbbrSelect lectList data.lecturers "Docente")
         , button [ style "margin-right" "2%", class "button", onClick Return ] [ text "Retornar" ]
         , button [ style "margin-left" "2%", class "button", onClick UpdateEventRequest ] [ text "Submeter" ]
         , div [ style "width" "100%" ] [ text errorMsg ]
@@ -325,6 +322,7 @@ renderWeekdaySelect : WeekDayList -> Html.Styled.Html (Select.Msg Time.Weekday)
 renderWeekdaySelect weekdayList =
     Select.view
         ((Select.single <| Maybe.map (\weekday -> basicMenuItem { item = weekday, label = toPortugueseWeekday weekday }) weekdayList.selectedWeekday)
+            |> Select.clearable True
             |> Select.state weekdayList.selectState
             |> Select.menuItems weekdayList.items
             |> Select.placeholder "Dia da Semana"
@@ -354,6 +352,7 @@ getAbbr abbrID rooms =
 renderAbbrSelect itemList items placeholder =
     Select.view
         ((Select.single <| Maybe.map (\abbrID -> basicMenuItem { item = abbrID, label = getAbbr abbrID items }) itemList.selectedItem)
+            |> Select.clearable True
             |> Select.state itemList.selectState
             |> Select.menuItems itemList.items
             |> Select.placeholder placeholder
