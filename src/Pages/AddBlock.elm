@@ -1,5 +1,6 @@
 module Pages.AddBlock exposing (Model, Msg, page)
 
+import Css
 import Decoders
 import Dict exposing (Dict)
 import Effect exposing (Effect)
@@ -22,6 +23,7 @@ import ScheduleObjects.Lecturer exposing (Lecturer, LecturerID)
 import ScheduleObjects.Room exposing (Room, RoomID)
 import ScheduleObjects.WeekTimeConverters exposing (..)
 import Select exposing (..)
+import Select.Styles as Styles
 import Shared
 import View exposing (View)
 
@@ -183,7 +185,14 @@ renderEventsList data eventList =
             |> Select.placeholder "Selecione os eventos"
             |> Select.searchable True
             |> Select.clearable True
+            |> Select.setStyles (Styles.default |> Styles.setMenuStyles menuBranding)
         )
+
+
+menuBranding : Styles.MenuConfig
+menuBranding =
+    Styles.getMenuConfig Styles.default
+        |> Styles.setMenuMaxHeightVh (Css.vh 50)
 
 
 {-| Transforms an event into a list item
