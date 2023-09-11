@@ -408,26 +408,10 @@ updateEvent ( id, event ) backendUrl token =
         , headers = [ Http.header "Authorization" ("Bearer " ++ token), Http.header "Content-Type" "application/json" ]
         , url = backendUrl ++ "events\\" ++ String.fromInt id
         , body = Http.jsonBody (Encoders.putEvent Nothing event)
-        , expect = Http.expectWhatever (handleUpdateResponse ( id, event ))
+        , expect = Http.expectJson UpdateEventResult (Decoders.responseParser Decoders.getEventAndID)
         , timeout = Nothing
         , tracker = Nothing
         }
-
-
-{-| When we update an event there are 2 possible options:
-
-1.  The event is updated successfully, in this case we do a GET request to get the updated event
-2.  The event is not updated, in this case we do nothing
-
--}
-handleUpdateResponse : ( EventID, Event ) -> Result Http.Error () -> Msg
-handleUpdateResponse ( evID, ev ) response =
-    case response of
-        Ok _ ->
-            UpdateEventResult (Ok ( evID, ev ))
-
-        Err err ->
-            UpdateEventResult (Err err)
 
 
 deleteEvent : EventID -> String -> Token -> Cmd Msg

@@ -163,20 +163,10 @@ updateLect ( id, lect ) backendUrl token =
         , headers = [ Http.header "Authorization" ("Bearer " ++ token), Http.header "Content-Type" "application/json" ]
         , url = backendUrl ++ "lecturers\\" ++ String.fromInt id
         , body = Http.jsonBody (Encoders.putLecturer Nothing lect)
-        , expect = Http.expectWhatever (handleUpdateResponse ( id, lect ))
+        , expect = Http.expectJson UpdateLectResult (Decoders.responseParser Decoders.getLectAndID)
         , timeout = Nothing
         , tracker = Nothing
         }
-
-
-handleUpdateResponse : ( LecturerID, Lecturer ) -> Result Http.Error () -> Msg
-handleUpdateResponse ( lectID, lect ) response =
-    case response of
-        Ok _ ->
-            UpdateLectResult (Ok ( lectID, lect ))
-
-        Err err ->
-            UpdateLectResult (Err err)
 
 
 deleteLect : LecturerID -> String -> Token -> Cmd Msg

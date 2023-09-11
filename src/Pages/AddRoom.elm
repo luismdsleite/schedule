@@ -54,7 +54,7 @@ type Msg
     | CapacityChange Int
     | NumberChange String
     | UpdateRoomRequest
-    | UpdateRoomResult (Result Http.Error RoomID)
+    | UpdateRoomResult (Result Http.Error ( RoomID, Room ))
     | Return
 
 
@@ -78,7 +78,7 @@ update msg (Model room backendUrl token errorMsg) =
 
         UpdateRoomResult result ->
             case result of
-                Ok id ->
+                Ok ( id, newRoom ) ->
                     let
                         route =
                             { path = Route.Path.Main
@@ -86,7 +86,7 @@ update msg (Model room backendUrl token errorMsg) =
                             , hash = Nothing
                             }
                     in
-                    ( Model room backendUrl token errorMsg, Effect.updateRoom ( id, room ) (Just route) )
+                    ( Model room backendUrl token errorMsg, Effect.updateRoom ( id, newRoom ) (Just route) )
 
                 Err err ->
                     ( Model room backendUrl token (Decoders.errorToString err), Effect.none )
@@ -134,7 +134,7 @@ updateRoom room backendUrl token =
         , headers = [ Http.header "Authorization" ("Bearer " ++ token), Http.header "Content-Type" "application/json" ]
         , url = backendUrl ++ "rooms"
         , body = Http.jsonBody (Encoders.putRoom Nothing room)
-        , expect = Http.expectJson UpdateRoomResult (JD.field "data" (JD.field "id" JD.int))
+        , expect = Http.expectJson UpdateRoomResult (Decoders.responseParser Decoders.getRoomAndID)
         , timeout = Nothing
         , tracker = Nothing
         }

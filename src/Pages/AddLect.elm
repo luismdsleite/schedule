@@ -52,7 +52,7 @@ type Msg
     | NameChange String
     | OfficeChange String
     | UpdateLectRequest
-    | UpdateLectResult (Result Http.Error LecturerID)
+    | UpdateLectResult (Result Http.Error ( LecturerID, Lecturer ))
     | Return
 
 
@@ -73,7 +73,7 @@ update msg (Model lect backendUrl token errorMsg) =
 
         UpdateLectResult result ->
             case result of
-                Ok id ->
+                Ok ( id, updatedLect ) ->
                     let
                         route =
                             { path = Route.Path.Main
@@ -81,7 +81,7 @@ update msg (Model lect backendUrl token errorMsg) =
                             , hash = Nothing
                             }
                     in
-                    ( Model lect backendUrl token errorMsg, Effect.updateLect ( id, lect ) (Just route) )
+                    ( Model lect backendUrl token errorMsg, Effect.updateLect ( id, updatedLect ) (Just route) )
 
                 Err err ->
                     ( Model lect backendUrl token (Decoders.errorToString err), Effect.none )
@@ -128,7 +128,7 @@ updateLect lect backendUrl token =
         , headers = [ Http.header "Authorization" ("Bearer " ++ token), Http.header "Content-Type" "application/json" ]
         , url = backendUrl ++ "lecturers"
         , body = Http.jsonBody (Encoders.putLecturer Nothing lect)
-        , expect = Http.expectJson UpdateLectResult (JD.field "data" (JD.field "id" JD.int))
+        , expect = Http.expectJson UpdateLectResult (Decoders.responseParser Decoders.getLectAndID)
         , timeout = Nothing
         , tracker = Nothing
         }

@@ -129,7 +129,7 @@ type Msg
     | SelectRoom (Select.Msg RoomID)
     | SelectLect (Select.Msg LecturerID)
     | UpdateEventRequest
-    | UpdateEventResult (Result Http.Error EventID)
+    | UpdateEventResult (Result Http.Error ( EventID, Event ))
     | Return
 
 
@@ -270,7 +270,7 @@ update msg (Model data ev weekdayList hourStartList hourEndList roomList lectLis
 
         UpdateEventResult result ->
             case result of
-                Ok id ->
+                Ok ( id, updatedEv ) ->
                     let
                         route =
                             { path = Route.Path.Main
@@ -278,7 +278,7 @@ update msg (Model data ev weekdayList hourStartList hourEndList roomList lectLis
                             , hash = Nothing
                             }
                     in
-                    ( Model { data | events = Dict.insert id ev data.events } ev weekdayList hourStartList hourEndList roomList lectList errorMsg, Effect.updateEvent ( id, ev ) (Just route) )
+                    ( Model { data | events = Dict.insert id updatedEv data.events } ev weekdayList hourStartList hourEndList roomList lectList errorMsg, Effect.updateEvent ( id, updatedEv ) (Just route) )
 
                 Err err ->
                     ( Model data ev weekdayList hourStartList hourEndList roomList lectList (Decoders.errorToString err), Effect.none )
@@ -370,7 +370,7 @@ updateEvent event backendUrl token =
         , headers = [ Http.header "Authorization" ("Bearer " ++ token), Http.header "Content-Type" "application/json" ]
         , url = backendUrl ++ "events"
         , body = Http.jsonBody (Encoders.putEvent Nothing event)
-        , expect = Http.expectJson UpdateEventResult (JD.field "data" (JD.field "id" JD.int))
+        , expect = Http.expectJson UpdateEventResult (Decoders.responseParser Decoders.getEventAndID)
         , timeout = Nothing
         , tracker = Nothing
         }

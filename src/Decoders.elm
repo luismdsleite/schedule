@@ -1,4 +1,4 @@
-module Decoders exposing (blockParser, errorToString, eventParser, getBlockAndId, getEventAndID, lectParser, objectsToDictParser, occupationParser, responseParser, restrictionParser, roomParser, tokenParser)
+module Decoders exposing (blockParser, errorToString, eventParser, getBlockAndId, getEventAndID, getLectAndID, getRoomAndID, lectParser, objectsToDictParser, occupationParser, responseParser, restrictionParser, roomParser, tokenParser)
 
 {-| Json Decoders used to interact with the servers REST API
 -}
@@ -12,10 +12,10 @@ import Maybe.Extra
 import ScheduleObjects.Block exposing (Block)
 import ScheduleObjects.Event exposing (Event, EventID)
 import ScheduleObjects.Id exposing (ID)
-import ScheduleObjects.Lecturer exposing (Lecturer)
+import ScheduleObjects.Lecturer exposing (Lecturer, LecturerID)
 import ScheduleObjects.Occupation exposing (Occupation)
 import ScheduleObjects.Restriction exposing (Restriction)
-import ScheduleObjects.Room exposing (Room)
+import ScheduleObjects.Room exposing (Room, RoomID)
 import ScheduleObjects.WeekTime exposing (WeekTime)
 import Time
 
@@ -73,6 +73,16 @@ blockParser =
 getEventAndID : Decoder ( EventID, Event )
 getEventAndID =
     JD.map2 Tuple.pair (JD.field "Id" JD.int) eventParser
+
+
+getRoomAndID : Decoder ( RoomID, Room )
+getRoomAndID =
+    JD.map2 Tuple.pair (JD.field "Id" JD.int) roomParser
+
+
+getLectAndID : Decoder ( LecturerID, Lecturer )
+getLectAndID =
+    JD.map2 Tuple.pair (JD.field "Id" JD.int) lectParser
 
 
 {-| Event Decoder

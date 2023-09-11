@@ -168,20 +168,10 @@ updateRoom ( id, room ) backendUrl token =
         , headers = [ Http.header "Authorization" ("Bearer " ++ token), Http.header "Content-Type" "application/json" ]
         , url = backendUrl ++ "rooms\\" ++ String.fromInt id
         , body = Http.jsonBody (Encoders.putRoom Nothing room)
-        , expect = Http.expectWhatever (handleUpdateResponse ( id, room ))
+        , expect = Http.expectJson UpdateRoomResult (Decoders.responseParser Decoders.getRoomAndID)
         , timeout = Nothing
         , tracker = Nothing
         }
-
-
-handleUpdateResponse : ( RoomID, Room ) -> Result Http.Error () -> Msg
-handleUpdateResponse ( roomID, room ) response =
-    case response of
-        Ok _ ->
-            UpdateRoomResult (Ok ( roomID, room ))
-
-        Err err ->
-            UpdateRoomResult (Err err)
 
 
 deleteRoom : RoomID -> String -> Token -> Cmd Msg
