@@ -162,11 +162,11 @@ update msg (Model ( id, restriction ) weekdayList hourStartList hourEndList cate
             ( Model ( id, { restriction | category = newCategory } ) weekdayList hourStartList hourEndList { categoryList | selectedCategory = newCategory, selectState = updatedSelectState } token backendUrl errorMsg deleteConfirmation, Effect.sendCmd (Cmd.map SelectCategory selectCmds) )
 
         UpdateRestrictionRequest ->
-            ( Model ( id, restriction ) weekdayList hourStartList hourEndList categoryList token backendUrl errorMsg deleteConfirmation, Effect.sendCmd (updateLect ( id, restriction ) backendUrl token) )
+            ( Model ( id, restriction ) weekdayList hourStartList hourEndList categoryList token backendUrl errorMsg deleteConfirmation, Effect.sendCmd (updateRestriction ( id, restriction ) backendUrl token) )
 
         DeleteRestrictionRequest ->
             if deleteConfirmation then
-                ( Model ( id, restriction ) weekdayList hourStartList hourEndList categoryList token backendUrl errorMsg False, Effect.sendCmd (deleteLect id backendUrl token) )
+                ( Model ( id, restriction ) weekdayList hourStartList hourEndList categoryList token backendUrl errorMsg False, Effect.sendCmd (deleteRestriction id backendUrl token) )
 
             else
                 ( Model ( id, restriction ) weekdayList hourStartList hourEndList categoryList token backendUrl errorMsg True, Effect.none )
@@ -240,8 +240,8 @@ view (Model ( id, restriction ) weekdayList hourStartList hourEndList categoryLi
 ------------------------ HTTP ------------------------
 
 
-updateLect : ( RestrictionID, Restriction ) -> String -> Token -> Cmd Msg
-updateLect ( id, restriction ) backendUrl token =
+updateRestriction : ( RestrictionID, Restriction ) -> String -> Token -> Cmd Msg
+updateRestriction ( id, restriction ) backendUrl token =
     Http.request
         { method = "PUT"
         , headers = [ Http.header "Authorization" ("Bearer " ++ token), Http.header "Content-Type" "application/json" ]
@@ -253,8 +253,8 @@ updateLect ( id, restriction ) backendUrl token =
         }
 
 
-deleteLect : RestrictionID -> String -> Token -> Cmd Msg
-deleteLect id backendUrl token =
+deleteRestriction : RestrictionID -> String -> Token -> Cmd Msg
+deleteRestriction id backendUrl token =
     Http.request
         { method = "DELETE"
         , headers = [ Http.header "Authorization" ("Bearer " ++ token), Http.header "Content-Type" "application/json" ]
