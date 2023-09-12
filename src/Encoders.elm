@@ -1,4 +1,4 @@
-module Encoders exposing (login, putBlock, putEvent, putLecturer, putRestriction, putRoom)
+module Encoders exposing (login, putBlock, putEvent, putLecturer, putOccupation, putRestriction, putRoom)
 
 import Dict exposing (Dict)
 import Json.Encode as Encode
@@ -6,6 +6,7 @@ import ScheduleObjects.Block exposing (Block, BlockID)
 import ScheduleObjects.Event exposing (Event, EventID)
 import ScheduleObjects.Id exposing (ID)
 import ScheduleObjects.Lecturer exposing (Lecturer, LecturerID)
+import ScheduleObjects.Occupation as Occupation exposing (Occupation, OccupationID)
 import ScheduleObjects.Restriction as Restriction exposing (Restriction, RestrictionID)
 import ScheduleObjects.Room exposing (Room, RoomID)
 import ScheduleObjects.WeekTimeConverters exposing (convertHourAndMinute, weekdayToNumber)
@@ -108,7 +109,7 @@ putRestriction : Maybe RestrictionID -> Restriction -> Encode.Value
 putRestriction maybeId restriction =
     let
         weekDay =
-            Encode.int (weekdayToNumber restriction.end_time.weekday)
+            Encode.int (weekdayToNumber restriction.start_time.weekday)
 
         convertToTime time =
             Encode.string (convertHourAndMinute time.hour time.minute)
@@ -134,6 +135,24 @@ putRestriction maybeId restriction =
                , ( "EndTime", convertToTime restriction.end_time )
                , ( "WeekDay", weekDay )
                , ( "Type", categoryParser restriction.category )
+               ]
+
+
+putOccupation : Maybe OccupationID -> Occupation -> Encode.Value
+putOccupation maybeId occupation =
+    let
+        weekDay =
+            Encode.int (weekdayToNumber occupation.start_time.weekday)
+
+        convertToTime time =
+            Encode.string (convertHourAndMinute time.hour time.minute)
+    in
+    Encode.object <|
+        idProperty maybeId
+            ++ [ ( "RoomId", Encode.int occupation.room )
+               , ( "StartTime", convertToTime occupation.start_time )
+               , ( "EndTime", convertToTime occupation.end_time )
+               , ( "WeekDay", weekDay )
                ]
 
 

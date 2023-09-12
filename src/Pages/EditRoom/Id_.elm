@@ -1,11 +1,12 @@
 module Pages.EditRoom.Id_ exposing (Model, Msg, page)
 
 import Decoders
-import Dict
+import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Encoders
 import Html exposing (..)
 import Html.Attributes exposing (..)
+import Html.Attributes.Aria exposing (ariaLabel)
 import Html.Events exposing (onClick, onInput)
 import Http
 import Maybe.Extra
@@ -13,7 +14,9 @@ import Page exposing (Page)
 import Route exposing (Route)
 import Route.Path
 import ScheduleObjects.Data exposing (Data, Token)
+import ScheduleObjects.Occupation exposing (Occupation, OccupationID)
 import ScheduleObjects.Room exposing (Room, RoomID)
+import ScheduleObjects.WeekTimeConverters exposing (convertWeekDay, convertWeekTimeHourAndMinute, weekTimeComparator)
 import Shared
 import View exposing (View)
 
@@ -33,7 +36,7 @@ page shared route =
 
 
 type Model
-    = Model ( RoomID, Room ) String String Bool String
+    = Model ( RoomID, Room ) (Dict OccupationID Occupation) String String Bool String
 
 
 init : Data -> String -> () -> ( Model, Effect Msg )
@@ -46,7 +49,7 @@ init data roomIDParam () =
         room =
             Dict.get roomID data.rooms |> Maybe.Extra.withDefaultLazy (\() -> Room "" "" 0 "")
     in
-    ( Model ( roomID, room ) data.backendUrl data.token False "", Effect.none )
+    ( Model ( roomID, room ) (Dict.filter (\_ occupations -> occupations.room == roomID) data.occupations) data.backendUrl data.token False "", Effect.none )
 
 
 
@@ -62,26 +65,28 @@ type Msg
     | UpdateRoomResult (Result Http.Error ( RoomID, Room ))
     | DeleteRoomRequest
     | DeleteRoomResult (Result Http.Error ())
+    | GoToEditOccupationPage OccupationID
+    | GoToAddOccupationPage
     | Return
 
 
 update : Msg -> Model -> ( Model, Effect Msg )
-update msg (Model ( roomID, room ) backendUrl token deleteConfirmation errorMsg) =
+update msg (Model ( roomID, room ) occupations backendUrl token deleteConfirmation errorMsg) =
     case msg of
         AbbrChange str ->
-            ( Model ( roomID, { room | abbr = str } ) backendUrl token deleteConfirmation errorMsg, Effect.none )
+            ( Model ( roomID, { room | abbr = str } ) occupations backendUrl token deleteConfirmation errorMsg, Effect.none )
 
         NameChange str ->
-            ( Model ( roomID, { room | name = str } ) backendUrl token deleteConfirmation errorMsg, Effect.none )
+            ( Model ( roomID, { room | name = str } ) occupations backendUrl token deleteConfirmation errorMsg, Effect.none )
 
         CapacityChange int ->
-            ( Model ( roomID, { room | capacity = int } ) backendUrl token deleteConfirmation errorMsg, Effect.none )
+            ( Model ( roomID, { room | capacity = int } ) occupations backendUrl token deleteConfirmation errorMsg, Effect.none )
 
         NumberChange str ->
-            ( Model ( roomID, { room | number = str } ) backendUrl token deleteConfirmation errorMsg, Effect.none )
+            ( Model ( roomID, { room | number = str } ) occupations backendUrl token deleteConfirmation errorMsg, Effect.none )
 
         UpdateRoomRequest ->
-            ( Model ( roomID, room ) backendUrl token deleteConfirmation errorMsg, Effect.sendCmd <| updateRoom ( roomID, room ) backendUrl token )
+            ( Model ( roomID, room ) occupations backendUrl token deleteConfirmation errorMsg, Effect.sendCmd <| updateRoom ( roomID, room ) backendUrl token )
 
         UpdateRoomResult result ->
             case result of
@@ -93,31 +98,37 @@ update msg (Model ( roomID, room ) backendUrl token deleteConfirmation errorMsg)
                             , hash = Nothing
                             }
                     in
-                    ( Model ( id, updatedRoom ) backendUrl token deleteConfirmation errorMsg, Effect.updateRoom ( id, updatedRoom ) (Just route) )
+                    ( Model ( id, updatedRoom ) occupations backendUrl token deleteConfirmation errorMsg, Effect.updateRoom ( id, updatedRoom ) (Just route) )
 
                 Err err ->
-                    ( Model ( roomID, room ) backendUrl token deleteConfirmation (Decoders.errorToString err), Effect.none )
+                    ( Model ( roomID, room ) occupations backendUrl token deleteConfirmation (Decoders.errorToString err), Effect.none )
 
         DeleteRoomRequest ->
             if deleteConfirmation then
-                ( Model ( roomID, room ) backendUrl token False errorMsg, Effect.sendCmd <| deleteRoom roomID backendUrl token )
+                ( Model ( roomID, room ) occupations backendUrl token False errorMsg, Effect.sendCmd <| deleteRoom roomID backendUrl token )
 
             else
-                ( Model ( roomID, room ) backendUrl token True errorMsg, Effect.none )
+                ( Model ( roomID, room ) occupations backendUrl token True errorMsg, Effect.none )
 
         DeleteRoomResult result ->
             case result of
                 Ok _ ->
-                    ( Model ( roomID, room ) backendUrl token deleteConfirmation errorMsg, Effect.deleteRoom roomID (Just { path = Route.Path.Main, query = Dict.empty, hash = Nothing }) )
+                    ( Model ( roomID, room ) occupations backendUrl token deleteConfirmation errorMsg, Effect.deleteRoom roomID (Just { path = Route.Path.Main, query = Dict.empty, hash = Nothing }) )
 
                 Err (Http.BadStatus 500) ->
-                    ( Model ( roomID, room ) backendUrl token deleteConfirmation "Erro no servidor. Verifique se ainda existem cadeiras (incluindo cadeiras escondidas) associadas a esta sala.", Effect.none )
+                    ( Model ( roomID, room ) occupations backendUrl token deleteConfirmation "Erro no servidor. Verifique se ainda existem cadeiras (incluindo cadeiras escondidas) associadas a esta sala.", Effect.none )
 
                 Err err ->
-                    ( Model ( roomID, room ) backendUrl token deleteConfirmation (Decoders.errorToString err), Effect.none )
+                    ( Model ( roomID, room ) occupations backendUrl token deleteConfirmation (Decoders.errorToString err), Effect.none )
+
+        GoToEditOccupationPage id ->
+            ( Model ( roomID, room ) occupations backendUrl token deleteConfirmation errorMsg, Effect.pushRoute { path = Route.Path.EditOccupation_Id_ { id = String.fromInt id }, query = Dict.empty, hash = Nothing } )
+
+        GoToAddOccupationPage ->
+            ( Model ( roomID, room ) occupations backendUrl token deleteConfirmation errorMsg, Effect.pushRoute { path = Route.Path.AddOccupation, query = Dict.singleton "roomID" (String.fromInt roomID), hash = Nothing } )
 
         Return ->
-            ( Model ( roomID, room ) backendUrl token deleteConfirmation errorMsg, Effect.pushRoute { path = Route.Path.Main, query = Dict.empty, hash = Nothing } )
+            ( Model ( roomID, room ) occupations backendUrl token deleteConfirmation errorMsg, Effect.pushRoute { path = Route.Path.Main, query = Dict.empty, hash = Nothing } )
 
 
 
@@ -134,13 +145,20 @@ subscriptions model =
 
 
 view : Model -> View Msg
-view (Model ( roomID, room ) backendUrl token deleteConfirmation errorMsg) =
+view (Model ( roomID, room ) occupations backendUrl token deleteConfirmation errorMsg) =
+    let
+        orderedOccupations =
+            occupations
+                |> Dict.toList
+                |> List.sortWith (\( _, r1 ) ( _, r2 ) -> weekTimeComparator r1.start_time r2.start_time)
+    in
     { title = "Editar Sala"
     , body =
         [ input [ class "input-box", style "width" "100%", value room.abbr, onInput AbbrChange, Html.Attributes.placeholder "Abbreviatura" ] []
         , input [ class "input-box", style "width" "100%", value room.name, onInput NameChange, Html.Attributes.placeholder "Nome Da Sala" ] []
         , input [ class "input-box", style "width" "100%", value <| String.fromInt room.capacity, onInput (CapacityChange << Maybe.Extra.withDefaultLazy (\() -> room.capacity) << String.toInt), Html.Attributes.placeholder "Capacidade" ] []
         , input [ class "input-box", style "width" "100%", value room.number, onInput NumberChange, Html.Attributes.placeholder "Número" ] []
+        , renderOccupations orderedOccupations
         , button [ style "margin-right" "2%", class "button", onClick Return ] [ text "Retornar" ]
         , button [ class "button", onClick UpdateRoomRequest ] [ text "Submeter" ]
         , button [ style "margin-left" "2%", style "color" "red", class "button", onClick DeleteRoomRequest ]
@@ -155,6 +173,20 @@ view (Model ( roomID, room ) backendUrl token deleteConfirmation errorMsg) =
         , div [ style "width" "100%" ] [ text errorMsg ]
         ]
     }
+
+
+renderOccupations : List ( OccupationID, Occupation ) -> Html Msg
+renderOccupations occupations =
+    ul [ class "list2 custom-scrollbar" ] (ul [ ariaLabel "Ocupações", class "list-title" ] [ div [ class "gg-add", onClick GoToAddOccupationPage ] [] ] :: List.map renderOccupation occupations)
+
+
+renderOccupation : ( OccupationID, Occupation ) -> Html Msg
+renderOccupation ( id, occupation ) =
+    li [ class "list-item", onClick (GoToEditOccupationPage id) ]
+        [ div [ class "custom-scrollbar", class "list-text", style "width" "10%" ] [ text <| convertWeekDay <| Just occupation.start_time ]
+        , div [ class "custom-scrollbar", class "list-text", style "width" "10%" ] [ text <| (++) "\t" <| (convertWeekTimeHourAndMinute <| Just occupation.start_time) ]
+        , div [ class "custom-scrollbar", class "list-text", style "width" "10%" ] [ text <| (++) "\t" <| convertWeekTimeHourAndMinute <| Just occupation.end_time ]
+        ]
 
 
 

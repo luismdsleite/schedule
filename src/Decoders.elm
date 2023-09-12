@@ -1,4 +1,4 @@
-module Decoders exposing (blockParser, errorToString, eventParser, getBlockAndId, getEventAndID, getLectAndID, getRestrictionAndId, getRoomAndID, lectParser, objectsToDictParser, occupationParser, responseParser, restrictionParser, roomParser, tokenParser)
+module Decoders exposing (blockParser, errorToString, eventParser, getBlockAndId, getEventAndID, getLectAndID, getOccupationAndId, getRestrictionAndId, getRoomAndID, lectParser, objectsToDictParser, occupationParser, responseParser, restrictionParser, roomParser, tokenParser)
 
 {-| Json Decoders used to interact with the servers REST API
 -}
@@ -13,7 +13,7 @@ import ScheduleObjects.Block exposing (Block)
 import ScheduleObjects.Event exposing (Event, EventID)
 import ScheduleObjects.Id exposing (ID)
 import ScheduleObjects.Lecturer exposing (Lecturer, LecturerID)
-import ScheduleObjects.Occupation exposing (Occupation)
+import ScheduleObjects.Occupation exposing (Occupation, OccupationID)
 import ScheduleObjects.Restriction as Restriction exposing (Restriction, RestrictionID)
 import ScheduleObjects.Room exposing (Room, RoomID)
 import ScheduleObjects.WeekTime exposing (WeekTime)
@@ -56,6 +56,11 @@ getLectAndID =
 getRestrictionAndId : Decoder ( RestrictionID, Restriction )
 getRestrictionAndId =
     JD.map2 Tuple.pair (JD.field "Id" JD.int) restrictionParser
+
+
+getOccupationAndId : Decoder ( OccupationID, Occupation )
+getOccupationAndId =
+    JD.map2 Tuple.pair (JD.field "Id" JD.int) occupationParser
 
 
 roomParser : Decoder Room

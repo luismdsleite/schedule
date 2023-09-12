@@ -115,6 +115,11 @@ update route msg model =
                     , effect
                     )
 
+                Shared.Msg.UpdateOccupation ( occID, occ ) ->
+                    ( { model | occupations = Dict.insert occID occ model.occupations }
+                    , effect
+                    )
+
                 Shared.Msg.DeleteEvent evID ->
                     ( { model | events = Dict.remove evID model.events }
                     , effect
@@ -137,6 +142,11 @@ update route msg model =
 
                 Shared.Msg.DeleteRestriction restID ->
                     ( { model | restrictions = Dict.remove restID model.restrictions }
+                    , effect
+                    )
+
+                Shared.Msg.DeleteOccupation occID ->
+                    ( { model | occupations = Dict.remove occID model.occupations }
                     , effect
                     )
 
