@@ -1,4 +1,4 @@
-module ScheduleObjects.Restriction exposing (Category(..), Restriction, RestrictionID, allCategories, categoryToColor, categoryToPortugueseString)
+module ScheduleObjects.Restriction exposing (Category(..), Restriction, RestrictionID, allCategories, categoryComparator, categoryToColor, categoryToPortugueseString)
 
 import ScheduleObjects.Id exposing (ID)
 import ScheduleObjects.Lecturer exposing (LecturerID)
@@ -44,18 +44,38 @@ categoryToPortugueseString : Category -> String
 categoryToPortugueseString category =
     case category of
         Priority ->
-            "Prioridade"
+            "Prioridade 🟧"
 
         Service ->
-            "Serviço"
+            "Serviço 🟥"
 
         Preference ->
-            "Preferência"
+            "Preferência 🟩"
 
         Other ->
-            "Outro"
+            "Outro 🟨"
 
 
 allCategories : List Category
 allCategories =
     [ Priority, Service, Preference, Other ]
+
+
+categoryComparator : Category -> Category -> Order
+categoryComparator category1 category2 =
+    let
+        categoryToNumber category =
+            case category of
+                Priority ->
+                    1
+
+                Service ->
+                    2
+
+                Preference ->
+                    3
+
+                Other ->
+                    4
+    in
+    compare (categoryToNumber category1) (categoryToNumber category2)

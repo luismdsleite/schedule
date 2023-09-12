@@ -15,7 +15,7 @@ import Route exposing (Route)
 import Route.Path
 import ScheduleObjects.Data exposing (Data, Token)
 import ScheduleObjects.Lecturer exposing (Lecturer, LecturerID)
-import ScheduleObjects.Restriction as Restriction exposing (Restriction, RestrictionID)
+import ScheduleObjects.Restriction as Restriction exposing (Restriction, RestrictionID, categoryComparator)
 import ScheduleObjects.WeekTimeConverters exposing (convertWeekDay, convertWeekTimeHourAndMinute, weekTimeComparator)
 import Shared
 import View exposing (View)
@@ -149,7 +149,14 @@ view (Model ( lectID, lect ) restrictions backendUrl token deleteConfirmation er
         orderedRestrictions =
             restrictions
                 |> Dict.toList
-                |> List.sortWith (\( _, r1 ) ( _, r2 ) -> weekTimeComparator r1.start_time r2.start_time)
+                |> List.sortWith
+                    (\( _, r1 ) ( _, r2 ) ->
+                        if r1.category == r2.category then
+                            weekTimeComparator r1.start_time r2.start_time
+
+                        else
+                            categoryComparator r1.category r2.category
+                    )
     in
     { title = "Editar Docente"
     , body =
