@@ -6,6 +6,7 @@ import ScheduleObjects.Block exposing (Block, BlockID)
 import ScheduleObjects.Data exposing (Data)
 import ScheduleObjects.Event exposing (Event, EventID)
 import ScheduleObjects.Lecturer exposing (Lecturer, LecturerID)
+import ScheduleObjects.Restriction exposing (Restriction, RestrictionID)
 import ScheduleObjects.Room exposing (Room, RoomID)
 
 
@@ -34,7 +35,9 @@ type UpdateType
     | UpdateRoom ( RoomID, Room )
     | UpdateLect ( LecturerID, Lecturer )
     | UpdateBlock ( BlockID, Block )
+    | UpdateRestriction ( RestrictionID, Restriction )
     | DeleteEvent EventID
     | DeleteRoom RoomID
     | DeleteLect LecturerID
     | DeleteBlock BlockID
+    | DeleteRestriction RestrictionID

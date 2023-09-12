@@ -1,4 +1,4 @@
-module Decoders exposing (blockParser, errorToString, eventParser, getBlockAndId, getEventAndID, getLectAndID, getRoomAndID, lectParser, objectsToDictParser, occupationParser, responseParser, restrictionParser, roomParser, tokenParser)
+module Decoders exposing (blockParser, errorToString, eventParser, getBlockAndId, getEventAndID, getLectAndID, getRestrictionAndId, getRoomAndID, lectParser, objectsToDictParser, occupationParser, responseParser, restrictionParser, roomParser, tokenParser)
 
 {-| Json Decoders used to interact with the servers REST API
 -}
@@ -14,7 +14,7 @@ import ScheduleObjects.Event exposing (Event, EventID)
 import ScheduleObjects.Id exposing (ID)
 import ScheduleObjects.Lecturer exposing (Lecturer, LecturerID)
 import ScheduleObjects.Occupation exposing (Occupation)
-import ScheduleObjects.Restriction as Restriction exposing (Restriction)
+import ScheduleObjects.Restriction as Restriction exposing (Restriction, RestrictionID)
 import ScheduleObjects.Room exposing (Room, RoomID)
 import ScheduleObjects.WeekTime exposing (WeekTime)
 import Time
@@ -31,6 +31,31 @@ objectsToDictParser objectDecoder =
 responseParser : Decoder a -> Decoder a
 responseParser decoder =
     JD.field "data" decoder
+
+
+getBlockAndId : Decoder ( ID, Block )
+getBlockAndId =
+    JD.map2 Tuple.pair (JD.field "Id" JD.int) blockParser
+
+
+getEventAndID : Decoder ( EventID, Event )
+getEventAndID =
+    JD.map2 Tuple.pair (JD.field "Id" JD.int) eventParser
+
+
+getRoomAndID : Decoder ( RoomID, Room )
+getRoomAndID =
+    JD.map2 Tuple.pair (JD.field "Id" JD.int) roomParser
+
+
+getLectAndID : Decoder ( LecturerID, Lecturer )
+getLectAndID =
+    JD.map2 Tuple.pair (JD.field "Id" JD.int) lectParser
+
+
+getRestrictionAndId : Decoder ( RestrictionID, Restriction )
+getRestrictionAndId =
+    JD.map2 Tuple.pair (JD.field "Id" JD.int) restrictionParser
 
 
 roomParser : Decoder Room
@@ -50,11 +75,6 @@ lectParser =
         (JD.field "Office" JD.string)
 
 
-getBlockAndId : Decoder ( ID, Block )
-getBlockAndId =
-    JD.map2 Tuple.pair (JD.field "Id" JD.int) blockParser
-
-
 blockParser : Decoder Block
 blockParser =
     JD.map3 Block
@@ -68,21 +88,6 @@ blockParser =
                     )
             )
         )
-
-
-getEventAndID : Decoder ( EventID, Event )
-getEventAndID =
-    JD.map2 Tuple.pair (JD.field "Id" JD.int) eventParser
-
-
-getRoomAndID : Decoder ( RoomID, Room )
-getRoomAndID =
-    JD.map2 Tuple.pair (JD.field "Id" JD.int) roomParser
-
-
-getLectAndID : Decoder ( LecturerID, Lecturer )
-getLectAndID =
-    JD.map2 Tuple.pair (JD.field "Id" JD.int) lectParser
 
 
 {-| Event Decoder
@@ -240,7 +245,7 @@ errorToString error =
             "Verifique a sua informação e tente novamente"
 
         Http.BadStatus int ->
-            "Unknown error (" ++ String.fromInt int ++ ")"
+            "Erro Desconhecido (" ++ String.fromInt int ++ ")"
 
         Http.BadBody errorMessage ->
             errorMessage

@@ -1,4 +1,4 @@
-module Encoders exposing (login, putBlock, putEvent, putLecturer, putRoom)
+module Encoders exposing (login, putBlock, putEvent, putLecturer, putRestriction, putRoom)
 
 import Dict exposing (Dict)
 import Json.Encode as Encode
@@ -6,6 +6,7 @@ import ScheduleObjects.Block exposing (Block, BlockID)
 import ScheduleObjects.Event exposing (Event, EventID)
 import ScheduleObjects.Id exposing (ID)
 import ScheduleObjects.Lecturer exposing (Lecturer, LecturerID)
+import ScheduleObjects.Restriction as Restriction exposing (Restriction, RestrictionID)
 import ScheduleObjects.Room exposing (Room, RoomID)
 import ScheduleObjects.WeekTimeConverters exposing (convertHourAndMinute, weekdayToNumber)
 import Tuple
@@ -100,6 +101,39 @@ putEvent maybeId event =
                , ( "StartTime", convertToTime event.start_time )
                , ( "EndTime", convertToTime event.end_time )
                , ( "WeekDay", weekDay )
+               ]
+
+
+putRestriction : Maybe RestrictionID -> Restriction -> Encode.Value
+putRestriction maybeId restriction =
+    let
+        weekDay =
+            Encode.int (weekdayToNumber restriction.end_time.weekday)
+
+        convertToTime time =
+            Encode.string (convertHourAndMinute time.hour time.minute)
+
+        categoryParser category =
+            case category of
+                Restriction.Preference ->
+                    Encode.int 0
+
+                Restriction.Service ->
+                    Encode.int 1
+
+                Restriction.Priority ->
+                    Encode.int 2
+
+                Restriction.Other ->
+                    Encode.int 3
+    in
+    Encode.object <|
+        idProperty maybeId
+            ++ [ ( "LecturerId", Encode.int restriction.lect )
+               , ( "StartTime", convertToTime restriction.start_time )
+               , ( "EndTime", convertToTime restriction.end_time )
+               , ( "WeekDay", weekDay )
+               , ( "Type", categoryParser restriction.category )
                ]
 
 

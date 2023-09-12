@@ -110,6 +110,11 @@ update route msg model =
                     , effect
                     )
 
+                Shared.Msg.UpdateRestriction ( restID, rest ) ->
+                    ( { model | restrictions = Dict.insert restID rest model.restrictions }
+                    , effect
+                    )
+
                 Shared.Msg.DeleteEvent evID ->
                     ( { model | events = Dict.remove evID model.events }
                     , effect
@@ -127,6 +132,11 @@ update route msg model =
 
                 Shared.Msg.DeleteBlock blockID ->
                     ( { model | blocks = Dict.remove blockID model.blocks }
+                    , effect
+                    )
+
+                Shared.Msg.DeleteRestriction restID ->
+                    ( { model | restrictions = Dict.remove restID model.restrictions }
                     , effect
                     )
 

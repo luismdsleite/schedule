@@ -4,7 +4,7 @@ module Effect exposing
     , sendCmd, sendMsg
     , pushRoute, replaceRoute, loadExternalUrl
     , map, toCmd
-    , deleteBlock, deleteEvent, deleteLect, deleteRoom, loadData, loadToken, updateBlock, updateEvent, updateLect, updateRoom
+    , deleteBlock, deleteEvent, deleteLect, deleteRestriction, deleteRoom, loadData, loadToken, updateBlock, updateEvent, updateLect, updateRestriction, updateRoom
     )
 
 {-|
@@ -26,6 +26,7 @@ import ScheduleObjects.Block exposing (Block, BlockID)
 import ScheduleObjects.Data exposing (Data)
 import ScheduleObjects.Event exposing (Event, EventID)
 import ScheduleObjects.Lecturer exposing (Lecturer, LecturerID)
+import ScheduleObjects.Restriction exposing (Restriction, RestrictionID)
 import ScheduleObjects.Room exposing (Room, RoomID)
 import Shared.Model
 import Shared.Msg
@@ -225,6 +226,11 @@ updateBlock ( blockID, block ) mayberoute =
     SendSharedMsg (Shared.Msg.UpdateData (Shared.Msg.UpdateBlock ( blockID, block )) mayberoute)
 
 
+updateRestriction : ( RestrictionID, Restriction ) -> Maybe { path : Route.Path.Path, query : Dict String String, hash : Maybe String } -> Effect msg
+updateRestriction ( restrictionID, restriction ) mayberoute =
+    SendSharedMsg (Shared.Msg.UpdateData (Shared.Msg.UpdateRestriction ( restrictionID, restriction )) mayberoute)
+
+
 deleteEvent : EventID -> Maybe { path : Route.Path.Path, query : Dict String String, hash : Maybe String } -> Effect msg
 deleteEvent evID mayberoute =
     SendSharedMsg (Shared.Msg.UpdateData (Shared.Msg.DeleteEvent evID) mayberoute)
@@ -243,3 +249,8 @@ deleteLect lectID mayberoute =
 deleteBlock : BlockID -> Maybe { path : Route.Path.Path, query : Dict String String, hash : Maybe String } -> Effect msg
 deleteBlock blockID mayberoute =
     SendSharedMsg (Shared.Msg.UpdateData (Shared.Msg.DeleteBlock blockID) mayberoute)
+
+
+deleteRestriction : RestrictionID -> Maybe { path : Route.Path.Path, query : Dict String String, hash : Maybe String } -> Effect msg
+deleteRestriction restrictionID mayberoute =
+    SendSharedMsg (Shared.Msg.UpdateData (Shared.Msg.DeleteRestriction restrictionID) mayberoute)

@@ -1,4 +1,4 @@
-module ScheduleObjects.Restriction exposing (Category(..), Restriction, RestrictionID, categoryToColor, restrictionToPortugueseString)
+module ScheduleObjects.Restriction exposing (Category(..), Restriction, RestrictionID, allCategories, categoryToColor, categoryToPortugueseString)
 
 import ScheduleObjects.Id exposing (ID)
 import ScheduleObjects.Lecturer exposing (LecturerID)
@@ -40,9 +40,9 @@ categoryToColor category =
             "yellow"
 
 
-restrictionToPortugueseString : Restriction -> String
-restrictionToPortugueseString restriction =
-    case restriction.category of
+categoryToPortugueseString : Category -> String
+categoryToPortugueseString category =
+    case category of
         Priority ->
             "Prioridade"
 
@@ -54,3 +54,8 @@ restrictionToPortugueseString restriction =
 
         Other ->
             "Outro"
+
+
+allCategories : List Category
+allCategories =
+    [ Priority, Service, Preference, Other ]

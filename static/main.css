@@ -154,3 +154,24 @@ ul:before {
   box-shadow: 0 0 5px rgba(0, 0, 0, 0.6);
   /* Add a shadow on press */
 }
+
+
+.list2{
+padding-bottom: 6px;
+padding-top: 4px;
+box-sizing: border-box;
+/* top: 100%; */
+background-color: #FFFFFF;
+/* position: absolute; */
+width: 100%;
+box-sizing: border-box;
+border-radius: 7px;
+box-shadow: 0px 0px 12px rgba(0,0,0,0.19);
+margin-top: 8px;
+z-index: 2;
+border: 6px solid transparent;
+max-height: 50vh;
+overflow-y: auto;
+padding-left: 0px;
+margin-bottom: 8px;
+}
