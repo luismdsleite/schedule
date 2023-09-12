@@ -10,7 +10,7 @@ import RenderMain.DisplayEvents exposing (..)
 import RenderMain.Msg exposing (..)
 import ScheduleObjects.Event exposing (Event, EventID)
 import ScheduleObjects.Occupation exposing (Occupation, OccupationID)
-import ScheduleObjects.Restriction exposing (Restriction, RestrictionID)
+import ScheduleObjects.Restriction as Restriction exposing (Restriction, RestrictionID)
 import ScheduleObjects.WeekTime exposing (..)
 import ScheduleObjects.WeekTimeConverters exposing (..)
 
@@ -69,21 +69,21 @@ renderSchedule tableWidth draggable events occupations restrictions title =
                     List.map (\( _, occ ) -> ( occ.start_time, occ.end_time )) occupations
 
                 -- List of all the restrictions timeslots, separated by categories, in the format ( start_time, end_time )
-                extractedGreenRestrictionsTimes : List ( WeekTime, WeekTime )
-                extractedGreenRestrictionsTimes =
-                    List.map (\( _, rest ) -> ( rest.start_time, rest.end_time )) (List.filter (\( _, rest ) -> rest.category == 0) restrictions)
+                extractedRestrictionsPreferenceTimes : List ( WeekTime, WeekTime )
+                extractedRestrictionsPreferenceTimes =
+                    List.map (\( _, rest ) -> ( rest.start_time, rest.end_time )) (List.filter (\( _, rest ) -> rest.category == Restriction.Preference) restrictions)
 
-                extractedRedRestrictionsTimes : List ( WeekTime, WeekTime )
-                extractedRedRestrictionsTimes =
-                    List.map (\( _, rest ) -> ( rest.start_time, rest.end_time )) (List.filter (\( _, rest ) -> rest.category == 1) restrictions)
+                extractedRestrictionsServiceTimes : List ( WeekTime, WeekTime )
+                extractedRestrictionsServiceTimes =
+                    List.map (\( _, rest ) -> ( rest.start_time, rest.end_time )) (List.filter (\( _, rest ) -> rest.category == Restriction.Service) restrictions)
 
-                extractedOrangeRestrictionsTimes : List ( WeekTime, WeekTime )
-                extractedOrangeRestrictionsTimes =
-                    List.map (\( _, rest ) -> ( rest.start_time, rest.end_time )) (List.filter (\( _, rest ) -> rest.category == 2) restrictions)
+                extractedRestrictionsPriorityTimes : List ( WeekTime, WeekTime )
+                extractedRestrictionsPriorityTimes =
+                    List.map (\( _, rest ) -> ( rest.start_time, rest.end_time )) (List.filter (\( _, rest ) -> rest.category == Restriction.Priority) restrictions)
 
-                extractedYellowRestrictionsTimes : List ( WeekTime, WeekTime )
-                extractedYellowRestrictionsTimes =
-                    List.map (\( _, rest ) -> ( rest.start_time, rest.end_time )) (List.filter (\( _, rest ) -> rest.category == 3) restrictions)
+                extractedRestrictionsOthersTimes : List ( WeekTime, WeekTime )
+                extractedRestrictionsOthersTimes =
+                    List.map (\( _, rest ) -> ( rest.start_time, rest.end_time )) (List.filter (\( _, rest ) -> rest.category == Restriction.Other) restrictions)
 
                 -- Color a slot based on the restrictions and occupations. Note: Restrictions and Occupations are mutually exclusive.
                 colorWeekLi : WeekTime -> String
@@ -91,17 +91,17 @@ renderSchedule tableWidth draggable events occupations restrictions title =
                     if List.any (weekTimeIsBetween weektime) extractedOccupiedTimes then
                         "red"
 
-                    else if List.any (weekTimeIsBetween weektime) extractedGreenRestrictionsTimes then
-                        "green"
+                    else if List.any (weekTimeIsBetween weektime) extractedRestrictionsPreferenceTimes then
+                        Restriction.categoryToColor Restriction.Preference
 
-                    else if List.any (weekTimeIsBetween weektime) extractedRedRestrictionsTimes then
-                        "red"
+                    else if List.any (weekTimeIsBetween weektime) extractedRestrictionsServiceTimes then
+                        Restriction.categoryToColor Restriction.Service
 
-                    else if List.any (weekTimeIsBetween weektime) extractedOrangeRestrictionsTimes then
-                        "orange"
+                    else if List.any (weekTimeIsBetween weektime) extractedRestrictionsPriorityTimes then
+                        Restriction.categoryToColor Restriction.Priority
 
-                    else if List.any (weekTimeIsBetween weektime) extractedYellowRestrictionsTimes then
-                        "yellow"
+                    else if List.any (weekTimeIsBetween weektime) extractedRestrictionsOthersTimes then
+                        Restriction.categoryToColor Restriction.Other
 
                     else
                         ""

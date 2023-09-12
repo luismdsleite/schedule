@@ -14,7 +14,7 @@ import ScheduleObjects.Event exposing (Event, EventID)
 import ScheduleObjects.Id exposing (ID)
 import ScheduleObjects.Lecturer exposing (Lecturer, LecturerID)
 import ScheduleObjects.Occupation exposing (Occupation)
-import ScheduleObjects.Restriction exposing (Restriction)
+import ScheduleObjects.Restriction as Restriction exposing (Restriction)
 import ScheduleObjects.Room exposing (Room, RoomID)
 import ScheduleObjects.WeekTime exposing (WeekTime)
 import Time
@@ -113,11 +113,30 @@ occupationParser =
 -}
 restrictionParser : Decoder Restriction
 restrictionParser =
+    let
+        categoryParser =
+            JD.int
+                |> JD.andThen
+                    (\n ->
+                        case n of
+                            0 ->
+                                JD.succeed Restriction.Preference
+
+                            1 ->
+                                JD.succeed Restriction.Service
+
+                            2 ->
+                                JD.succeed Restriction.Priority
+
+                            _ ->
+                                JD.succeed Restriction.Other
+                    )
+    in
     JD.map4 Restriction
         (JD.field "LecturerId" JD.int)
         (weektimeDecoder "StartTime")
         (weektimeDecoder "EndTime")
-        (JD.field "Type" JD.int)
+        (JD.field "Type" categoryParser)
 
 
 {-| Weektime Decoder.
