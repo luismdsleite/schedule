@@ -219,36 +219,17 @@ weekdayComparator weekday1 weekday2 =
         num2 =
             weekdayToNumber weekday2
     in
-    if num1 == num2 then
-        EQ
-
-    else if num1 < num2 then
-        LT
-
-    else
-        GT
-
-
-intComparator : Int -> Int -> Order
-intComparator int1 int2 =
-    if int1 == int2 then
-        EQ
-
-    else if int1 < int2 then
-        LT
-
-    else
-        GT
+    compare num1 num2
 
 
 weekTimeComparator : WeekTime -> WeekTime -> Order
 weekTimeComparator time1 time2 =
     if time1.weekday == time2.weekday then
         if time1.hour == time2.hour then
-            intComparator time1.minute time2.minute
+            compare time1.minute time2.minute
 
         else
-            intComparator time1.hour time2.hour
+            compare time1.hour time2.hour
 
     else
         weekdayComparator time1.weekday time2.weekday
