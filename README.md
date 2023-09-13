@@ -18,6 +18,7 @@ This repository contains only the frontend of the application, the backend can b
 elm-land server  # starts this app at http:/localhost:1234
 ```
 Requires the following environment variables to be set:
+
 `SERVER_URL`= Url of the backend host + api entrypoint e.g. https://192.168.1.217:8008/api/v1/
 
 ## Production
@@ -28,6 +29,7 @@ Build the application
 elm-land build
 ```
 Requires the following environment variables to be set:
+
 `SERVER_URL`= Url of the backend host + api entrypoint e.g. https://192.168.1.217:8008/api/v1/
 
 Output is stored in the `dist/` directory.
