@@ -15,9 +15,9 @@ This repository contains only the frontend of the application, the backend can b
 ## Dev Server
 
 ```bash
-SERVER_URL=$SERVER_URL elm-land server  # starts this app at http:/localhost:1234
+elm-land server  # starts this app at http:/localhost:1234
 ```
-
+Requires the following environment variables to be set:
 `SERVER_URL`= Url of the backend host + api entrypoint e.g. https://192.168.1.217:8008/api/v1/
 
 ## Production
@@ -25,9 +25,9 @@ SERVER_URL=$SERVER_URL elm-land server  # starts this app at http:/localhost:123
 Build the application
 
 ```bash
-SERVER_URL=$SERVER_URL elm-land build
+elm-land build
 ```
-
+Requires the following environment variables to be set:
 `SERVER_URL`= Url of the backend host + api entrypoint e.g. https://192.168.1.217:8008/api/v1/
 
 Output is stored in the `dist/` directory.
