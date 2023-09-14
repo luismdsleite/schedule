@@ -19,6 +19,10 @@ type alias Data =
     , lecturers : Dict ID Lecturer
     , events : Dict EventID Event
     , blocks : Dict ID Block
+    , hiddenRooms : Dict RoomID Room
+    , hiddenLecturers : Dict ID Lecturer
+    , hiddenEvents : Dict EventID Event
+    , hiddenBlocks : Dict ID Block
     , occupations : Dict OccupationID Occupation
     , restrictions : Dict RestrictionID Restriction
     , token : Token

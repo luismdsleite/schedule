@@ -41,8 +41,8 @@ blockTupleComparator ( _, block1 ) ( _, block2 ) =
 
 {-| Renders all the events into a list.
 -}
-renderEvents : List ( Int, Event ) -> Dict RoomID Room -> Dict LecturerID Lecturer -> Maybe ( EventID, Event ) -> Html Msg
-renderEvents events rooms lecturers selectedEvent =
+renderEvents : List ( Int, Event ) -> List ( Int, Event ) -> Dict RoomID Room -> Dict LecturerID Lecturer -> Maybe ( EventID, Event ) -> Html Msg
+renderEvents events hiddenEvents rooms lecturers selectedEvent =
     let
         modifyIcon =
             case selectedEvent of
@@ -53,12 +53,12 @@ renderEvents events rooms lecturers selectedEvent =
                     div [ style "display" "none" ] []
     in
     ul [ class "list custom-scrollbar" ]
-        (ul [ ariaLabel "Cadeiras", class "list-title" ] [ modifyIcon, div [ class "gg-add", onClick (EditMenu AddEvent) ] [] ] :: List.map (renderEvent rooms lecturers) (List.sortWith eventTupleComparator events))
+        (ul [ ariaLabel "Cadeiras", class "list-title" ] [ modifyIcon, div [ class "gg-add", onClick (EditMenu AddEvent) ] [] ] :: List.map (renderEvent rooms lecturers) (List.sortWith eventTupleComparator events) ++ List.map renderHiddenEvents (List.sortWith eventTupleComparator hiddenEvents))
 
 
 {-| Transforms an event into a list item
 -}
-renderEvent : Dict RoomID Room -> Dict LecturerID Lecturer -> ( Int, Event ) -> Html Msg
+renderEvent : Dict RoomID Room -> Dict LecturerID Lecturer -> ( EventID, Event ) -> Html Msg
 renderEvent rooms lecturers ( eventID, event ) =
     let
         room =
@@ -103,13 +103,24 @@ renderEvent rooms lecturers ( eventID, event ) =
         ]
 
 
+renderHiddenEvents : ( EventID, Event ) -> Html Msg
+renderHiddenEvents ( eventID, event ) =
+    li [ class "list-item", style "text-decoration" "line-through", onClick (EditMenu (EditEvent eventID)) ]
+        [ div [ class "custom-scrollbar", class "list-text", style "width" "10%", attribute "title" event.subjectAbbr ] [ text event.subjectAbbr ]
+        , div [ class "custom-scrollbar", class "list-text", style "width" "35%", attribute "title" event.subject, style "margin-left" "1%" ] [ text event.subject ]
+        ]
+
+
 {-| TODO: ADD ⚠️ emote to rooms with conflicts.
 -}
-renderRooms : Dict RoomID Room -> Maybe ( RoomID, Room ) -> Html Msg
-renderRooms rooms selectedRoom =
+renderRooms : Dict RoomID Room -> Dict RoomID Room -> Maybe ( RoomID, Room ) -> Html Msg
+renderRooms rooms hiddenRooms selectedRoom =
     let
         roomsList =
             Dict.toList rooms |> List.sortWith roomTupleComparator
+
+        hiddenRoomsList =
+            Dict.toList hiddenRooms |> List.sortWith roomTupleComparator
 
         modifyIcon =
             case selectedRoom of
@@ -122,21 +133,30 @@ renderRooms rooms selectedRoom =
     ul [ class "list custom-scrollbar" ]
         (ul [ ariaLabel "Salas", class "list-title" ] [ modifyIcon, div [ class "gg-add", onClick (EditMenu AddRoom) ] [] ]
             :: List.map renderRoom roomsList
+            ++ List.map renderHiddenRooms hiddenRoomsList
         )
 
 
-renderRoom : ( Int, Room ) -> Html Msg
+renderRoom : ( RoomID, Room ) -> Html Msg
 renderRoom ( int, room ) =
     li [ class "list-item", onClick (ItemClick (OnRoomClick ( int, room ))), attribute "title" room.name ] [ div [ class "custom-scrollbar", class "list-text" ] [ text room.abbr ] ]
 
 
+renderHiddenRooms : ( RoomID, Room ) -> Html Msg
+renderHiddenRooms ( int, room ) =
+    li [ class "list-item", style "text-decoration" "line-through", attribute "title" room.name, onClick (EditMenu (EditRoom int)) ] [ div [ class "custom-scrollbar", class "list-text" ] [ text room.abbr ] ]
+
+
 {-| TODO: ADD ⚠️ emote to lecturers with conflicts
 -}
-renderLecturers : Dict LecturerID Lecturer -> Maybe ( LecturerID, Lecturer ) -> Html Msg
-renderLecturers lecturers selectedLect =
+renderLecturers : Dict LecturerID Lecturer -> Dict LecturerID Lecturer -> Maybe ( LecturerID, Lecturer ) -> Html Msg
+renderLecturers lecturers hiddenLecturers selectedLect =
     let
         lecturersList =
             Dict.toList lecturers |> List.sortWith lectTupleComparator
+
+        hiddenLecturersList =
+            Dict.toList hiddenLecturers |> List.sortWith lectTupleComparator
 
         modifyIcon =
             case selectedLect of
@@ -147,19 +167,27 @@ renderLecturers lecturers selectedLect =
                     div [ style "display" "none" ] []
     in
     ul [ class "list custom-scrollbar" ]
-        (ul [ ariaLabel "Docentes", class "list-title" ] [ modifyIcon, div [ class "gg-add", onClick (EditMenu AddLect) ] [] ] :: List.map renderLecturer lecturersList)
+        (ul [ ariaLabel "Docentes", class "list-title" ] [ modifyIcon, div [ class "gg-add", onClick (EditMenu AddLect) ] [] ] :: List.map renderLecturer lecturersList ++ List.map renderHiddenLecturer hiddenLecturersList)
 
 
-renderLecturer : ( Int, Lecturer ) -> Html Msg
+renderLecturer : ( LecturerID, Lecturer ) -> Html Msg
 renderLecturer ( int, lecturer ) =
     li [ class "list-item", onClick (ItemClick (OnLecturerClick ( int, lecturer ))), attribute "title" lecturer.name ] [ div [ class "custom-scrollbar", class "list-text" ] [ text lecturer.abbr ] ]
 
 
-renderBlocks : Dict BlockID Block -> Maybe ( BlockID, Block ) -> Html Msg
-renderBlocks blocks selectedBlock =
+renderHiddenLecturer : ( LecturerID, Lecturer ) -> Html Msg
+renderHiddenLecturer ( int, lecturer ) =
+    li [ class "list-item", style "text-decoration" "line-through", attribute "title" lecturer.name, onClick (EditMenu (EditLect int)) ] [ div [ class "custom-scrollbar", class "list-text" ] [ text lecturer.abbr ] ]
+
+
+renderBlocks : Dict BlockID Block -> Dict BlockID Block -> Maybe ( BlockID, Block ) -> Html Msg
+renderBlocks blocks hiddenBlocks selectedBlock =
     let
         blocksList =
             Dict.toList blocks |> List.sortWith blockTupleComparator
+
+        hiddenBlocksList =
+            Dict.toList hiddenBlocks |> List.sortWith blockTupleComparator
 
         modifyIcon =
             case selectedBlock of
@@ -170,12 +198,17 @@ renderBlocks blocks selectedBlock =
                     div [ style "display" "none" ] []
     in
     ul [ class "list custom-scrollbar" ]
-        (ul [ ariaLabel "Blocos", class "list-title" ] [ modifyIcon, div [ class "gg-add", onClick (EditMenu AddBlock) ] [] ] :: List.map renderBlock blocksList)
+        (ul [ ariaLabel "Blocos", class "list-title" ] [ modifyIcon, div [ class "gg-add", onClick (EditMenu AddBlock) ] [] ] :: List.map renderBlock blocksList ++ List.map renderHiddenBlock hiddenBlocksList)
 
 
-renderBlock : ( Int, Block ) -> Html Msg
+renderBlock : ( BlockID, Block ) -> Html Msg
 renderBlock ( id, block ) =
     li [ class "list-item", onClick (ItemClick (OnBlockClick ( id, block ))), attribute "title" block.name ] [ div [ class "custom-scrollbar", class "list-text" ] [ text block.nameAbbr ] ]
+
+
+renderHiddenBlock : ( BlockID, Block ) -> Html Msg
+renderHiddenBlock ( id, block ) =
+    li [ class "list-item", style "text-decoration" "line-through", attribute "title" block.name, onClick (EditMenu (EditBlock id)) ] [ div [ class "custom-scrollbar", class "list-text" ] [ text block.nameAbbr ] ]
 
 
 renderAvailableRooms : Maybe ( EventID, Event ) -> Dict RoomID Room -> List Event -> List Occupation -> Html Msg

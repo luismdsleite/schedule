@@ -4,6 +4,7 @@ import Dict
 import DnD
 import Html exposing (..)
 import Html.Attributes exposing (..)
+import Maybe.Extra
 import RenderMain.List exposing (renderAvailableRooms, renderBlocks, renderEvents, renderLecturers, renderRooms)
 import RenderMain.Model exposing (Model(..))
 import RenderMain.Msg exposing (Msg(..))
@@ -21,7 +22,6 @@ view (Model data filters draggable selectedItems) =
         renderScheduleAbbr =
             renderSchedule tableWidth draggable
 
-        -- Here we render the filters, turning them from (EventID -> Event -> Bool) into a List (EventID, Event)
         roomList =
             Dict.filter filters.room data.events |> Dict.toList
 
@@ -31,11 +31,21 @@ view (Model data filters draggable selectedItems) =
         blockList =
             Dict.filter filters.block data.events |> Dict.toList
 
+        -- Here we render the filters, turning them from (EventID -> Event -> Bool) into a List (EventID, Event)
         occupationsList =
             Dict.filter filters.occupations data.occupations |> Dict.toList
 
         restrictionList =
             Dict.filter filters.restrictions data.restrictions |> Dict.toList
+
+        roomName =
+            Maybe.map (\( _, r ) -> r.abbr) selectedItems.room |> Maybe.Extra.withDefaultLazy (\() -> "")
+
+        lectName =
+            Maybe.map (\( _, l ) -> l.abbr) selectedItems.lect |> Maybe.Extra.withDefaultLazy (\() -> "")
+
+        blockName =
+            Maybe.map (\( _, b ) -> b.nameAbbr) selectedItems.block |> Maybe.Extra.withDefaultLazy (\() -> "")
 
         displayOnDrag : ID -> Html Msg
         displayOnDrag id =
@@ -43,13 +53,13 @@ view (Model data filters draggable selectedItems) =
     in
     div []
         [ div [ class "listbox-area" ]
-            [ renderBlocks data.blocks selectedItems.block
-            , renderLecturers data.lecturers selectedItems.lect
-            , renderRooms data.rooms selectedItems.room
-            , renderEvents (Dict.toList data.events) data.rooms data.lecturers selectedItems.event
+            [ renderBlocks data.blocks data.hiddenBlocks selectedItems.block
+            , renderLecturers data.lecturers data.hiddenLecturers selectedItems.lect
+            , renderRooms data.rooms data.hiddenRooms selectedItems.room
+            , renderEvents (Dict.toList data.events) (Dict.toList data.hiddenEvents) data.rooms data.lecturers selectedItems.event
             , renderAvailableRooms selectedItems.event data.rooms (Dict.values data.events) (Dict.values data.occupations)
             ]
-        , div [ class "grids-container" ] [ renderScheduleAbbr blockList [] [] ("Bloco:" ++ filters.blockName), renderScheduleAbbr roomList occupationsList [] ("Sala:" ++ filters.roomName), renderScheduleAbbr lectList [] restrictionList ("Docente:" ++ filters.lectName) ]
+        , div [ class "grids-container" ] [ renderScheduleAbbr blockList [] [] ("Bloco:" ++ roomName), renderScheduleAbbr roomList occupationsList [] ("Sala:" ++ roomName), renderScheduleAbbr lectList [] restrictionList ("Docente:" ++ lectName) ]
         , DnD.dragged
             draggable
             displayOnDrag

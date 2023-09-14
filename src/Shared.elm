@@ -12,12 +12,14 @@ module Shared exposing
 
 -}
 
-import Dict
+import Decoders exposing (IsHidden)
+import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Json.Decode
 import Route exposing (Route)
 import Route.Path
 import ScheduleObjects.Data exposing (Data)
+import ScheduleObjects.Id exposing (ID)
 import Shared.Model
 import Shared.Msg
 
@@ -48,12 +50,12 @@ init : Result Json.Decode.Error Flags -> Route () -> ( Model, Effect Msg )
 init flagsResult route =
     case flagsResult of
         Ok flags ->
-            ( Data Dict.empty Dict.empty Dict.empty Dict.empty Dict.empty Dict.empty "" flags.server_url
+            ( Data Dict.empty Dict.empty Dict.empty Dict.empty Dict.empty Dict.empty Dict.empty Dict.empty Dict.empty Dict.empty "" flags.server_url
             , Effect.pushRoute { path = Route.Path.Home_, query = Dict.empty, hash = Nothing }
             )
 
         Err _ ->
-            ( Data Dict.empty Dict.empty Dict.empty Dict.empty Dict.empty Dict.empty "" ""
+            ( Data Dict.empty Dict.empty Dict.empty Dict.empty Dict.empty Dict.empty Dict.empty Dict.empty Dict.empty Dict.empty "" ""
             , Effect.pushRoute { path = Route.Path.Home_, query = Dict.empty, hash = Nothing }
             )
 
@@ -90,25 +92,61 @@ update route msg model =
                             Effect.none
             in
             case req of
-                Shared.Msg.UpdateEvent ( evID, ev ) ->
-                    ( { model | events = Dict.insert evID ev model.events }
-                    , effect
-                    )
+                Shared.Msg.UpdateEvent ( evID, ( ev, isHidden ) ) ->
+                    let
+                        cleansedModel =
+                            { model | events = Dict.remove evID model.events, hiddenEvents = Dict.remove evID model.hiddenEvents }
 
-                Shared.Msg.UpdateRoom ( roomID, room ) ->
-                    ( { model | rooms = Dict.insert roomID room model.rooms }
-                    , effect
-                    )
+                        newModel =
+                            if isHidden then
+                                { cleansedModel | hiddenEvents = Dict.insert evID ev model.hiddenEvents }
 
-                Shared.Msg.UpdateLect ( lectID, lect ) ->
-                    ( { model | lecturers = Dict.insert lectID lect model.lecturers }
-                    , effect
-                    )
+                            else
+                                { cleansedModel | events = Dict.insert evID ev model.events }
+                    in
+                    ( newModel, effect )
 
-                Shared.Msg.UpdateBlock ( blockID, block ) ->
-                    ( { model | blocks = Dict.insert blockID block model.blocks }
-                    , effect
-                    )
+                Shared.Msg.UpdateRoom ( roomID, ( room, isHidden ) ) ->
+                    let
+                        cleansedModel =
+                            { model | rooms = Dict.remove roomID model.rooms, hiddenRooms = Dict.remove roomID model.hiddenRooms }
+
+                        newModel =
+                            if isHidden then
+                                { cleansedModel | hiddenRooms = Dict.insert roomID room model.hiddenRooms }
+
+                            else
+                                { cleansedModel | rooms = Dict.insert roomID room model.rooms }
+                    in
+                    ( newModel, effect )
+
+                Shared.Msg.UpdateLect ( lectID, ( lect, isHidden ) ) ->
+                    let
+                        cleansedModel =
+                            { model | lecturers = Dict.remove lectID model.lecturers, hiddenLecturers = Dict.remove lectID model.hiddenLecturers }
+
+                        newModel =
+                            if isHidden then
+                                { cleansedModel | hiddenLecturers = Dict.insert lectID lect model.hiddenLecturers }
+
+                            else
+                                { cleansedModel | lecturers = Dict.insert lectID lect model.lecturers }
+                    in
+                    ( newModel, effect )
+
+                Shared.Msg.UpdateBlock ( blockID, ( block, isHidden ) ) ->
+                    let
+                        cleansedModel =
+                            { model | blocks = Dict.remove blockID model.blocks, hiddenBlocks = Dict.remove blockID model.hiddenBlocks }
+
+                        newModel =
+                            if isHidden then
+                                { cleansedModel | hiddenBlocks = Dict.insert blockID block model.hiddenBlocks }
+
+                            else
+                                { cleansedModel | blocks = Dict.insert blockID block model.blocks }
+                    in
+                    ( newModel, effect )
 
                 Shared.Msg.UpdateRestriction ( restID, rest ) ->
                     ( { model | restrictions = Dict.insert restID rest model.restrictions }
@@ -121,22 +159,22 @@ update route msg model =
                     )
 
                 Shared.Msg.DeleteEvent evID ->
-                    ( { model | events = Dict.remove evID model.events }
+                    ( { model | events = Dict.remove evID model.events, hiddenEvents = Dict.remove evID model.hiddenEvents }
                     , effect
                     )
 
                 Shared.Msg.DeleteRoom roomID ->
-                    ( { model | rooms = Dict.remove roomID model.rooms }
+                    ( { model | rooms = Dict.remove roomID model.rooms, hiddenRooms = Dict.remove roomID model.hiddenRooms }
                     , effect
                     )
 
                 Shared.Msg.DeleteLect lectID ->
-                    ( { model | lecturers = Dict.remove lectID model.lecturers }
+                    ( { model | lecturers = Dict.remove lectID model.lecturers, hiddenLecturers = Dict.remove lectID model.hiddenLecturers }
                     , effect
                     )
 
                 Shared.Msg.DeleteBlock blockID ->
-                    ( { model | blocks = Dict.remove blockID model.blocks }
+                    ( { model | blocks = Dict.remove blockID model.blocks, hiddenBlocks = Dict.remove blockID model.hiddenBlocks }
                     , effect
                     )
 

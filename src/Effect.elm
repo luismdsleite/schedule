@@ -19,6 +19,7 @@ module Effect exposing
 -}
 
 import Browser.Navigation
+import Decoders exposing (IsHidden)
 import Dict exposing (Dict)
 import Route exposing (Route)
 import Route.Path
@@ -200,7 +201,7 @@ loadData data =
 {-| Update an event in the shared model. Optionally you can also give a route to go into (Effect.pushRoute) after the event has been updated.
 -}
 updateEvent :
-    ( EventID, Event )
+    ( EventID, ( Event, IsHidden ) )
     ->
         Maybe
             { path : Route.Path.Path
@@ -212,17 +213,17 @@ updateEvent ( evID, ev ) maybeRoute =
     SendSharedMsg (Shared.Msg.UpdateData (Shared.Msg.UpdateEvent ( evID, ev )) maybeRoute)
 
 
-updateRoom : ( RoomID, Room ) -> Maybe { path : Route.Path.Path, query : Dict String String, hash : Maybe String } -> Effect msg
+updateRoom : ( RoomID, ( Room, IsHidden ) ) -> Maybe { path : Route.Path.Path, query : Dict String String, hash : Maybe String } -> Effect msg
 updateRoom ( roomID, room ) maybeRoute =
     SendSharedMsg (Shared.Msg.UpdateData (Shared.Msg.UpdateRoom ( roomID, room )) maybeRoute)
 
 
-updateLect : ( LecturerID, Lecturer ) -> Maybe { path : Route.Path.Path, query : Dict String String, hash : Maybe String } -> Effect msg
+updateLect : ( LecturerID, ( Lecturer, IsHidden ) ) -> Maybe { path : Route.Path.Path, query : Dict String String, hash : Maybe String } -> Effect msg
 updateLect ( lectID, lect ) mayberoute =
     SendSharedMsg (Shared.Msg.UpdateData (Shared.Msg.UpdateLect ( lectID, lect )) mayberoute)
 
 
-updateBlock : ( BlockID, Block ) -> Maybe { path : Route.Path.Path, query : Dict String String, hash : Maybe String } -> Effect msg
+updateBlock : ( BlockID, ( Block, IsHidden ) ) -> Maybe { path : Route.Path.Path, query : Dict String String, hash : Maybe String } -> Effect msg
 updateBlock ( blockID, block ) mayberoute =
     SendSharedMsg (Shared.Msg.UpdateData (Shared.Msg.UpdateBlock ( blockID, block )) mayberoute)
 

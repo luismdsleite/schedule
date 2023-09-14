@@ -20,10 +20,6 @@ type Msg
     | EditMenu EditMenu
 
 
-
--- | UrlChange Data { from : Route (), to : Route () }
-
-
 type OnItemClick
     = OnRoomClick ( RoomID, Room )
     | OnLecturerClick ( LecturerID, Lecturer )

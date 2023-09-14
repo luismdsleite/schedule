@@ -1,12 +1,12 @@
 module Pages.EditEvent.Id_ exposing (Model, Msg, page)
 
-import Decoders
+import Decoders exposing (IsHidden)
 import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Encoders
 import Html exposing (..)
 import Html.Attributes exposing (..)
-import Html.Events exposing (onClick, onInput)
+import Html.Events exposing (onCheck, onClick, onInput)
 import Html.Styled
 import Http
 import Maybe.Extra
@@ -41,7 +41,7 @@ page shared route =
 
 
 type Model
-    = Model Data ( EventID, Event ) WeekDayList HourList HourList AbbrList AbbrList Bool String
+    = Model Data ( EventID, Event ) WeekDayList HourList HourList AbbrList AbbrList Bool String Bool
 
 
 type alias WeekDayList =
@@ -76,9 +76,13 @@ init data eventIDParam () =
                 Nothing ->
                     -1
 
-        event =
-            Dict.get eventID data.events
-                |> Maybe.Extra.withDefaultLazy (\() -> Event "" "" Nothing Nothing Nothing Nothing)
+        ( event, isHidden ) =
+            case Dict.get eventID data.events of
+                Just ev ->
+                    ( ev, False )
+
+                _ ->
+                    ( Dict.get eventID data.hiddenEvents |> Maybe.Extra.withDefaultLazy (\() -> Event "" "" Nothing Nothing Nothing Nothing), True )
 
         weekDay =
             event.start_time |> Maybe.map (\a -> a.weekday)
@@ -89,7 +93,7 @@ init data eventIDParam () =
         endHour =
             event.end_time |> Maybe.map (\a -> ( a.hour, a.minute ))
     in
-    ( Model data ( eventID, event ) (initWeekDayList weekDay) (initHourList startHour "StartHour") (initHourList endHour "EndHour") (initAbbrList event.room (Dict.toList data.rooms) "Room") (initAbbrList event.lecturer (Dict.toList data.lecturers) "Lecturer") False "", Effect.none )
+    ( Model data ( eventID, event ) (initWeekDayList weekDay) (initHourList startHour "StartHour") (initHourList endHour "EndHour") (initAbbrList event.room (Dict.toList data.rooms) "Room") (initAbbrList event.lecturer (Dict.toList data.lecturers) "Lecturer") False "" isHidden, Effect.none )
 
 
 initWeekDayList : Maybe Time.Weekday -> WeekDayList
@@ -141,20 +145,21 @@ type Msg
     | SelectRoom (Select.Msg RoomID)
     | SelectLect (Select.Msg LecturerID)
     | UpdateEventRequest
-    | UpdateEventResult (Result Http.Error ( EventID, Event ))
+    | UpdateEventResult (Result Http.Error ( EventID, ( Event, IsHidden ) ))
     | DeleteEventRequest
     | DeleteEventResult (Result Http.Error ())
+    | VisibilityChange Bool
     | Return
 
 
 update : Msg -> Model -> ( Model, Effect Msg )
-update msg (Model data ( evId, ev ) weekdayList hourStartList hourEndList roomList lectList deleteConfirmation errorMsg) =
+update msg (Model data ( evId, ev ) weekdayList hourStartList hourEndList roomList lectList deleteConfirmation errorMsg isHidden) =
     case msg of
         SubjectAbbrChange str ->
-            ( Model data ( evId, { ev | subjectAbbr = str } ) weekdayList hourStartList hourEndList roomList lectList deleteConfirmation errorMsg, Effect.none )
+            ( Model data ( evId, { ev | subjectAbbr = str } ) weekdayList hourStartList hourEndList roomList lectList deleteConfirmation errorMsg isHidden, Effect.none )
 
         SubjectChange str ->
-            ( Model data ( evId, { ev | subject = str } ) weekdayList hourStartList hourEndList roomList lectList deleteConfirmation errorMsg, Effect.none )
+            ( Model data ( evId, { ev | subject = str } ) weekdayList hourStartList hourEndList roomList lectList deleteConfirmation errorMsg isHidden, Effect.none )
 
         SelectWeekday selectMsg ->
             let
@@ -181,13 +186,13 @@ update msg (Model data ( evId, ev ) weekdayList hourStartList hourEndList roomLi
                                         Nothing ->
                                             { weekday = weekday, hour = 9, minute = 0 }
                             in
-                            Model data ( evId, { ev | start_time = Just newStart_time, end_time = Just newEnd_time } ) { weekdayList | selectedWeekday = Just weekday, selectState = updatedSelectState } { hourStartList | selectedHour = Just ( newStart_time.hour, newStart_time.minute ) } { hourEndList | selectedHour = Just ( newEnd_time.hour, newEnd_time.minute ) } roomList lectList deleteConfirmation errorMsg
+                            Model data ( evId, { ev | start_time = Just newStart_time, end_time = Just newEnd_time } ) { weekdayList | selectedWeekday = Just weekday, selectState = updatedSelectState } { hourStartList | selectedHour = Just ( newStart_time.hour, newStart_time.minute ) } { hourEndList | selectedHour = Just ( newEnd_time.hour, newEnd_time.minute ) } roomList lectList deleteConfirmation errorMsg isHidden
 
                         Just Clear ->
-                            Model data ( evId, { ev | start_time = Nothing, end_time = Nothing } ) { weekdayList | selectedWeekday = Nothing, selectState = updatedSelectState } { hourStartList | selectedHour = Nothing } { hourEndList | selectedHour = Nothing } roomList lectList deleteConfirmation errorMsg
+                            Model data ( evId, { ev | start_time = Nothing, end_time = Nothing } ) { weekdayList | selectedWeekday = Nothing, selectState = updatedSelectState } { hourStartList | selectedHour = Nothing } { hourEndList | selectedHour = Nothing } roomList lectList deleteConfirmation errorMsg isHidden
 
                         _ ->
-                            Model data ( evId, ev ) { weekdayList | selectState = updatedSelectState } hourStartList hourEndList roomList lectList deleteConfirmation errorMsg
+                            Model data ( evId, ev ) { weekdayList | selectState = updatedSelectState } hourStartList hourEndList roomList lectList deleteConfirmation errorMsg isHidden
             in
             ( newModel
             , Effect.sendCmd (Cmd.map SelectWeekday selectCmds)
@@ -210,10 +215,10 @@ update msg (Model data ( evId, ev ) weekdayList hourStartList hourEndList roomLi
                                         Nothing ->
                                             ( Just (WeekTime Time.Mon hour minute), Just (WeekTime Time.Mon 19 30) )
                             in
-                            Model data ( evId, { ev | start_time = newStartTime, end_time = newEndTime } ) weekdayList { hourStartList | selectState = updatedSelectState, selectedHour = Just ( hour, minute ) } hourEndList roomList lectList deleteConfirmation errorMsg
+                            Model data ( evId, { ev | start_time = newStartTime, end_time = newEndTime } ) weekdayList { hourStartList | selectState = updatedSelectState, selectedHour = Just ( hour, minute ) } hourEndList roomList lectList deleteConfirmation errorMsg isHidden
 
                         _ ->
-                            Model data ( evId, ev ) weekdayList { hourStartList | selectState = updatedSelectState } hourEndList roomList lectList deleteConfirmation errorMsg
+                            Model data ( evId, ev ) weekdayList { hourStartList | selectState = updatedSelectState } hourEndList roomList lectList deleteConfirmation errorMsg isHidden
             in
             ( newModel
             , Effect.sendCmd (Cmd.map SelectStartHour selectCmds)
@@ -236,10 +241,10 @@ update msg (Model data ( evId, ev ) weekdayList hourStartList hourEndList roomLi
                                         Nothing ->
                                             ( Just (WeekTime Time.Mon 8 0), Just (WeekTime Time.Mon hour minute) )
                             in
-                            Model data ( evId, { ev | start_time = newStartTime, end_time = newEndTime } ) weekdayList hourStartList { hourEndList | selectState = updatedSelectState, selectedHour = Just ( hour, minute ) } roomList lectList deleteConfirmation errorMsg
+                            Model data ( evId, { ev | start_time = newStartTime, end_time = newEndTime } ) weekdayList hourStartList { hourEndList | selectState = updatedSelectState, selectedHour = Just ( hour, minute ) } roomList lectList deleteConfirmation errorMsg isHidden
 
                         _ ->
-                            Model data ( evId, ev ) weekdayList hourStartList { hourEndList | selectState = updatedSelectState } roomList lectList deleteConfirmation errorMsg
+                            Model data ( evId, ev ) weekdayList hourStartList { hourEndList | selectState = updatedSelectState } roomList lectList deleteConfirmation errorMsg isHidden
             in
             ( newModel, Effect.sendCmd (Cmd.map SelectStartHour selectCmds) )
 
@@ -251,13 +256,13 @@ update msg (Model data ( evId, ev ) weekdayList hourStartList hourEndList roomLi
                 newModel =
                     case maybeAction of
                         Just (Select roomID) ->
-                            Model data ( evId, { ev | room = Just roomID } ) weekdayList hourStartList hourEndList { roomList | selectState = updatedSelectState, selectedItem = Just roomID } lectList deleteConfirmation errorMsg
+                            Model data ( evId, { ev | room = Just roomID } ) weekdayList hourStartList hourEndList { roomList | selectState = updatedSelectState, selectedItem = Just roomID } lectList deleteConfirmation errorMsg isHidden
 
                         Just Clear ->
-                            Model data ( evId, { ev | room = Nothing } ) weekdayList hourStartList hourEndList { roomList | selectState = updatedSelectState, selectedItem = Nothing } lectList deleteConfirmation errorMsg
+                            Model data ( evId, { ev | room = Nothing } ) weekdayList hourStartList hourEndList { roomList | selectState = updatedSelectState, selectedItem = Nothing } lectList deleteConfirmation errorMsg isHidden
 
                         _ ->
-                            Model data ( evId, ev ) weekdayList hourStartList hourEndList { roomList | selectState = updatedSelectState } lectList deleteConfirmation errorMsg
+                            Model data ( evId, ev ) weekdayList hourStartList hourEndList { roomList | selectState = updatedSelectState } lectList deleteConfirmation errorMsg isHidden
             in
             ( newModel, Effect.sendCmd (Cmd.map SelectRoom selectCmds) )
 
@@ -269,18 +274,18 @@ update msg (Model data ( evId, ev ) weekdayList hourStartList hourEndList roomLi
                 newModel =
                     case maybeAction of
                         Just (Select lectID) ->
-                            Model data ( evId, { ev | lecturer = Just lectID } ) weekdayList hourStartList hourEndList roomList { lectList | selectState = updatedSelectState, selectedItem = Just lectID } deleteConfirmation errorMsg
+                            Model data ( evId, { ev | lecturer = Just lectID } ) weekdayList hourStartList hourEndList roomList { lectList | selectState = updatedSelectState, selectedItem = Just lectID } deleteConfirmation errorMsg isHidden
 
                         Just Clear ->
-                            Model data ( evId, { ev | lecturer = Nothing } ) weekdayList hourStartList hourEndList roomList { lectList | selectState = updatedSelectState, selectedItem = Nothing } deleteConfirmation errorMsg
+                            Model data ( evId, { ev | lecturer = Nothing } ) weekdayList hourStartList hourEndList roomList { lectList | selectState = updatedSelectState, selectedItem = Nothing } deleteConfirmation errorMsg isHidden
 
                         _ ->
-                            Model data ( evId, ev ) weekdayList hourStartList hourEndList roomList { lectList | selectState = updatedSelectState } deleteConfirmation errorMsg
+                            Model data ( evId, ev ) weekdayList hourStartList hourEndList roomList { lectList | selectState = updatedSelectState } deleteConfirmation errorMsg isHidden
             in
             ( newModel, Effect.sendCmd (Cmd.map SelectRoom selectCmds) )
 
         UpdateEventRequest ->
-            ( Model data ( evId, ev ) weekdayList hourStartList hourEndList roomList lectList deleteConfirmation errorMsg, Effect.sendCmd (updateEvent ( evId, ev ) data.backendUrl data.token) )
+            ( Model data ( evId, ev ) weekdayList hourStartList hourEndList roomList lectList deleteConfirmation errorMsg isHidden, Effect.sendCmd (updateEvent ( evId, ev ) isHidden data.backendUrl data.token) )
 
         UpdateEventResult result ->
             case result of
@@ -292,28 +297,31 @@ update msg (Model data ( evId, ev ) weekdayList hourStartList hourEndList roomLi
                             , hash = Nothing
                             }
                     in
-                    ( Model { data | events = Dict.insert id event data.events } ( id, event ) weekdayList hourStartList hourEndList roomList lectList deleteConfirmation errorMsg, Effect.updateEvent ( id, event ) (Just route) )
+                    ( Model data ( evId, ev ) weekdayList hourStartList hourEndList roomList lectList deleteConfirmation errorMsg isHidden, Effect.updateEvent ( id, event ) (Just route) )
 
                 Err err ->
-                    ( Model data ( evId, ev ) weekdayList hourStartList hourEndList roomList lectList deleteConfirmation (Decoders.errorToString err), Effect.none )
+                    ( Model data ( evId, ev ) weekdayList hourStartList hourEndList roomList lectList deleteConfirmation (Decoders.errorToString err) isHidden, Effect.none )
 
         DeleteEventRequest ->
             if deleteConfirmation then
-                ( Model data ( evId, ev ) weekdayList hourStartList hourEndList roomList lectList deleteConfirmation errorMsg, Effect.sendCmd (deleteEvent evId data.backendUrl data.token) )
+                ( Model data ( evId, ev ) weekdayList hourStartList hourEndList roomList lectList deleteConfirmation errorMsg isHidden, Effect.sendCmd (deleteEvent evId data.backendUrl data.token) )
 
             else
-                ( Model data ( evId, ev ) weekdayList hourStartList hourEndList roomList lectList True errorMsg, Effect.none )
+                ( Model data ( evId, ev ) weekdayList hourStartList hourEndList roomList lectList True errorMsg isHidden, Effect.none )
 
         DeleteEventResult result ->
             case result of
                 Ok _ ->
-                    ( Model { data | events = Dict.remove evId data.events } ( evId, ev ) weekdayList hourStartList hourEndList roomList lectList deleteConfirmation errorMsg, Effect.deleteEvent evId (Just { path = Route.Path.Main, query = Dict.empty, hash = Nothing }) )
+                    ( Model { data | events = Dict.remove evId data.events } ( evId, ev ) weekdayList hourStartList hourEndList roomList lectList deleteConfirmation errorMsg isHidden, Effect.deleteEvent evId (Just { path = Route.Path.Main, query = Dict.empty, hash = Nothing }) )
 
                 Err err ->
-                    ( Model data ( evId, ev ) weekdayList hourStartList hourEndList roomList lectList deleteConfirmation (Decoders.errorToString err), Effect.none )
+                    ( Model data ( evId, ev ) weekdayList hourStartList hourEndList roomList lectList deleteConfirmation (Decoders.errorToString err) isHidden, Effect.none )
+
+        VisibilityChange changeVisibility ->
+            ( Model data ( evId, ev ) weekdayList hourStartList hourEndList roomList lectList deleteConfirmation errorMsg changeVisibility, Effect.none )
 
         Return ->
-            ( Model data ( evId, ev ) weekdayList hourStartList hourEndList roomList lectList deleteConfirmation errorMsg, Effect.pushRoute { path = Route.Path.Main, query = Dict.empty, hash = Nothing } )
+            ( Model data ( evId, ev ) weekdayList hourStartList hourEndList roomList lectList deleteConfirmation errorMsg isHidden, Effect.pushRoute { path = Route.Path.Main, query = Dict.empty, hash = Nothing } )
 
 
 
@@ -330,7 +338,7 @@ subscriptions model =
 
 
 view : Model -> View Msg
-view (Model data ( evId, ev ) weekdayList hourStartList hourEndList roomList lectList deleteConfirmation errorMsg) =
+view (Model data ( evId, ev ) weekdayList hourStartList hourEndList roomList lectList deleteConfirmation errorMsg isHidden) =
     { title = "Editar Cadeira"
     , body =
         [ input [ class "input-box", style "width" "100%", value ev.subjectAbbr, onInput SubjectAbbrChange, Html.Attributes.placeholder "Abbreviatura" ] []
@@ -340,6 +348,7 @@ view (Model data ( evId, ev ) weekdayList hourStartList hourEndList roomList lec
         , Html.map SelectEndHour (Html.Styled.toUnstyled <| renderHourSelect hourEndList "Hora de Fim")
         , Html.map SelectRoom (Html.Styled.toUnstyled <| renderAbbrSelect roomList data.rooms "Sala")
         , Html.map SelectLect (Html.Styled.toUnstyled <| renderAbbrSelect lectList data.lecturers "Docente")
+        , div [] [ input [ type_ "checkbox", checked isHidden, onCheck VisibilityChange ] [], label [] [ text "Esconder Cadeira" ] ]
         , button [ style "margin-right" "2%", class "button", onClick Return ] [ text "Retornar" ]
         , button [ class "button", onClick UpdateEventRequest ] [ text "Submeter" ]
         , button [ style "margin-left" "2%", style "color" "red", class "button", onClick DeleteEventRequest ]
@@ -401,13 +410,13 @@ renderAbbrSelect itemList items placeholder =
 ------------------------ HTTP ------------------------
 
 
-updateEvent : ( EventID, Event ) -> String -> Token -> Cmd Msg
-updateEvent ( id, event ) backendUrl token =
+updateEvent : ( EventID, Event ) -> IsHidden -> String -> Token -> Cmd Msg
+updateEvent ( id, event ) isHidden backendUrl token =
     Http.request
         { method = "PUT"
         , headers = [ Http.header "Authorization" ("Bearer " ++ token), Http.header "Content-Type" "application/json" ]
         , url = backendUrl ++ "events\\" ++ String.fromInt id
-        , body = Http.jsonBody (Encoders.putEvent Nothing event)
+        , body = Http.jsonBody (Encoders.putEvent Nothing event isHidden)
         , expect = Http.expectJson UpdateEventResult (Decoders.responseParser Decoders.getEventAndID)
         , timeout = Nothing
         , tracker = Nothing

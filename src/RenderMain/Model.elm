@@ -38,7 +38,7 @@ type alias SelectedItemsInList =
 init : Data -> () -> ( Model, Effect Msg )
 init data () =
     ( Model data
-        (ScheduleFilter (\_ _ -> False) (\_ _ -> False) (\_ _ -> False) (\_ _ -> False) (\_ _ -> False) "" "" "")
+        (ScheduleFilter (\_ _ -> False) (\_ _ -> False) (\_ _ -> False) (\_ _ -> False) (\_ _ -> False))
         dnd.model
         (SelectedItemsInList Nothing Nothing Nothing Nothing)
     , Effect.none

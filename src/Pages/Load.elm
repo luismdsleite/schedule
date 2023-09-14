@@ -9,7 +9,7 @@ module Pages.Load exposing (Model, Msg, page)
 -}
 
 import Array exposing (Array)
-import Decoders exposing (blockParser, eventParser, lectParser, objectsToDictParser, occupationParser, restrictionParser, roomParser)
+import Decoders exposing (IsHidden, blockParser, eventParser, lectParser, objectsToDictParser, occupationParser, restrictionParser, roomParser)
 import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Html
@@ -60,7 +60,7 @@ init : String -> Token -> () -> ( Model, Effect Msg )
 init backendUrl token () =
     let
         emptyData =
-            Data Dict.empty Dict.empty Dict.empty Dict.empty Dict.empty Dict.empty token backendUrl
+            Data Dict.empty Dict.empty Dict.empty Dict.empty Dict.empty Dict.empty Dict.empty Dict.empty Dict.empty Dict.empty token backendUrl
 
         noneReceived =
             Array.fromList [ False, False, False, False, False, False ]
@@ -78,13 +78,28 @@ init backendUrl token () =
 
 
 type Msg
-    = GotRooms (Result Http.Error (Dict ID Room))
-    | GotLecturers (Result Http.Error (Dict ID Lecturer))
-    | GotEvents (Result Http.Error (Dict ID Event))
-    | GotBlocks (Result Http.Error (Dict ID Block))
+    = GotRooms (Result Http.Error (Dict ID ( Room, IsHidden )))
+    | GotLecturers (Result Http.Error (Dict ID ( Lecturer, IsHidden )))
+    | GotEvents (Result Http.Error (Dict ID ( Event, IsHidden )))
+    | GotBlocks (Result Http.Error (Dict ID ( Block, IsHidden )))
     | GotOccupations (Result Http.Error (Dict ID Occupation))
     | GotRestrictions (Result Http.Error (Dict ID Restriction))
     | LoadedData Data
+
+
+hidden : a -> ( b, IsHidden ) -> Bool
+hidden _ ( _, bool ) =
+    bool
+
+
+notHidden : a -> ( b, IsHidden ) -> Bool
+notHidden _ ( _, bool ) =
+    not bool
+
+
+removeHiddenMap : Dict a ( b, IsHidden ) -> Dict a b
+removeHiddenMap =
+    Dict.map (\_ ( b, _ ) -> b)
 
 
 update : Msg -> Model -> ( Model, Effect Msg )
@@ -99,8 +114,16 @@ update msg model =
                     case model of
                         Loading data state ->
                             let
+                                exposedRooms =
+                                    Dict.filter notHidden rooms
+                                        |> removeHiddenMap
+
+                                hiddenRooms =
+                                    Dict.filter hidden rooms
+                                        |> removeHiddenMap
+
                                 updatedData =
-                                    { data | rooms = rooms }
+                                    { data | rooms = exposedRooms, hiddenRooms = hiddenRooms }
                             in
                             if Array.foldl (&&) True (Array.set 0 True state) then
                                 update (LoadedData data) (Loaded updatedData)
@@ -120,8 +143,16 @@ update msg model =
                     case model of
                         Loading data state ->
                             let
+                                exposedEvents =
+                                    Dict.filter notHidden events
+                                        |> removeHiddenMap
+
+                                hiddenEvents =
+                                    Dict.filter hidden events
+                                        |> removeHiddenMap
+
                                 updatedData =
-                                    { data | events = events }
+                                    { data | events = exposedEvents, hiddenEvents = hiddenEvents }
                             in
                             if Array.foldl (&&) True (Array.set 1 True state) then
                                 update (LoadedData updatedData) (Loaded updatedData)
@@ -141,8 +172,16 @@ update msg model =
                     case model of
                         Loading data state ->
                             let
+                                exposedLecturers =
+                                    Dict.filter notHidden lecturers
+                                        |> removeHiddenMap
+
+                                hiddenLecturers =
+                                    Dict.filter hidden lecturers
+                                        |> removeHiddenMap
+
                                 updatedData =
-                                    { data | lecturers = lecturers }
+                                    { data | lecturers = exposedLecturers, hiddenLecturers = hiddenLecturers }
                             in
                             if Array.foldl (&&) True (Array.set 2 True state) then
                                 update (LoadedData updatedData) (Loaded updatedData)
@@ -162,8 +201,16 @@ update msg model =
                     case model of
                         Loading data state ->
                             let
+                                exposedBlocks =
+                                    Dict.filter notHidden blocks
+                                        |> removeHiddenMap
+
+                                hiddenBlocks =
+                                    Dict.filter hidden blocks
+                                        |> removeHiddenMap
+
                                 updatedData =
-                                    { data | blocks = blocks }
+                                    { data | blocks = exposedBlocks, hiddenBlocks = hiddenBlocks }
                             in
                             if Array.foldl (&&) True (Array.set 3 True state) then
                                 update (LoadedData updatedData) (Loaded updatedData)

@@ -1,7 +1,7 @@
 module Pages.AddBlock exposing (Model, Msg, page)
 
 import Css
-import Decoders
+import Decoders exposing (IsHidden)
 import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Encoders
@@ -11,8 +11,6 @@ import Html.Events exposing (..)
 import Html.Styled as HS
 import Html.Styled.Attributes as HSA
 import Http
-import Json.Decode as JD
-import Maybe.Extra
 import Page exposing (Page)
 import Route exposing (Route)
 import Route.Path
@@ -43,7 +41,7 @@ page shared route =
 
 
 type Model
-    = Model Data Block EventList Bool String
+    = Model Data Block EventList Bool String Bool
 
 
 type alias EventList =
@@ -55,7 +53,7 @@ type alias EventList =
 
 init : Data -> () -> ( Model, Effect Msg )
 init data () =
-    ( Model data (Block "" "" (\_ _ -> False)) (initEventList data) False ""
+    ( Model data (Block "" "" (\_ _ -> False)) (initEventList data) False "" False
     , Effect.none
     )
 
@@ -83,12 +81,13 @@ type Msg
     | NameChange String
     | SelectEvent (Select.Msg ( EventID, Event ))
     | UpdateBlockRequest
-    | UpdateBlockResult (Result Http.Error ( BlockID, Block ))
+    | UpdateBlockResult (Result Http.Error ( BlockID, ( Block, IsHidden ) ))
+    | VisibilityChange Bool
     | Return
 
 
 update : Msg -> Model -> ( Model, Effect Msg )
-update msg (Model data block evList deleteConfirmation errorMsg) =
+update msg (Model data block evList deleteConfirmation errorMsg isHidden) =
     case msg of
         SelectEvent selectMsg ->
             let
@@ -112,16 +111,16 @@ update msg (Model data block evList deleteConfirmation errorMsg) =
                 newBlockCond =
                     \id _ -> List.member id (List.map Tuple.first updatedSelectedEvents)
             in
-            ( Model data { block | cond = newBlockCond } { evList | selectState = updatedSelectState, selectedEvents = updatedSelectedEvents } deleteConfirmation errorMsg, Effect.sendCmd (Cmd.map SelectEvent selectCmds) )
+            ( Model data { block | cond = newBlockCond } { evList | selectState = updatedSelectState, selectedEvents = updatedSelectedEvents } deleteConfirmation errorMsg isHidden, Effect.sendCmd (Cmd.map SelectEvent selectCmds) )
 
         NameChange newName ->
-            ( Model data { block | name = newName } evList deleteConfirmation errorMsg, Effect.none )
+            ( Model data { block | name = newName } evList deleteConfirmation errorMsg isHidden, Effect.none )
 
         AbbrChange newAbbr ->
-            ( Model data { block | nameAbbr = newAbbr } evList deleteConfirmation errorMsg, Effect.none )
+            ( Model data { block | nameAbbr = newAbbr } evList deleteConfirmation errorMsg isHidden, Effect.none )
 
         UpdateBlockRequest ->
-            ( Model data block evList deleteConfirmation errorMsg, Effect.sendCmd <| updateBlock block data.events data.backendUrl data.token )
+            ( Model data block evList deleteConfirmation errorMsg isHidden, Effect.sendCmd <| updateBlock block isHidden data.events data.backendUrl data.token )
 
         UpdateBlockResult result ->
             case result of
@@ -133,13 +132,16 @@ update msg (Model data block evList deleteConfirmation errorMsg) =
                             , hash = Nothing
                             }
                     in
-                    ( Model data updatedBlock evList deleteConfirmation errorMsg, Effect.updateBlock ( id, updatedBlock ) (Just route) )
+                    ( Model data block evList deleteConfirmation errorMsg isHidden, Effect.updateBlock ( id, updatedBlock ) (Just route) )
 
                 Err err ->
-                    ( Model data block evList deleteConfirmation (Decoders.errorToString err), Effect.none )
+                    ( Model data block evList deleteConfirmation (Decoders.errorToString err) isHidden, Effect.none )
+
+        VisibilityChange newVisibility ->
+            ( Model data block evList deleteConfirmation errorMsg newVisibility, Effect.none )
 
         Return ->
-            ( Model data block evList deleteConfirmation errorMsg, Effect.pushRoute { path = Route.Path.Main, query = Dict.empty, hash = Nothing } )
+            ( Model data block evList deleteConfirmation errorMsg isHidden, Effect.pushRoute { path = Route.Path.Main, query = Dict.empty, hash = Nothing } )
 
 
 
@@ -156,11 +158,12 @@ subscriptions model =
 
 
 view : Model -> View Msg
-view (Model data block evList deleteConfirmation errorMsg) =
+view (Model data block evList deleteConfirmation errorMsg isHidden) =
     { title = "Criar Bloco"
     , body =
         [ input [ class "input-box", style "width" "100%", value block.nameAbbr, onInput AbbrChange, Html.Attributes.placeholder "Abbreviatura" ] []
         , input [ class "input-box", style "width" "100%", value block.name, onInput NameChange, Html.Attributes.placeholder "Nome Da Sala" ] []
+        , div [] [ input [ type_ "checkbox", checked isHidden, onCheck VisibilityChange ] [], label [] [ text "Esconder Bloco" ] ]
         , button [ style "margin-right" "2%", class "button", onClick Return ] [ text "Retornar" ]
         , button [ class "button", onClick UpdateBlockRequest, style "margin-top" "1vh", style "margin-bottom" "1vh" ] [ text "Submeter" ]
         , div [ style "width" "100%" ] [ text errorMsg ]
@@ -246,14 +249,14 @@ renderEvent rooms lecturers ( eventID, event ) =
 ------------------------ HTTP ------------------------
 
 
-updateBlock : Block -> Dict EventID Event -> String -> Token -> Cmd Msg
-updateBlock block events backendUrl token =
+updateBlock : Block -> IsHidden -> Dict EventID Event -> String -> Token -> Cmd Msg
+updateBlock block isHidden events backendUrl token =
     Http.request
         { method = "POST"
         , headers = [ Http.header "Authorization" ("Bearer " ++ token), Http.header "Content-Type" "application/json" ]
         , url = backendUrl ++ "blocks"
-        , body = Http.jsonBody (Encoders.putBlock Nothing events block)
-        , expect = Http.expectJson UpdateBlockResult (Decoders.responseParser Decoders.getBlockAndId)
+        , body = Http.jsonBody (Encoders.putBlock Nothing events block isHidden)
+        , expect = Http.expectJson UpdateBlockResult (Decoders.responseParser Decoders.getBlockAndID)
         , timeout = Nothing
         , tracker = Nothing
         }

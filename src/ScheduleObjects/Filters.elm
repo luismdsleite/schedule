@@ -14,7 +14,7 @@ import ScheduleObjects.Restriction exposing (Restriction, RestrictionID)
 The ScheduleFilter holds 3 different filter functions that are only parsed when displaying html.
 -}
 type alias ScheduleFilter =
-    { room : Filter, lect : Filter, block : Filter, occupations : OccupationsFilter, restrictions : RestrictionsFilter, roomName : String, lectName : String, blockName : String }
+    { room : Filter, lect : Filter, block : Filter, occupations : OccupationsFilter, restrictions : RestrictionsFilter }
 
 
 type alias Filter =

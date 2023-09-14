@@ -1,4 +1,4 @@
-module Decoders exposing (blockParser, errorToString, eventParser, getBlockAndId, getEventAndID, getLectAndID, getOccupationAndId, getRestrictionAndId, getRoomAndID, lectParser, objectsToDictParser, occupationParser, responseParser, restrictionParser, roomParser, tokenParser)
+module Decoders exposing (IsHidden, blockParser, errorToString, eventParser, getBlockAndID, getEventAndID, getLectAndID, getOccupationAndId, getRestrictionAndId, getRoomAndID, lectParser, objectsToDictParser, occupationParser, responseParser, restrictionParser, roomParser, tokenParser)
 
 {-| Json Decoders used to interact with the servers REST API
 -}
@@ -20,6 +20,10 @@ import ScheduleObjects.WeekTime exposing (WeekTime)
 import Time
 
 
+type alias IsHidden =
+    Bool
+
+
 objectsToDictParser : Decoder a -> Decoder (Dict ID a)
 objectsToDictParser objectDecoder =
     (JD.list (JD.map2 Tuple.pair (JD.field "Id" JD.int) objectDecoder)
@@ -33,22 +37,39 @@ responseParser decoder =
     JD.field "data" decoder
 
 
-getBlockAndId : Decoder ( ID, Block )
-getBlockAndId =
+addHideProperty : Decoder a -> Decoder ( a, Bool )
+addHideProperty =
+    JD.andThen
+        (\obj ->
+            JD.field "Hide" JD.int
+                |> JD.andThen
+                    (\n ->
+                        if n == 0 then
+                            JD.succeed False
+
+                        else
+                            JD.succeed True
+                    )
+                |> JD.map (\isHidden -> ( obj, isHidden ))
+        )
+
+
+getBlockAndID : Decoder ( ID, ( Block, IsHidden ) )
+getBlockAndID =
     JD.map2 Tuple.pair (JD.field "Id" JD.int) blockParser
 
 
-getEventAndID : Decoder ( EventID, Event )
+getEventAndID : Decoder ( EventID, ( Event, IsHidden ) )
 getEventAndID =
     JD.map2 Tuple.pair (JD.field "Id" JD.int) eventParser
 
 
-getRoomAndID : Decoder ( RoomID, Room )
+getRoomAndID : Decoder ( RoomID, ( Room, IsHidden ) )
 getRoomAndID =
     JD.map2 Tuple.pair (JD.field "Id" JD.int) roomParser
 
 
-getLectAndID : Decoder ( LecturerID, Lecturer )
+getLectAndID : Decoder ( LecturerID, ( Lecturer, IsHidden ) )
 getLectAndID =
     JD.map2 Tuple.pair (JD.field "Id" JD.int) lectParser
 
@@ -63,24 +84,26 @@ getOccupationAndId =
     JD.map2 Tuple.pair (JD.field "Id" JD.int) occupationParser
 
 
-roomParser : Decoder Room
+roomParser : Decoder ( Room, IsHidden )
 roomParser =
     JD.map4 Room
         (JD.field "Name" JD.string)
         (JD.field "NameAbbr" JD.string)
         (JD.field "Capacity" JD.int)
         (JD.field "Number" JD.string)
+        |> addHideProperty
 
 
-lectParser : Decoder Lecturer
+lectParser : Decoder ( Lecturer, IsHidden )
 lectParser =
     JD.map3 Lecturer
         (JD.field "Name" JD.string)
         (JD.field "NameAbbr" JD.string)
         (JD.field "Office" JD.string)
+        |> addHideProperty
 
 
-blockParser : Decoder Block
+blockParser : Decoder ( Block, IsHidden )
 blockParser =
     JD.map3 Block
         (JD.field "Name" JD.string)
@@ -93,20 +116,21 @@ blockParser =
                     )
             )
         )
+        |> addHideProperty
 
 
 {-| Event Decoder
 -}
-eventParser : Decoder Event
+eventParser : Decoder ( Event, IsHidden )
 eventParser =
     JD.map6 Event
         (JD.field "Subject" JD.string)
         (JD.field "SubjectAbbr" JD.string)
-        -- (JD.field "RoomId" (Just JD.int) )
         (JD.maybe (JD.field "RoomId" JD.int))
         (JD.maybe (JD.field "LecturerId" JD.int))
         (JD.maybe (weektimeDecoder "StartTime"))
         (JD.maybe (weektimeDecoder "EndTime"))
+        |> addHideProperty
 
 
 {-| Occupation Decoder

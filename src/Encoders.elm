@@ -1,5 +1,6 @@
 module Encoders exposing (login, putBlock, putEvent, putLecturer, putOccupation, putRestriction, putRoom)
 
+import Decoders exposing (IsHidden)
 import Dict exposing (Dict)
 import Json.Encode as Encode
 import ScheduleObjects.Block exposing (Block, BlockID)
@@ -23,13 +24,23 @@ idProperty maybeId =
             []
 
 
+hideEncoder : IsHidden -> Encode.Value
+hideEncoder isHidden =
+    case isHidden of
+        True ->
+            Encode.int 1
+
+        False ->
+            Encode.int 0
+
+
 {-| Encoder for a Room. Can optionally also encode a RoomID
 -}
-putRoom : Maybe RoomID -> Room -> Encode.Value
-putRoom maybeId room =
+putRoom : Maybe RoomID -> Room -> IsHidden -> Encode.Value
+putRoom maybeId room isHidden =
     Encode.object <|
         idProperty maybeId
-            ++ [ ( "Hide", Encode.int 0 )
+            ++ [ ( "Hide", hideEncoder isHidden )
                , ( "Name", Encode.string room.name )
                , ( "NameAbbr", Encode.string room.abbr )
                , ( "Capacity", Encode.int room.capacity )
@@ -39,11 +50,11 @@ putRoom maybeId room =
 
 {-| Encoder for a Block. Can optionally also encode a BlockID
 -}
-putBlock : Maybe ID -> Dict EventID Event -> Block -> Encode.Value
-putBlock maybeId events block =
+putBlock : Maybe ID -> Dict EventID Event -> Block -> IsHidden -> Encode.Value
+putBlock maybeId events block isHidden =
     Encode.object <|
         idProperty maybeId
-            ++ [ ( "Hide", Encode.int 0 )
+            ++ [ ( "Hide", hideEncoder isHidden )
                , ( "Name", Encode.string block.name )
                , ( "NameAbbr", Encode.string block.nameAbbr )
                , ( "AssociatedEventIds", Encode.list Encode.int (Dict.filter block.cond events |> Dict.toList |> List.map Tuple.first) )
@@ -52,11 +63,11 @@ putBlock maybeId events block =
 
 {-| Encoder for a Lecturer. Can optionally also encode a LecturerID
 -}
-putLecturer : Maybe LecturerID -> Lecturer -> Encode.Value
-putLecturer maybeId lect =
+putLecturer : Maybe LecturerID -> Lecturer -> IsHidden -> Encode.Value
+putLecturer maybeId lect isHidden =
     Encode.object <|
         idProperty maybeId
-            ++ [ ( "Hide", Encode.int 0 )
+            ++ [ ( "Hide", hideEncoder isHidden )
                , ( "Name", Encode.string lect.name )
                , ( "NameAbbr", Encode.string lect.abbr )
                , ( "Office", Encode.string lect.office )
@@ -65,8 +76,8 @@ putLecturer maybeId lect =
 
 {-| Encoder for an Event. Can optionally also encode an EventID
 -}
-putEvent : Maybe EventID -> Event -> Encode.Value
-putEvent maybeId event =
+putEvent : Maybe EventID -> Event -> IsHidden -> Encode.Value
+putEvent maybeId event isHidden =
     let
         nullInCaseOfNothing funct maybe =
             case maybe of
@@ -94,7 +105,7 @@ putEvent maybeId event =
     in
     Encode.object <|
         idProperty maybeId
-            ++ [ ( "Hide", Encode.int 0 )
+            ++ [ ( "Hide", hideEncoder isHidden )
                , ( "RoomId", nullInCaseOfNothing Encode.int event.room )
                , ( "LecturerId", nullInCaseOfNothing Encode.int event.lecturer )
                , ( "Subject", Encode.string event.subject )

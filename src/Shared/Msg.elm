@@ -1,5 +1,6 @@
 module Shared.Msg exposing (Msg(..), UpdateType(..))
 
+import Decoders exposing (IsHidden)
 import Dict exposing (Dict)
 import Route.Path
 import ScheduleObjects.Block exposing (Block, BlockID)
@@ -32,10 +33,10 @@ type Msg
 
 
 type UpdateType
-    = UpdateEvent ( EventID, Event )
-    | UpdateRoom ( RoomID, Room )
-    | UpdateLect ( LecturerID, Lecturer )
-    | UpdateBlock ( BlockID, Block )
+    = UpdateEvent ( EventID, ( Event, IsHidden ) )
+    | UpdateRoom ( RoomID, ( Room, IsHidden ) )
+    | UpdateLect ( LecturerID, ( Lecturer, IsHidden ) )
+    | UpdateBlock ( BlockID, ( Block, IsHidden ) )
     | UpdateRestriction ( RestrictionID, Restriction )
     | UpdateOccupation ( OccupationID, Occupation )
     | DeleteEvent EventID
