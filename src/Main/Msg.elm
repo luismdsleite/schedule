@@ -1,4 +1,4 @@
-module RenderMain.Msg exposing (..)
+module Main.Msg exposing (..)
 
 import DnD
 import Http

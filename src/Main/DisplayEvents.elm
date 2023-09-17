@@ -1,4 +1,4 @@
-module RenderMain.DisplayEvents exposing (DisplayEvent(..), createDisplayEvents, endingHour, endingMinute, startingHour, startingMinute)
+module Main.DisplayEvents exposing (DisplayEvent(..), createDisplayEvents, endingHour, endingMinute, startingHour, startingMinute)
 
 {-| Responsible for converting `(EventID,Event)`s into `DisplayEvent`s. The new object works as a wrapper around an `Event`, holding additional information necessary to visually display it.
 -}

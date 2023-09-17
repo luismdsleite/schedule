@@ -1,4 +1,4 @@
-module RenderMain.List exposing (renderAvailableRooms, renderBlocks, renderEvents, renderLecturers, renderRooms)
+module Main.List exposing (renderAvailableRooms, renderBlocks, renderEvents, renderLecturers, renderRooms)
 
 {-| Responsible for displaying a list of a certain resource (e.g. list of rooms).
 -}
@@ -8,8 +8,8 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Attributes.Aria exposing (ariaLabel)
 import Html.Events exposing (onClick)
+import Main.Msg exposing (EditMenu(..), Msg(..), OnItemClick(..))
 import Maybe.Extra exposing (isJust)
-import RenderMain.Msg exposing (EditMenu(..), Msg(..), OnItemClick(..))
 import ScheduleObjects.Block exposing (Block, BlockID)
 import ScheduleObjects.Event exposing (Event, EventID)
 import ScheduleObjects.Lecturer exposing (Lecturer, LecturerID)

@@ -1,4 +1,4 @@
-module RenderMain.Schedule exposing (renderSchedule)
+module Main.Schedule exposing (renderSchedule)
 
 {-| Renders a schedule
 -}
@@ -6,8 +6,8 @@ module RenderMain.Schedule exposing (renderSchedule)
 import DnD
 import Html exposing (..)
 import Html.Attributes exposing (..)
-import RenderMain.DisplayEvents exposing (..)
-import RenderMain.Msg exposing (..)
+import Main.DisplayEvents exposing (..)
+import Main.Msg exposing (..)
 import ScheduleObjects.Event exposing (Event, EventID)
 import ScheduleObjects.Occupation exposing (Occupation, OccupationID)
 import ScheduleObjects.Restriction as Restriction exposing (Restriction, RestrictionID)

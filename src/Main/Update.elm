@@ -1,4 +1,4 @@
-module RenderMain.Update exposing (..)
+module Main.Update exposing (..)
 
 import Browser.Dom exposing (Error(..))
 import Dict
@@ -6,10 +6,10 @@ import DnD
 import Effect exposing (Effect)
 import Encoders
 import Http
+import Main.DisplayEvents exposing (..)
+import Main.Model exposing (..)
+import Main.Msg exposing (..)
 import Maybe.Extra
-import RenderMain.DisplayEvents exposing (..)
-import RenderMain.Model exposing (..)
-import RenderMain.Msg exposing (..)
 import Route.Path
 import ScheduleObjects.Data exposing (..)
 import ScheduleObjects.Event exposing (Event, EventID, setEvent, setEventRoom)
@@ -315,11 +315,11 @@ updateEvent ( id, event ) isHidden backendUrl token =
 2.  The event is not updated, in this case we do nothing
 
 -}
-handleResponse : ( EventID, Event ) -> Result Http.Error () -> RenderMain.Msg.Msg
+handleResponse : ( EventID, Event ) -> Result Http.Error () -> Main.Msg.Msg
 handleResponse ( evID, ev ) response =
     case response of
         Ok _ ->
-            RenderMain.Msg.UpdateEvent (Ok ( evID, ev ))
+            Main.Msg.UpdateEvent (Ok ( evID, ev ))
 
         Err err ->
-            RenderMain.Msg.UpdateEvent (Err err)
+            Main.Msg.UpdateEvent (Err err)

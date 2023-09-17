@@ -1,9 +1,9 @@
-module RenderMain.Model exposing (Model, init, setFilters, setSelectedBlock, setSelectedEvent, setSelectedItems, setSelectedLect, setSelectedRoom)
+module Main.Model exposing (Model, init, setFilters, setSelectedBlock, setSelectedEvent, setSelectedItems, setSelectedLect, setSelectedRoom)
 
 -- import Dict
 
 import Effect exposing (Effect)
-import RenderMain.Msg exposing (Draggable, Msg(..), dnd)
+import Main.Msg exposing (Draggable, Msg(..), dnd)
 import ScheduleObjects.Block exposing (Block, BlockID)
 import ScheduleObjects.Data exposing (Data)
 import ScheduleObjects.Event exposing (Event, EventID)

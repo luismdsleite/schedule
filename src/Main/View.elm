@@ -1,14 +1,14 @@
-module RenderMain.View exposing (..)
+module Main.View exposing (..)
 
 import Dict
 import DnD
 import Html exposing (..)
 import Html.Attributes exposing (..)
+import Main.List exposing (renderAvailableRooms, renderBlocks, renderEvents, renderLecturers, renderRooms)
+import Main.Model exposing (Model)
+import Main.Msg exposing (Msg(..))
+import Main.Schedule exposing (..)
 import Maybe.Extra
-import RenderMain.List exposing (renderAvailableRooms, renderBlocks, renderEvents, renderLecturers, renderRooms)
-import RenderMain.Model exposing (Model)
-import RenderMain.Msg exposing (Msg(..))
-import RenderMain.Schedule exposing (..)
 import ScheduleObjects.Id exposing (ID)
 
 

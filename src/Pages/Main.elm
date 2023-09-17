@@ -1,12 +1,12 @@
 module Pages.Main exposing (Model, Msg, page)
 
 import Html
+import Main.Model exposing (init)
+import Main.Msg exposing (Msg(..))
+import Main.Subscription exposing (subscriptions)
+import Main.Update exposing (update)
+import Main.View exposing (view)
 import Page exposing (Page)
-import RenderMain.Model exposing (init)
-import RenderMain.Msg exposing (Msg(..))
-import RenderMain.Subscription exposing (subscriptions)
-import RenderMain.Update exposing (update)
-import RenderMain.View exposing (view)
 import Route exposing (Route)
 import Shared
 import View exposing (View)
@@ -30,8 +30,8 @@ generateHtml title view model =
 
 
 type alias Msg =
-    RenderMain.Msg.Msg
+    Main.Msg.Msg
 
 
 type alias Model =
-    RenderMain.Model.Model
+    Main.Model.Model
