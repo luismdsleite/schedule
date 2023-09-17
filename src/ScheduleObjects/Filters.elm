@@ -1,7 +1,6 @@
 module ScheduleObjects.Filters exposing (..)
 
 import ScheduleObjects.Event exposing (Event, EventID)
-import ScheduleObjects.Id exposing (ID)
 import ScheduleObjects.Occupation exposing (Occupation, OccupationID)
 import ScheduleObjects.Restriction exposing (Restriction, RestrictionID)
 
