@@ -211,7 +211,7 @@ renderEventsList data eventList =
         (Select.multi selectedItems
             |> Select.state eventList.selectState
             |> Select.menuItems menuItems
-            |> Select.placeholder "Selecione os eventos"
+            |> Select.placeholder "Selecione as cadeiras"
             |> Select.searchable True
             |> Select.clearable True
             |> Select.setStyles (Styles.default |> Styles.setMenuStyles menuBranding)
