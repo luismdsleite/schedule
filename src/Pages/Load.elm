@@ -127,7 +127,7 @@ update msg model =
                                     { data | rooms = exposedRooms, hiddenRooms = hiddenRooms }
                             in
                             if Array.foldl (&&) True (Array.set 0 True state) then
-                                update (LoadedData data) (Loaded updatedData)
+                                update (LoadedData updatedData) (Loaded updatedData)
 
                             else
                                 ( Loading updatedData (Array.set 0 True state), Effect.none )
