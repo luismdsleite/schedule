@@ -6,6 +6,7 @@ import Route exposing (Route)
 import ScheduleObjects.Block exposing (Block, BlockID)
 import ScheduleObjects.Data exposing (Data)
 import ScheduleObjects.Event exposing (Event, EventID)
+import ScheduleObjects.Hide exposing (IsHidden)
 import ScheduleObjects.Id exposing (ID)
 import ScheduleObjects.Lecturer exposing (Lecturer, LecturerID)
 import ScheduleObjects.Room exposing (Room, RoomID)
@@ -16,7 +17,7 @@ type Msg
     = ItemClick OnItemClick
     | DnDMsg (DnD.Msg ( DropEvent, WeekTime ) ID)
     | OnDrop ( DropEvent, WeekTime ) ID
-    | UpdateEvent (Result Http.Error ( EventID, Event ))
+    | UpdateEvent (Result Http.Error ( EventID, ( Event, IsHidden ) ))
     | EditMenu EditMenu
 
 

@@ -1,6 +1,7 @@
 module Main.Update exposing (..)
 
 import Browser.Dom exposing (Error(..))
+import Decoders
 import Dict
 import DnD
 import Effect exposing (Effect)
@@ -26,7 +27,6 @@ import Time
 -}
 update : Msg -> Model -> ( Model, Effect Msg )
 update msg model =
-    -- update msg (Model data filters draggable selectedItems) =
     case msg of
         ItemClick clickMsg ->
             updateOnItemClick clickMsg model
@@ -85,23 +85,34 @@ update msg model =
                         newEv =
                             { ev | start_time = Just weekTime, end_time = Just newEndTime }
                     in
-                    ( model, Effect.sendCmd (updateEvent ( eventID, newEv ) True model.data.backendUrl model.data.token) )
+                    ( model, Effect.sendCmd (updateEvent ( eventID, newEv ) False model.data.backendUrl model.data.token) )
 
                 Nothing ->
                     ( model, Effect.none )
 
         UpdateEvent result ->
             case result of
-                Ok ( evID, ev ) ->
+                Ok ( evID, ( ev, isHidden ) ) ->
                     let
                         newEvents =
-                            Dict.insert evID ev model.data.events
+                            if isHidden then
+                                Dict.remove evID model.data.events
+
+                            else
+                                Dict.insert evID ev model.data.events
+
+                        newHiddenEvents =
+                            if isHidden then
+                                Dict.insert evID ev model.data.hiddenEvents
+
+                            else
+                                Dict.remove evID model.data.hiddenEvents
 
                         updatedSelectedItems =
                             -- If the timeslots for the event we are searching for available rooms are modified, we must update the 'selectedItems.event' variable.
                             case model.selectedItems.event of
                                 Just ( selectedId, _ ) ->
-                                    if selectedId == evID then
+                                    if selectedId == evID && not isHidden then
                                         model.selectedItems |> setSelectedEvent (Just ( selectedId, ev ))
 
                                     else
@@ -111,9 +122,9 @@ update msg model =
                                     model.selectedItems
                     in
                     ( model
-                        |> setData (model.data |> setDataEvents newEvents)
+                        |> setData (model.data |> setDataEvents newEvents |> setDataHiddenEvents newHiddenEvents)
                         |> setSelectedItems updatedSelectedItems
-                    , Effect.updateEvent ( evID, ( ev, True ) ) Nothing
+                    , Effect.updateEvent ( evID, ( ev, isHidden ) ) Nothing
                     )
 
                 Err _ ->
@@ -121,21 +132,6 @@ update msg model =
 
         EditMenu menuMsg ->
             updateOnMenuEdit menuMsg model
-
-
-
--- UrlChange sharedData route ->
---     let
---         c =
---             Dict.get 1620 sharedData.events
---         a =
---             case c of
---                 Just ev ->
---                     Debug.log "ev" ev
---                 Nothing ->
---                     Debug.log "Nothing" (Event "" "" Nothing Nothing Nothing Nothing)
---     in
---     ( Model data filters draggable selectedItems, Effect.none )
 
 
 updateOnItemClick : OnItemClick -> Model -> ( Model, Effect Msg )
@@ -256,7 +252,7 @@ updateOnItemClick msg model =
                 sideEffect =
                     case eventGet of
                         Just event ->
-                            Effect.sendCmd (updateEvent ( evId, event |> setEventRoom (Just roomId) ) True model.data.backendUrl model.data.token)
+                            Effect.sendCmd (updateEvent ( evId, event |> setEventRoom (Just roomId) ) False model.data.backendUrl model.data.token)
 
                         Nothing ->
                             Effect.none
@@ -303,23 +299,7 @@ updateEvent ( id, event ) isHidden backendUrl token =
         , headers = [ Http.header "Authorization" ("Bearer " ++ token), Http.header "Content-Type" "application/json" ]
         , url = backendUrl ++ "events\\" ++ String.fromInt id
         , body = Http.jsonBody (Encoders.putEvent (Just id) event isHidden)
-        , expect = Http.expectWhatever (handleResponse ( id, event ))
+        , expect = Http.expectJson Main.Msg.UpdateEvent (Decoders.responseParser Decoders.getEventAndID)
         , timeout = Nothing
         , tracker = Nothing
         }
-
-
-{-| When we update an event there are 2 possible options:
-
-1.  The event is updated successfully, in this case we do a GET request to get the updated event
-2.  The event is not updated, in this case we do nothing
-
--}
-handleResponse : ( EventID, Event ) -> Result Http.Error () -> Main.Msg.Msg
-handleResponse ( evID, ev ) response =
-    case response of
-        Ok _ ->
-            Main.Msg.UpdateEvent (Ok ( evID, ev ))
-
-        Err err ->
-            Main.Msg.UpdateEvent (Err err)
