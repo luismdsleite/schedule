@@ -48,9 +48,33 @@ page shared route =
 
 -}
 type Model
-    = Loading Data (Array Bool)
+    = Loading Data GotData
     | Loaded Data
     | Failed String
+
+
+type alias GotData =
+    { gotRooms : Bool
+    , gotLecturers : Bool
+    , gotEvents : Bool
+    , gotBlocks : Bool
+    , gotOccupations : Bool
+    , gotRestrictions : Bool
+    }
+
+
+receivedAllData : GotData -> Bool
+receivedAllData gotData =
+    gotData.gotRooms && gotData.gotLecturers && gotData.gotEvents && gotData.gotBlocks && gotData.gotOccupations && gotData.gotRestrictions
+
+
+handleValidHttpResult : GotData -> Data -> ( Model, Effect Msg )
+handleValidHttpResult newState updatedData =
+    if receivedAllData newState then
+        update (LoadedData updatedData) (Loaded updatedData)
+
+    else
+        ( Loading updatedData newState, Effect.none )
 
 
 
@@ -64,7 +88,7 @@ init backendUrl token () =
             Data Dict.empty Dict.empty Dict.empty Dict.empty Dict.empty Dict.empty Dict.empty Dict.empty Dict.empty Dict.empty token backendUrl
 
         noneReceived =
-            Array.fromList [ False, False, False, False, False, False ]
+            GotData False False False False False False
 
         getRequests =
             List.map (\req -> req backendUrl)
@@ -125,12 +149,11 @@ update msg model =
 
                                 updatedData =
                                     { data | rooms = exposedRooms, hiddenRooms = hiddenRooms }
-                            in
-                            if Array.foldl (&&) True (Array.set 0 True state) then
-                                update (LoadedData updatedData) (Loaded updatedData)
 
-                            else
-                                ( Loading updatedData (Array.set 0 True state), Effect.none )
+                                newState =
+                                    { state | gotRooms = True }
+                            in
+                            handleValidHttpResult newState updatedData
 
                         state ->
                             ( state, Effect.none )
@@ -154,12 +177,11 @@ update msg model =
 
                                 updatedData =
                                     { data | events = exposedEvents, hiddenEvents = hiddenEvents }
-                            in
-                            if Array.foldl (&&) True (Array.set 1 True state) then
-                                update (LoadedData updatedData) (Loaded updatedData)
 
-                            else
-                                ( Loading updatedData (Array.set 1 True state), Effect.none )
+                                newState =
+                                    { state | gotEvents = True }
+                            in
+                            handleValidHttpResult newState updatedData
 
                         state ->
                             ( state, Effect.none )
@@ -183,12 +205,11 @@ update msg model =
 
                                 updatedData =
                                     { data | lecturers = exposedLecturers, hiddenLecturers = hiddenLecturers }
-                            in
-                            if Array.foldl (&&) True (Array.set 2 True state) then
-                                update (LoadedData updatedData) (Loaded updatedData)
 
-                            else
-                                ( Loading updatedData (Array.set 2 True state), Effect.none )
+                                newState =
+                                    { state | gotLecturers = True }
+                            in
+                            handleValidHttpResult newState updatedData
 
                         state ->
                             ( state, Effect.none )
@@ -212,12 +233,11 @@ update msg model =
 
                                 updatedData =
                                     { data | blocks = exposedBlocks, hiddenBlocks = hiddenBlocks }
-                            in
-                            if Array.foldl (&&) True (Array.set 3 True state) then
-                                update (LoadedData updatedData) (Loaded updatedData)
 
-                            else
-                                ( Loading updatedData (Array.set 3 True state), Effect.none )
+                                newState =
+                                    { state | gotBlocks = True }
+                            in
+                            handleValidHttpResult newState updatedData
 
                         state ->
                             ( state, Effect.none )
@@ -233,12 +253,11 @@ update msg model =
                             let
                                 updatedData =
                                     { data | occupations = occupations }
-                            in
-                            if Array.foldl (&&) True (Array.set 4 True state) then
-                                update (LoadedData updatedData) (Loaded updatedData)
 
-                            else
-                                ( Loading updatedData (Array.set 4 True state), Effect.none )
+                                newState =
+                                    { state | gotOccupations = True }
+                            in
+                            handleValidHttpResult newState updatedData
 
                         state ->
                             ( state, Effect.none )
@@ -254,12 +273,11 @@ update msg model =
                             let
                                 updatedData =
                                     { data | restrictions = restrictions }
-                            in
-                            if Array.foldl (&&) True (Array.set 5 True state) then
-                                update (LoadedData updatedData) (Loaded updatedData)
 
-                            else
-                                ( Loading updatedData (Array.set 5 True state), Effect.none )
+                                newState =
+                                    { state | gotRestrictions = True }
+                            in
+                            handleValidHttpResult newState updatedData
 
                         state ->
                             ( state, Effect.none )
