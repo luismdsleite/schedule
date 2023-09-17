@@ -26,8 +26,17 @@ renderCategorySelect : CategoryList -> Html.Styled.Html (Select.Msg Category)
 renderCategorySelect categoryList =
     Select.view
         ((Select.single <| Just (basicMenuItem { item = categoryList.selectedCategory, label = categoryToPortugueseString categoryList.selectedCategory }))
-            |> Select.clearable True
             |> Select.state categoryList.selectState
             |> Select.menuItems categoryList.items
             |> Select.placeholder "Categoria"
         )
+
+
+setCategoryList : CategoryList -> { b | categoryList : CategoryList } -> { b | categoryList : CategoryList }
+setCategoryList categoryList a =
+    { a | categoryList = categoryList }
+
+
+setCategoryListSelect : Category -> { b | selectedCategory : Category } -> { b | selectedCategory : Category }
+setCategoryListSelect category categoryList =
+    { categoryList | selectedCategory = category }

@@ -9,7 +9,7 @@ module Pages.Load exposing (Model, Msg, page)
 -}
 
 import Array exposing (Array)
-import Decoders exposing (IsHidden, blockParser, eventParser, lectParser, objectsToDictParser, occupationParser, restrictionParser, roomParser)
+import Decoders exposing (blockParser, eventParser, lectParser, objectsToDictParser, occupationParser, restrictionParser, roomParser)
 import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Html
@@ -20,6 +20,7 @@ import Route exposing (Route)
 import ScheduleObjects.Block exposing (Block)
 import ScheduleObjects.Data exposing (Data, Token)
 import ScheduleObjects.Event exposing (Event)
+import ScheduleObjects.Hide exposing (IsHidden)
 import ScheduleObjects.Id exposing (ID)
 import ScheduleObjects.Lecturer exposing (Lecturer)
 import ScheduleObjects.Occupation exposing (Occupation)

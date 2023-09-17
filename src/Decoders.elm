@@ -1,4 +1,4 @@
-module Decoders exposing (IsHidden, blockParser, errorToString, eventParser, getBlockAndID, getEventAndID, getLectAndID, getOccupationAndId, getRestrictionAndId, getRoomAndID, lectParser, objectsToDictParser, occupationParser, responseParser, restrictionParser, roomParser, tokenParser)
+module Decoders exposing (blockParser, errorToString, eventParser, getBlockAndID, getEventAndID, getLectAndID, getOccupationAndId, getRestrictionAndId, getRoomAndID, lectParser, objectsToDictParser, occupationParser, responseParser, restrictionParser, roomParser, tokenParser)
 
 {-| Json Decoders used to interact with the servers REST API
 -}
@@ -6,11 +6,11 @@ module Decoders exposing (IsHidden, blockParser, errorToString, eventParser, get
 import Dict exposing (Dict)
 import Http
 import Json.Decode as JD exposing (Decoder)
-import Json.Decode.Extra as JDE
 import List
 import Maybe.Extra
 import ScheduleObjects.Block exposing (Block)
 import ScheduleObjects.Event exposing (Event, EventID)
+import ScheduleObjects.Hide exposing (IsHidden)
 import ScheduleObjects.Id exposing (ID)
 import ScheduleObjects.Lecturer exposing (Lecturer, LecturerID)
 import ScheduleObjects.Occupation exposing (Occupation, OccupationID)
@@ -18,10 +18,6 @@ import ScheduleObjects.Restriction as Restriction exposing (Restriction, Restric
 import ScheduleObjects.Room exposing (Room, RoomID)
 import ScheduleObjects.WeekTime exposing (WeekTime)
 import Time
-
-
-type alias IsHidden =
-    Bool
 
 
 objectsToDictParser : Decoder a -> Decoder (Dict ID a)

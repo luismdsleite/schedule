@@ -14,12 +14,12 @@ import Page exposing (Page)
 import Route exposing (Route)
 import Route.Path
 import ScheduleObjects.Data exposing (Data, Token)
-import ScheduleObjects.Restriction as Restriction exposing (Category, Restriction, RestrictionID)
+import ScheduleObjects.Restriction as Restriction exposing (Category, Restriction, RestrictionID, setRestCategory, setRestEndTime, setRestStartTime, setRestriction)
 import ScheduleObjects.WeekTime exposing (WeekTime)
 import Select exposing (..)
-import SelectLists.Category exposing (CategoryList, initCategoryList, renderCategorySelect)
-import SelectLists.Hour exposing (HourList, initHourList, renderHourSelect)
-import SelectLists.WeekDay exposing (WeekDayList, initWeekDayList, renderWeekdaySelect)
+import SelectLists.Category exposing (CategoryList, initCategoryList, renderCategorySelect, setCategoryList, setCategoryListSelect)
+import SelectLists.Hour exposing (HourList, initHourList, renderHourSelect, setEndHourList, setHourListSelect, setStartHourList)
+import SelectLists.WeekDay exposing (WeekDayList, initWeekDayList, renderWeekdaySelect, setWeekdayList, setWeekdayListSelect, setWeekdaySelectState)
 import Shared
 import Time
 import View exposing (View)
@@ -39,8 +39,18 @@ page shared route =
 -- INIT
 
 
-type Model
-    = Model ( RestrictionID, Restriction ) WeekDayList HourList HourList CategoryList String String String Bool
+type alias Model =
+    { restrictionID : RestrictionID
+    , restriction : Restriction
+    , weekdayList : WeekDayList
+    , hourStartList : HourList
+    , hourEndList : HourList
+    , categoryList : CategoryList
+    , token : Token
+    , backendUrl : String
+    , errorMsg : String
+    , deleteConfirmation : Bool
+    }
 
 
 init : Data -> String -> () -> ( Model, Effect Msg )
@@ -59,7 +69,7 @@ init data idParam () =
         endHour =
             ( restriction.end_time.hour, restriction.end_time.minute )
     in
-    ( Model ( id, restriction ) (initWeekDayList restriction.start_time.weekday) (initHourList startHour "StartHour") (initHourList endHour "EndHour") (initCategoryList restriction.category) data.token data.backendUrl "" False
+    ( Model id restriction (initWeekDayList restriction.start_time.weekday) (initHourList startHour "StartHour") (initHourList endHour "EndHour") (initCategoryList restriction.category) data.token data.backendUrl "" False
     , Effect.none
     )
 
@@ -81,12 +91,12 @@ type Msg
 
 
 update : Msg -> Model -> ( Model, Effect Msg )
-update msg (Model ( id, restriction ) weekdayList hourStartList hourEndList categoryList token backendUrl errorMsg deleteConfirmation) =
+update msg model =
     case msg of
         SelectWeekday selectMsg ->
             let
                 ( maybeAction, updatedSelectState, selectCmds ) =
-                    Select.update selectMsg weekdayList.selectState
+                    Select.update selectMsg model.weekdayList.selectState
 
                 newWeekday =
                     case maybeAction of
@@ -94,20 +104,28 @@ update msg (Model ( id, restriction ) weekdayList hourStartList hourEndList cate
                             weekday
 
                         _ ->
-                            restriction.start_time.weekday
+                            model.restriction.start_time.weekday
 
                 oldStart_time =
-                    restriction.start_time
+                    model.restriction.start_time
 
                 oldEnd_time =
-                    restriction.end_time
+                    model.restriction.end_time
             in
-            ( Model ( id, { restriction | start_time = { oldStart_time | weekday = newWeekday }, end_time = { oldEnd_time | weekday = newWeekday } } ) { weekdayList | selectedWeekday = newWeekday, selectState = updatedSelectState } hourStartList hourEndList categoryList token backendUrl errorMsg deleteConfirmation, Effect.sendCmd (Cmd.map SelectWeekday selectCmds) )
+            ( model
+                |> setRestriction
+                    (model.restriction
+                        |> setRestStartTime { oldStart_time | weekday = newWeekday }
+                        |> setRestEndTime { oldEnd_time | weekday = newWeekday }
+                    )
+                |> setWeekdayList (setWeekdaySelectState updatedSelectState model.weekdayList |> setWeekdayListSelect newWeekday)
+            , Effect.sendCmd (Cmd.map SelectWeekday selectCmds)
+            )
 
         SelectStartHour selectMsg ->
             let
                 ( maybeAction, updatedSelectState, selectCmds ) =
-                    Select.update selectMsg hourStartList.selectState
+                    Select.update selectMsg model.hourStartList.selectState
 
                 newHour =
                     case maybeAction of
@@ -115,20 +133,27 @@ update msg (Model ( id, restriction ) weekdayList hourStartList hourEndList cate
                             hour
 
                         _ ->
-                            ( restriction.start_time.hour, restriction.start_time.minute )
+                            ( model.restriction.start_time.hour, model.restriction.start_time.minute )
 
                 oldStart_time =
-                    restriction.start_time
+                    model.restriction.start_time
 
                 newStart_time =
                     { oldStart_time | hour = Tuple.first newHour, minute = Tuple.second newHour }
             in
-            ( Model ( id, { restriction | start_time = newStart_time } ) weekdayList { hourStartList | selectedHour = newHour, selectState = updatedSelectState } hourEndList categoryList token backendUrl errorMsg deleteConfirmation, Effect.sendCmd (Cmd.map SelectStartHour selectCmds) )
+            ( model
+                |> setRestriction
+                    (model.restriction
+                        |> setRestStartTime newStart_time
+                    )
+                |> setStartHourList (setWeekdaySelectState updatedSelectState model.hourStartList |> setHourListSelect newHour)
+            , Effect.sendCmd (Cmd.map SelectStartHour selectCmds)
+            )
 
         SelectEndHour selectMsg ->
             let
                 ( maybeAction, updatedSelectState, selectCmds ) =
-                    Select.update selectMsg hourEndList.selectState
+                    Select.update selectMsg model.hourEndList.selectState
 
                 newHour =
                     case maybeAction of
@@ -136,20 +161,27 @@ update msg (Model ( id, restriction ) weekdayList hourStartList hourEndList cate
                             hour
 
                         _ ->
-                            ( restriction.end_time.hour, restriction.end_time.minute )
+                            ( model.restriction.end_time.hour, model.restriction.end_time.minute )
 
                 oldEnd_time =
-                    restriction.end_time
+                    model.restriction.end_time
 
                 newEnd_time =
                     { oldEnd_time | hour = Tuple.first newHour, minute = Tuple.second newHour }
             in
-            ( Model ( id, { restriction | end_time = newEnd_time } ) weekdayList hourStartList { hourEndList | selectedHour = newHour, selectState = updatedSelectState } categoryList token backendUrl errorMsg deleteConfirmation, Effect.sendCmd (Cmd.map SelectEndHour selectCmds) )
+            ( model
+                |> setRestriction
+                    (model.restriction
+                        |> setRestEndTime newEnd_time
+                    )
+                |> setEndHourList (setWeekdaySelectState updatedSelectState model.hourEndList |> setHourListSelect newHour)
+            , Effect.sendCmd (Cmd.map SelectEndHour selectCmds)
+            )
 
         SelectCategory selectMsg ->
             let
                 ( maybeAction, updatedSelectState, selectCmds ) =
-                    Select.update selectMsg categoryList.selectState
+                    Select.update selectMsg model.categoryList.selectState
 
                 newCategory =
                     case maybeAction of
@@ -157,46 +189,53 @@ update msg (Model ( id, restriction ) weekdayList hourStartList hourEndList cate
                             category
 
                         _ ->
-                            restriction.category
+                            model.restriction.category
             in
-            ( Model ( id, { restriction | category = newCategory } ) weekdayList hourStartList hourEndList { categoryList | selectedCategory = newCategory, selectState = updatedSelectState } token backendUrl errorMsg deleteConfirmation, Effect.sendCmd (Cmd.map SelectCategory selectCmds) )
+            ( model
+                |> setRestriction
+                    (model.restriction
+                        |> setRestCategory newCategory
+                    )
+                |> setCategoryList (setWeekdaySelectState updatedSelectState model.categoryList |> setCategoryListSelect newCategory)
+            , Effect.sendCmd (Cmd.map SelectCategory selectCmds)
+            )
 
         UpdateRestrictionRequest ->
-            ( Model ( id, restriction ) weekdayList hourStartList hourEndList categoryList token backendUrl errorMsg deleteConfirmation, Effect.sendCmd (updateRestriction ( id, restriction ) backendUrl token) )
+            ( model, Effect.sendCmd (updateRestriction ( model.restrictionID, model.restriction ) model.backendUrl model.token) )
 
         DeleteRestrictionRequest ->
-            if deleteConfirmation then
-                ( Model ( id, restriction ) weekdayList hourStartList hourEndList categoryList token backendUrl errorMsg False, Effect.sendCmd (deleteRestriction id backendUrl token) )
+            if model.deleteConfirmation then
+                ( { model | deleteConfirmation = False }, Effect.sendCmd (deleteRestriction model.restrictionID model.backendUrl model.token) )
 
             else
-                ( Model ( id, restriction ) weekdayList hourStartList hourEndList categoryList token backendUrl errorMsg True, Effect.none )
+                ( { model | deleteConfirmation = True }, Effect.none )
 
         UpdateRestrictionResult result ->
             case result of
                 Ok ( updatedID, updatedRestriction ) ->
                     let
                         route =
-                            { path = Route.Path.EditLect_Id_ { id = String.fromInt restriction.lect }, query = Dict.empty, hash = Nothing }
+                            { path = Route.Path.EditLect_Id_ { id = String.fromInt model.restriction.lect }, query = Dict.empty, hash = Nothing }
                     in
-                    ( Model ( id, restriction ) weekdayList hourStartList hourEndList categoryList token backendUrl errorMsg deleteConfirmation, Effect.updateRestriction ( updatedID, updatedRestriction ) (Just route) )
+                    ( model, Effect.updateRestriction ( updatedID, updatedRestriction ) (Just route) )
 
                 Err err ->
-                    ( Model ( id, restriction ) weekdayList hourStartList hourEndList categoryList token backendUrl (Decoders.errorToString err) deleteConfirmation, Effect.none )
+                    ( { model | errorMsg = Decoders.errorToString err }, Effect.none )
 
         DeleteRestrictionResult result ->
             case result of
                 Ok _ ->
                     let
                         route =
-                            { path = Route.Path.EditLect_Id_ { id = String.fromInt restriction.lect }, query = Dict.empty, hash = Nothing }
+                            { path = Route.Path.EditLect_Id_ { id = String.fromInt model.restriction.lect }, query = Dict.empty, hash = Nothing }
                     in
-                    ( Model ( id, restriction ) weekdayList hourStartList hourEndList categoryList token backendUrl errorMsg deleteConfirmation, Effect.deleteRestriction id (Just route) )
+                    ( model, Effect.deleteRestriction model.restrictionID (Just route) )
 
                 Err err ->
-                    ( Model ( id, restriction ) weekdayList hourStartList hourEndList categoryList token backendUrl (Decoders.errorToString err) deleteConfirmation, Effect.none )
+                    ( { model | errorMsg = Decoders.errorToString err }, Effect.none )
 
         Return ->
-            ( Model ( id, restriction ) weekdayList hourStartList hourEndList categoryList token backendUrl errorMsg deleteConfirmation, Effect.pushRoute { path = Route.Path.EditLect_Id_ { id = String.fromInt restriction.lect }, query = Dict.empty, hash = Nothing } )
+            ( model, Effect.pushRoute { path = Route.Path.EditLect_Id_ { id = String.fromInt model.restriction.lect }, query = Dict.empty, hash = Nothing } )
 
 
 
@@ -213,25 +252,25 @@ subscriptions model =
 
 
 view : Model -> View Msg
-view (Model ( id, restriction ) weekdayList hourStartList hourEndList categoryList token backendUrl errorMsg deleteConfirmation) =
+view model =
     { title = "Editar Restrição"
     , body =
-        [ Html.map SelectWeekday (Html.Styled.toUnstyled <| renderWeekdaySelect weekdayList)
-        , Html.map SelectStartHour (Html.Styled.toUnstyled <| renderHourSelect hourStartList "Hora de Início")
-        , Html.map SelectEndHour (Html.Styled.toUnstyled <| renderHourSelect hourEndList "Hora de Fim")
-        , Html.map SelectCategory (Html.Styled.toUnstyled <| renderCategorySelect categoryList)
+        [ Html.map SelectWeekday (Html.Styled.toUnstyled <| renderWeekdaySelect model.weekdayList)
+        , Html.map SelectStartHour (Html.Styled.toUnstyled <| renderHourSelect model.hourStartList "Hora de Início")
+        , Html.map SelectEndHour (Html.Styled.toUnstyled <| renderHourSelect model.hourEndList "Hora de Fim")
+        , Html.map SelectCategory (Html.Styled.toUnstyled <| renderCategorySelect model.categoryList)
         , button [ style "margin-right" "2%", class "button", onClick Return ] [ text "Retornar" ]
         , button [ class "button", onClick UpdateRestrictionRequest ] [ text "Submeter" ]
         , button [ style "margin-left" "2%", style "color" "red", class "button", onClick DeleteRestrictionRequest ]
             [ text
-                (if deleteConfirmation then
+                (if model.deleteConfirmation then
                     "Tem a certeza?"
 
                  else
                     "Eliminar"
                 )
             ]
-        , div [ style "width" "100%" ] [ text errorMsg ]
+        , div [ style "width" "100%" ] [ text model.errorMsg ]
         ]
     }
 

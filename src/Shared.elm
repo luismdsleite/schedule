@@ -12,13 +12,13 @@ module Shared exposing
 
 -}
 
-import Decoders exposing (IsHidden)
 import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Json.Decode
 import Route exposing (Route)
 import Route.Path
 import ScheduleObjects.Data exposing (Data)
+import ScheduleObjects.Hide exposing (IsHidden)
 import ScheduleObjects.Id exposing (ID)
 import Shared.Model
 import Shared.Msg

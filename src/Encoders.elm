@@ -1,10 +1,10 @@
 module Encoders exposing (login, putBlock, putEvent, putLecturer, putOccupation, putRestriction, putRoom)
 
-import Decoders exposing (IsHidden)
 import Dict exposing (Dict)
 import Json.Encode as Encode
 import ScheduleObjects.Block exposing (Block, BlockID)
 import ScheduleObjects.Event exposing (Event, EventID)
+import ScheduleObjects.Hide exposing (IsHidden)
 import ScheduleObjects.Id exposing (ID)
 import ScheduleObjects.Lecturer exposing (Lecturer, LecturerID)
 import ScheduleObjects.Occupation as Occupation exposing (Occupation, OccupationID)

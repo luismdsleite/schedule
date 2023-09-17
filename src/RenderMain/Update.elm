@@ -1,7 +1,6 @@
 module RenderMain.Update exposing (..)
 
 import Browser.Dom exposing (Error(..))
-import Decoders exposing (IsHidden)
 import Dict
 import DnD
 import Effect exposing (Effect)
@@ -9,11 +8,13 @@ import Encoders
 import Http
 import Maybe.Extra
 import RenderMain.DisplayEvents exposing (..)
-import RenderMain.Model exposing (Model(..))
+import RenderMain.Model exposing (..)
 import RenderMain.Msg exposing (..)
 import Route.Path
-import ScheduleObjects.Data exposing (Token)
-import ScheduleObjects.Event exposing (Event, EventID)
+import ScheduleObjects.Data exposing (..)
+import ScheduleObjects.Event exposing (Event, EventID, setEvent, setEventRoom)
+import ScheduleObjects.Filters exposing (..)
+import ScheduleObjects.Hide exposing (IsHidden)
 import ScheduleObjects.Id exposing (ID)
 import ScheduleObjects.Occupation exposing (Occupation, OccupationID)
 import ScheduleObjects.Restriction exposing (Restriction, RestrictionID)
@@ -24,18 +25,19 @@ import Time
 {-| Update Block / Event / Room / Lecturer filters based on the msg received.
 -}
 update : Msg -> Model -> ( Model, Effect Msg )
-update msg (Model data filters draggable selectedItems) =
+update msg model =
+    -- update msg (Model data filters draggable selectedItems) =
     case msg of
         ItemClick clickMsg ->
-            updateOnItemClick clickMsg (Model data filters draggable selectedItems)
+            updateOnItemClick clickMsg model
 
         DnDMsg dndmsg ->
-            ( Model data filters (DnD.update dndmsg draggable) selectedItems, Effect.none )
+            ( { model | draggable = DnD.update dndmsg model.draggable }, Effect.none )
 
         OnDrop ( _, weekTime ) eventID ->
             let
                 event =
-                    Dict.get eventID data.events
+                    Dict.get eventID model.data.events
             in
             case event of
                 Just ev ->
@@ -83,38 +85,42 @@ update msg (Model data filters draggable selectedItems) =
                         newEv =
                             { ev | start_time = Just weekTime, end_time = Just newEndTime }
                     in
-                    ( Model data filters draggable selectedItems, Effect.sendCmd (updateEvent ( eventID, newEv ) True data.backendUrl data.token) )
+                    ( model, Effect.sendCmd (updateEvent ( eventID, newEv ) True model.data.backendUrl model.data.token) )
 
                 Nothing ->
-                    ( Model data filters draggable selectedItems, Effect.none )
+                    ( model, Effect.none )
 
         UpdateEvent result ->
             case result of
                 Ok ( evID, ev ) ->
                     let
                         newEvents =
-                            Dict.insert evID ev data.events
+                            Dict.insert evID ev model.data.events
 
                         updatedSelectedItems =
                             -- If the timeslots for the event we are searching for available rooms are modified, we must update the 'selectedItems.event' variable.
-                            case selectedItems.event of
+                            case model.selectedItems.event of
                                 Just ( selectedId, _ ) ->
                                     if selectedId == evID then
-                                        { selectedItems | event = Just ( selectedId, ev ) }
+                                        model.selectedItems |> setSelectedEvent (Just ( selectedId, ev ))
 
                                     else
-                                        selectedItems
+                                        model.selectedItems
 
                                 Nothing ->
-                                    selectedItems
+                                    model.selectedItems
                     in
-                    ( Model { data | events = newEvents } filters draggable updatedSelectedItems, Effect.updateEvent ( evID, ( ev, True ) ) Nothing )
+                    ( model
+                        |> setData (model.data |> setDataEvents newEvents)
+                        |> setSelectedItems updatedSelectedItems
+                    , Effect.updateEvent ( evID, ( ev, True ) ) Nothing
+                    )
 
                 Err _ ->
-                    ( Model data filters draggable selectedItems, Effect.none )
+                    ( model, Effect.none )
 
         EditMenu menuMsg ->
-            updateOnMenuEdit menuMsg (Model data filters draggable selectedItems)
+            updateOnMenuEdit menuMsg model
 
 
 
@@ -133,7 +139,7 @@ update msg (Model data filters draggable selectedItems) =
 
 
 updateOnItemClick : OnItemClick -> Model -> ( Model, Effect Msg )
-updateOnItemClick msg (Model data filters draggable selectedItems) =
+updateOnItemClick msg model =
     let
         {- We Create a function to fetch a new Room/Lecturer filter and abbreviation based on a Room/Lecturer ID.
            If the Room/Lecturer to update is already the one being displayed then dont perform any action.
@@ -166,15 +172,27 @@ updateOnItemClick msg (Model data filters draggable selectedItems) =
     in
     case msg of
         OnBlockClick ( blockId, block ) ->
-            ( Model data { filters | block = block.cond } draggable { selectedItems | block = Just ( blockId, block ) }, Effect.none )
+            ( model
+                |> setFilters (model.filters |> setBlockFilter block.cond)
+                |> setSelectedItems (model.selectedItems |> setSelectedBlock (Just ( blockId, block )))
+            , Effect.none
+            )
 
         -- Get all events with a certain Room ID and with it update the Room Filter and Abbr.
         OnRoomClick ( id, room ) ->
-            ( Model data { filters | room = createNewRoomFilter id, occupations = createNewOccFilter id } draggable { selectedItems | room = Just ( id, room ) }, Effect.none )
+            ( model
+                |> setFilters (model.filters |> setRoomFilter (createNewRoomFilter id) |> setOccFilter (createNewOccFilter id))
+                |> setSelectedItems (model.selectedItems |> setSelectedRoom (Just ( id, room )))
+            , Effect.none
+            )
 
         -- Get all events with a certain Lecturer ID and with it update the Lecturer Filter.
         OnLecturerClick ( id, lect ) ->
-            ( Model data { filters | lect = createNewLectFilter id, restrictions = createNewRestFilter id } draggable { selectedItems | lect = Just ( id, lect ) }, Effect.none )
+            ( model
+                |> setFilters (model.filters |> setLectFilter (createNewLectFilter id) |> setRestFilter (createNewRestFilter id))
+                |> setSelectedItems (model.selectedItems |> setSelectedLect (Just ( id, lect )))
+            , Effect.none
+            )
 
         {-
            For an Event click we need to change both the room Filter and the Lecturer Filter.
@@ -188,82 +206,90 @@ updateOnItemClick msg (Model data filters draggable selectedItems) =
                 ( updatedRoomFilter, updatedOccupationsFilter, updatedSelectedRoom ) =
                     case ev.room of
                         Just roomId ->
-                            case Dict.get roomId data.rooms of
+                            case Dict.get roomId model.data.rooms of
                                 Just room ->
                                     ( createNewRoomFilter roomId, createNewOccFilter roomId, Just ( roomId, room ) )
 
                                 Nothing ->
-                                    ( filters.room, filters.occupations, selectedItems.room )
+                                    ( model.filters.room, model.filters.occupations, model.selectedItems.room )
 
                         Nothing ->
-                            ( filters.room, filters.occupations, selectedItems.room )
+                            ( model.filters.room, model.filters.occupations, model.selectedItems.room )
 
                 -- Updating Lecturer & Restriction Filters + Selected Lecturer
                 ( updatedLectFilter, updatedRestrictionsFilter, updatedSelectedLect ) =
                     case ev.lecturer of
                         Just lectId ->
-                            case Dict.get lectId data.lecturers of
+                            case Dict.get lectId model.data.lecturers of
                                 Just lect ->
                                     ( createNewLectFilter lectId, createNewRestFilter lectId, Just ( lectId, lect ) )
 
                                 Nothing ->
-                                    ( filters.lect, filters.restrictions, selectedItems.lect )
+                                    ( model.filters.lect, model.filters.restrictions, model.selectedItems.lect )
 
                         Nothing ->
-                            ( filters.lect, filters.restrictions, selectedItems.lect )
-
-                updatedSelectedItems =
-                    { selectedItems | event = Just ( evID, ev ), room = updatedSelectedRoom, lect = updatedSelectedLect }
+                            ( model.filters.lect, model.filters.restrictions, model.selectedItems.lect )
             in
-            ( Model data { filters | room = updatedRoomFilter, lect = updatedLectFilter, occupations = updatedOccupationsFilter, restrictions = updatedRestrictionsFilter } draggable updatedSelectedItems, Effect.none )
+            ( model
+                |> setFilters
+                    (model.filters
+                        |> setRoomFilter updatedRoomFilter
+                        |> setLectFilter updatedLectFilter
+                        |> setOccFilter updatedOccupationsFilter
+                        |> setRestFilter updatedRestrictionsFilter
+                    )
+                |> setSelectedItems
+                    (model.selectedItems
+                        |> setSelectedEvent (Just ( evID, ev ))
+                        |> setSelectedRoom updatedSelectedRoom
+                        |> setSelectedLect updatedSelectedLect
+                    )
+            , Effect.none
+            )
 
         ChangeEventRoomClick evId roomId ->
             let
                 eventGet =
-                    Dict.get evId data.events
+                    Dict.get evId model.data.events
 
                 -- If it exists then update the room field of the event else do nothing.
                 sideEffect =
                     case eventGet of
                         Just event ->
-                            let
-                                updatedEv =
-                                    { event | room = Just roomId }
-                            in
-                            Effect.sendCmd (updateEvent ( evId, updatedEv ) True data.backendUrl data.token)
+                            Effect.sendCmd (updateEvent ( evId, event |> setEventRoom (Just roomId) ) True model.data.backendUrl model.data.token)
 
                         Nothing ->
                             Effect.none
             in
-            ( Model data filters draggable selectedItems, sideEffect )
+            ( model, sideEffect )
 
 
 updateOnMenuEdit : EditMenu -> Model -> ( Model, Effect Msg )
-updateOnMenuEdit msg (Model data filters draggable selectedItems) =
+updateOnMenuEdit msg model =
     case msg of
         EditEvent evID ->
-            ( Model data filters draggable selectedItems, Effect.pushRoute { path = Route.Path.EditEvent_Id_ { id = String.fromInt evID }, query = Dict.empty, hash = Nothing } )
+            ( model, Effect.pushRoute { path = Route.Path.EditEvent_Id_ { id = String.fromInt evID }, query = Dict.empty, hash = Nothing } )
 
         EditLect lectID ->
-            ( Model data filters draggable selectedItems, Effect.pushRoute { path = Route.Path.EditLect_Id_ { id = String.fromInt lectID }, query = Dict.empty, hash = Nothing } )
+            ( model, Effect.pushRoute { path = Route.Path.EditLect_Id_ { id = String.fromInt lectID }, query = Dict.empty, hash = Nothing } )
 
         EditRoom roomID ->
-            ( Model data filters draggable selectedItems, Effect.pushRoute { path = Route.Path.EditRoom_Id_ { id = String.fromInt roomID }, query = Dict.empty, hash = Nothing } )
+            ( model, Effect.pushRoute { path = Route.Path.EditRoom_Id_ { id = String.fromInt roomID }, query = Dict.empty, hash = Nothing } )
 
         EditBlock blockID ->
-            ( Model data filters draggable selectedItems, Effect.pushRoute { path = Route.Path.EditBlock_Id_ { id = String.fromInt blockID }, query = Dict.empty, hash = Nothing } )
+            ( model, Effect.pushRoute { path = Route.Path.EditBlock_Id_ { id = String.fromInt blockID }, query = Dict.empty, hash = Nothing } )
 
         AddEvent ->
-            ( Model data filters draggable selectedItems, Effect.pushRoute { path = Route.Path.AddEvent, query = Dict.empty, hash = Nothing } )
+            ( model, Effect.pushRoute { path = Route.Path.AddEvent, query = Dict.empty, hash = Nothing } )
 
         AddLect ->
-            ( Model data filters draggable selectedItems, Effect.pushRoute { path = Route.Path.AddLect, query = Dict.empty, hash = Nothing } )
+            ( model, Effect.pushRoute { path = Route.Path.AddLect, query = Dict.empty, hash = Nothing } )
 
         AddRoom ->
-            ( Model data filters draggable selectedItems, Effect.pushRoute { path = Route.Path.AddRoom, query = Dict.empty, hash = Nothing } )
+            ( model, Effect.pushRoute { path = Route.Path.AddRoom, query = Dict.empty, hash = Nothing } )
 
         AddBlock ->
-            ( Model data filters draggable selectedItems, Effect.pushRoute { path = Route.Path.AddBlock, query = Dict.empty, hash = Nothing } )
+            ( model, Effect.pushRoute { path = Route.Path.AddBlock, query = Dict.empty, hash = Nothing } )
 
 
 

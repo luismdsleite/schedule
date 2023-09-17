@@ -1,9 +1,9 @@
 module RenderMain.Subscription exposing (..)
 
-import RenderMain.Model exposing (Model(..))
+import RenderMain.Model exposing (Model)
 import RenderMain.Msg exposing (Msg, dnd)
 
 
 subscriptions : Model -> Sub Msg
-subscriptions (Model _ _ draggable _) =
-    dnd.subscriptions draggable
+subscriptions model =
+    dnd.subscriptions model.draggable

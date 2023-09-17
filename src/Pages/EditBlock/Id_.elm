@@ -1,7 +1,7 @@
 module Pages.EditBlock.Id_ exposing (Model, Msg, page)
 
 import Css
-import Decoders exposing (IsHidden)
+import Decoders
 import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Encoders
@@ -15,9 +15,10 @@ import Maybe.Extra
 import Page exposing (Page)
 import Route exposing (Route)
 import Route.Path
-import ScheduleObjects.Block exposing (Block, BlockID)
+import ScheduleObjects.Block exposing (Block, BlockID, setBlockAbbr, setBlockCond, setBlockName)
 import ScheduleObjects.Data exposing (Data, Token)
 import ScheduleObjects.Event exposing (Event, EventID)
+import ScheduleObjects.Hide exposing (IsHidden)
 import ScheduleObjects.Lecturer exposing (Lecturer, LecturerID)
 import ScheduleObjects.Room exposing (Room, RoomID)
 import ScheduleObjects.WeekTimeConverters exposing (..)
@@ -41,8 +42,19 @@ page shared route =
 -- INIT
 
 
-type Model
-    = Model Data ( BlockID, Block ) EventList Bool String Bool
+type alias Model =
+    { data : Data
+    , blockID : BlockID
+    , block : Block
+    , evList : EventList
+    , deleteConfirmation : Bool
+    , errorMsg : String
+    , isHidden : Bool
+    }
+
+
+
+-- Model data ( blockID, block ) evList deleteConfirmation errorMsg isHidden
 
 
 type alias EventList =
@@ -50,6 +62,27 @@ type alias EventList =
     , items : List ( EventID, Event )
     , selectedEvents : List ( EventID, Event )
     }
+
+
+asBlockIn : { a | block : b } -> b -> { a | block : b }
+asBlockIn a block =
+    { a | block = block }
+
+
+setBlock block a =
+    { a | block = block }
+
+
+setEvList evList model =
+    { model | evList = evList }
+
+
+setEvListSelectState state evList =
+    { evList | selectState = state }
+
+
+setEvListSelectEv selectedEvents evList =
+    { evList | selectedEvents = selectedEvents }
 
 
 init : Data -> String -> () -> ( Model, Effect Msg )
@@ -71,7 +104,7 @@ init data eventIDParam () =
                 Nothing ->
                     ( Dict.get blockID data.hiddenBlocks |> Maybe.Extra.withDefaultLazy (\() -> Block "" "" (\_ _ -> False)), True )
     in
-    ( Model data ( blockID, block ) (initEventList ( blockID, block ) data) False "" isHidden
+    ( Model data blockID block (initEventList ( blockID, block ) data) False "" isHidden
     , Effect.none
     )
 
@@ -111,47 +144,52 @@ type Msg
 
 
 update : Msg -> Model -> ( Model, Effect Msg )
-update msg (Model data ( blockID, block ) evList deleteConfirmation errorMsg isHidden) =
+update msg model =
     case msg of
         SelectEvent selectMsg ->
             let
                 ( maybeAction, updatedSelectState, selectCmds ) =
-                    Select.update selectMsg evList.selectState
+                    Select.update selectMsg model.evList.selectState
 
                 updatedSelectedEvents =
                     case maybeAction of
                         Just (Select.Select ( id, ev )) ->
-                            ( id, ev ) :: evList.selectedEvents
+                            ( id, ev ) :: model.evList.selectedEvents
 
                         Just (Select.Deselect deselectedItems) ->
-                            List.filter (\( id, ev ) -> not (List.member ( id, ev ) deselectedItems)) evList.selectedEvents
+                            List.filter (\( id, ev ) -> not (List.member ( id, ev ) deselectedItems)) model.evList.selectedEvents
 
                         Just Clear ->
                             []
 
                         _ ->
-                            evList.selectedEvents
+                            model.evList.selectedEvents
 
                 newBlockCond =
                     \id _ -> List.member id (List.map Tuple.first updatedSelectedEvents)
             in
-            ( Model data ( blockID, { block | cond = newBlockCond } ) { evList | selectState = updatedSelectState, selectedEvents = updatedSelectedEvents } deleteConfirmation errorMsg isHidden, Effect.sendCmd (Cmd.map SelectEvent selectCmds) )
+            ( model
+                |> setBlock (model.block |> setBlockCond newBlockCond)
+                |> setEvList (model.evList |> setEvListSelectState updatedSelectState |> setEvListSelectEv updatedSelectedEvents)
+            , Effect.sendCmd (Cmd.map SelectEvent selectCmds)
+            )
 
+        -- ( Model data ( blockID, { block | cond = newBlockCond } ) { evList | selectState = updatedSelectState, selectedEvents = updatedSelectedEvents } deleteConfirmation errorMsg isHidden, Effect.sendCmd (Cmd.map SelectEvent selectCmds) )
         NameChange newName ->
-            ( Model data ( blockID, { block | name = newName } ) evList deleteConfirmation errorMsg isHidden, Effect.none )
+            ( model |> setBlock (model.block |> setBlockName newName), Effect.none )
 
         AbbrChange newAbbr ->
-            ( Model data ( blockID, { block | nameAbbr = newAbbr } ) evList deleteConfirmation errorMsg isHidden, Effect.none )
+            ( model |> setBlock (model.block |> setBlockAbbr newAbbr), Effect.none )
 
         UpdateBlockRequest ->
-            ( Model data ( blockID, block ) evList deleteConfirmation errorMsg isHidden, Effect.sendCmd <| updateBlock ( blockID, block ) isHidden data.events data.backendUrl data.token )
+            ( model, Effect.sendCmd <| updateBlock ( model.blockID, model.block ) model.isHidden model.data.events model.data.backendUrl model.data.token )
 
         DeleteBlockRequest ->
-            if deleteConfirmation then
-                ( Model data ( blockID, block ) evList False errorMsg isHidden, Effect.sendCmd <| deleteBlock blockID data.backendUrl data.token )
+            if model.deleteConfirmation then
+                ( { model | deleteConfirmation = False }, Effect.sendCmd <| deleteBlock model.blockID model.data.backendUrl model.data.token )
 
             else
-                ( Model data ( blockID, block ) evList True errorMsg isHidden, Effect.none )
+                ( { model | deleteConfirmation = True }, Effect.none )
 
         UpdateBlockResult result ->
             case result of
@@ -163,10 +201,10 @@ update msg (Model data ( blockID, block ) evList deleteConfirmation errorMsg isH
                             , hash = Nothing
                             }
                     in
-                    ( Model data ( blockID, block ) evList deleteConfirmation errorMsg isHidden, Effect.updateBlock ( id, updatedBlock ) (Just route) )
+                    ( model, Effect.updateBlock ( id, updatedBlock ) (Just route) )
 
                 Err err ->
-                    ( Model data ( blockID, block ) evList deleteConfirmation (Decoders.errorToString err) isHidden, Effect.none )
+                    ( { model | errorMsg = Decoders.errorToString err }, Effect.none )
 
         DeleteBlockResult result ->
             case result of
@@ -178,13 +216,13 @@ update msg (Model data ( blockID, block ) evList deleteConfirmation errorMsg isH
                             , hash = Nothing
                             }
                     in
-                    ( Model data ( blockID, block ) evList deleteConfirmation errorMsg isHidden, Effect.deleteBlock blockID (Just route) )
+                    ( model, Effect.deleteBlock model.blockID (Just route) )
 
                 Err err ->
-                    ( Model data ( blockID, block ) evList deleteConfirmation (Decoders.errorToString err) isHidden, Effect.none )
+                    ( { model | errorMsg = Decoders.errorToString err }, Effect.none )
 
         VisibilityChange newVisibility ->
-            ( Model data ( blockID, block ) evList deleteConfirmation errorMsg newVisibility, Effect.none )
+            ( {model | isHidden = newVisibility}, Effect.none )
 
         Return ->
             let
@@ -194,7 +232,7 @@ update msg (Model data ( blockID, block ) evList deleteConfirmation errorMsg isH
                     , hash = Nothing
                     }
             in
-            ( Model data ( blockID, block ) evList deleteConfirmation errorMsg isHidden, Effect.pushRoute route )
+            ( model, Effect.pushRoute route )
 
 
 
@@ -211,25 +249,25 @@ subscriptions model =
 
 
 view : Model -> View Msg
-view (Model data ( blockID, block ) evList deleteConfirmation errorMsg isHidden) =
+view model =
     { title = "Editar Blocos"
     , body =
-        [ input [ class "input-box", style "width" "100%", value block.nameAbbr, onInput AbbrChange, Html.Attributes.placeholder "Abbreviatura" ] []
-        , input [ class "input-box", style "width" "100%", value block.name, onInput NameChange, Html.Attributes.placeholder "Nome Da Sala" ] []
-        , div [] [ input [ type_ "checkbox", checked isHidden, onCheck VisibilityChange ] [], label [] [ text "Esconder Bloco" ] ]
+        [ input [ class "input-box", style "width" "100%", value model.block.nameAbbr, onInput AbbrChange, Html.Attributes.placeholder "Abbreviatura" ] []
+        , input [ class "input-box", style "width" "100%", value model.block.name, onInput NameChange, Html.Attributes.placeholder "Nome Da Sala" ] []
+        , div [] [ input [ type_ "checkbox", checked model.isHidden, onCheck VisibilityChange ] [], label [] [ text "Esconder Bloco" ] ]
         , button [ style "margin-right" "2%", class "button", onClick Return ] [ text "Retornar" ]
         , button [ class "button", onClick UpdateBlockRequest, style "margin-top" "1vh", style "margin-bottom" "1vh" ] [ text "Submeter" ]
         , button [ style "margin-left" "2%", style "color" "red", class "button", onClick DeleteBlockRequest ]
             [ text
-                (if deleteConfirmation then
+                (if model.deleteConfirmation then
                     "Tem a certeza?"
 
                  else
                     "Eliminar"
                 )
             ]
-        , div [ style "width" "100%" ] [ text errorMsg ]
-        , Html.map SelectEvent (HS.toUnstyled <| renderEventsList data evList)
+        , div [ style "width" "100%" ] [ text model.errorMsg ]
+        , Html.map SelectEvent (HS.toUnstyled <| renderEventsList model.data model.evList)
         ]
     }
 

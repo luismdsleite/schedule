@@ -47,5 +47,5 @@ NOTE: All Elm Land apps are compiled as "single-page applications" in the dist f
 # TO-DO
 
 - [ ] Add ⚠️ emote to rooms and professors with conflicts.
-- [ ] Use `text-decoration: underline;` to show what rooms/events/lects/blocks are hidden.
 - [ ] Replace old lists in main with the ones used in the other pages
+- [ ] Replace Model with a record

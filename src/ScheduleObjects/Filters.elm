@@ -17,6 +17,31 @@ type alias ScheduleFilter =
     { room : Filter, lect : Filter, block : Filter, occupations : OccupationsFilter, restrictions : RestrictionsFilter }
 
 
+setRoomFilter : Filter -> ScheduleFilter -> ScheduleFilter
+setRoomFilter f sf =
+    { sf | room = f }
+
+
+setLectFilter : Filter -> ScheduleFilter -> ScheduleFilter
+setLectFilter f sf =
+    { sf | lect = f }
+
+
+setBlockFilter : Filter -> ScheduleFilter -> ScheduleFilter
+setBlockFilter f sf =
+    { sf | block = f }
+
+
+setOccFilter : OccupationsFilter -> ScheduleFilter -> ScheduleFilter
+setOccFilter f sf =
+    { sf | occupations = f }
+
+
+setRestFilter : RestrictionsFilter -> ScheduleFilter -> ScheduleFilter
+setRestFilter f sf =
+    { sf | restrictions = f }
+
+
 type alias Filter =
     EventID -> Event -> Bool
 

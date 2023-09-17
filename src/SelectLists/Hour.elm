@@ -1,4 +1,4 @@
-module SelectLists.Hour exposing (HourList, initHourList, renderHourSelect)
+module SelectLists.Hour exposing (HourList, MaybeHourList, initHourList, renderHourSelect, renderMaybeHourSelect, setEndHourList, setHourListSelect, setHourListSelectState, setStartHourList)
 
 {-| This module contains the functions to create and render a select list for the hours of the day.
 -}
@@ -15,6 +15,33 @@ type alias MaybeHourList =
     , items : List (Select.MenuItem ( Int, Int ))
     , selectedHour : Maybe ( Int, Int )
     }
+
+
+type alias HourList =
+    { selectState : Select.State
+    , items : List (Select.MenuItem ( Int, Int ))
+    , selectedHour : ( Int, Int )
+    }
+
+
+setStartHourList : a -> { b | hourStartList : a } -> { b | hourStartList : a }
+setStartHourList hourStartList a =
+    { a | hourStartList = hourStartList }
+
+
+setEndHourList : a -> { b | hourEndList : a } -> { b | hourEndList : a }
+setEndHourList hourEndList a =
+    { a | hourEndList = hourEndList }
+
+
+setHourListSelectState : a -> { b | selectState : a } -> { b | selectState : a }
+setHourListSelectState state hourList =
+    { hourList | selectState = state }
+
+
+setHourListSelect : a -> { b | selectedHour : a } -> { b | selectedHour : a }
+setHourListSelect selectedHour hourList =
+    { hourList | selectedHour = selectedHour }
 
 
 initHourList eventHour selectIdentifier =
@@ -40,13 +67,6 @@ renderMaybeHourSelect hourList placeholder =
             |> Select.menuItems hourList.items
             |> Select.placeholder placeholder
         )
-
-
-type alias HourList =
-    { selectState : Select.State
-    , items : List (Select.MenuItem ( Int, Int ))
-    , selectedHour : ( Int, Int )
-    }
 
 
 renderHourSelect : HourList -> String -> Html.Styled.Html (Select.Msg ( Int, Int ))

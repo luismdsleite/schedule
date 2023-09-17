@@ -13,3 +13,18 @@ type alias Block =
 
 type alias BlockID =
     ID
+
+
+setBlockCond : (EventID -> Event -> Bool) -> Block -> Block
+setBlockCond cond block =
+    { block | cond = cond }
+
+
+setBlockAbbr : String -> Block -> Block
+setBlockAbbr abbr block =
+    { block | nameAbbr = abbr }
+
+
+setBlockName : String -> Block -> Block
+setBlockName name block =
+    { block | name = name }

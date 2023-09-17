@@ -1,10 +1,17 @@
-module SelectLists.WeekDay exposing (WeekDayList, initWeekDayList, renderWeekdaySelect)
+module SelectLists.WeekDay exposing (MaybeWeekDayList, WeekDayList, initWeekDayList, renderMaybeWeekdaySelect, renderWeekdaySelect, setWeekdayList, setWeekdayListSelect, setWeekdaySelectState)
 
 import Html.Styled
 import ScheduleObjects.WeekTime exposing (WeekTime)
 import ScheduleObjects.WeekTimeConverters exposing (..)
 import Select exposing (basicMenuItem)
 import Time
+
+
+type alias WeekDayList =
+    { selectState : Select.State
+    , items : List (Select.MenuItem Time.Weekday)
+    , selectedWeekday : Time.Weekday
+    }
 
 
 type alias MaybeWeekDayList =
@@ -14,6 +21,19 @@ type alias MaybeWeekDayList =
     }
 
 
+setWeekdayList weekdayList a =
+    { a | weekdayList = weekdayList }
+
+
+setWeekdaySelectState state weekdayList =
+    { weekdayList | selectState = state }
+
+
+setWeekdayListSelect selectedEvents weekdayList =
+    { weekdayList | selectedWeekday = selectedEvents }
+
+
+initWeekDayList : a -> { selectState : Select.State, items : List (Select.MenuItem Time.Weekday), selectedWeekday : a }
 initWeekDayList selectedWeekday =
     { selectState =
         Select.initState (Select.selectIdentifier "Weekday")
@@ -32,13 +52,6 @@ renderMaybeWeekdaySelect weekdayList =
             |> Select.menuItems weekdayList.items
             |> Select.placeholder "Dia da Semana"
         )
-
-
-type alias WeekDayList =
-    { selectState : Select.State
-    , items : List (Select.MenuItem Time.Weekday)
-    , selectedWeekday : Time.Weekday
-    }
 
 
 renderWeekdaySelect : WeekDayList -> Html.Styled.Html (Select.Msg Time.Weekday)

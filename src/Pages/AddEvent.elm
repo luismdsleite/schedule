@@ -1,6 +1,6 @@
 module Pages.AddEvent exposing (Model, Msg, page)
 
-import Decoders exposing (IsHidden)
+import Decoders
 import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Encoders
@@ -9,18 +9,20 @@ import Html.Attributes exposing (..)
 import Html.Events exposing (onCheck, onClick, onInput)
 import Html.Styled
 import Http
-import Json.Decode as JD
 import Page exposing (Page)
 import Route exposing (Route)
 import Route.Path
 import ScheduleObjects.Data exposing (Data, Token)
-import ScheduleObjects.Event exposing (Event, EventID)
+import ScheduleObjects.Event exposing (Event, EventID, asEventIn, setEvent, setEventAbbr, setEventEndTime, setEventLecturer, setEventRoom, setEventStartTime, setEventSubject)
+import ScheduleObjects.Hide exposing (IsHidden)
 import ScheduleObjects.Id exposing (ID)
 import ScheduleObjects.Lecturer exposing (LecturerID)
 import ScheduleObjects.Room exposing (RoomID)
 import ScheduleObjects.WeekTime exposing (WeekTime)
 import ScheduleObjects.WeekTimeConverters exposing (..)
 import Select exposing (..)
+import SelectLists.Hour exposing (MaybeHourList, initHourList, renderMaybeHourSelect, setEndHourList, setHourListSelect, setHourListSelectState, setStartHourList)
+import SelectLists.WeekDay exposing (MaybeWeekDayList, initWeekDayList, renderMaybeWeekdaySelect, setWeekdayList, setWeekdayListSelect, setWeekdaySelectState)
 import Shared
 import Time
 import View exposing (View)
@@ -40,21 +42,16 @@ page shared route =
 -- MODEL
 
 
-type Model
-    = Model Data Event WeekDayList HourList HourList AbbrList AbbrList String Bool
-
-
-type alias WeekDayList =
-    { selectState : Select.State
-    , items : List (Select.MenuItem Time.Weekday)
-    , selectedWeekday : Maybe Time.Weekday
-    }
-
-
-type alias HourList =
-    { selectState : Select.State
-    , items : List (Select.MenuItem ( Int, Int ))
-    , selectedHour : Maybe ( Int, Int )
+type alias Model =
+    { data : Data
+    , event : Event
+    , weekdayList : MaybeWeekDayList
+    , hourStartList : MaybeHourList
+    , hourEndList : MaybeHourList
+    , roomList : AbbrList
+    , lectList : AbbrList
+    , errorMsg : String
+    , isHidden : Bool
     }
 
 
@@ -63,6 +60,26 @@ type alias AbbrList =
     , items : List (Select.MenuItem ID)
     , selectedItem : Maybe ID
     }
+
+
+setRoomList : AbbrList -> { a | roomList : AbbrList } -> { a | roomList : AbbrList }
+setRoomList roomList a =
+    { a | roomList = roomList }
+
+
+setLectList : AbbrList -> { a | lectList : AbbrList } -> { a | lectList : AbbrList }
+setLectList lectList a =
+    { a | lectList = lectList }
+
+
+setAbbrListSelectState : Select.State -> AbbrList -> AbbrList
+setAbbrListSelectState selectState abbrList =
+    { abbrList | selectState = selectState }
+
+
+setAbbrListSelect : Maybe ID -> AbbrList -> AbbrList
+setAbbrListSelect selectedItem abbrList =
+    { abbrList | selectedItem = selectedItem }
 
 
 
@@ -78,32 +95,6 @@ init data () =
     ( Model data event (initWeekDayList Nothing) (initHourList Nothing "StartHour") (initHourList Nothing "EndHour") (initAbbrList event.room (Dict.toList data.rooms) "Room") (initAbbrList event.lecturer (Dict.toList data.lecturers) "Lecturer") "" False
     , Effect.none
     )
-
-
-initWeekDayList : Maybe Time.Weekday -> WeekDayList
-initWeekDayList selectedWeekday =
-    { selectState =
-        Select.initState (Select.selectIdentifier "Weekday")
-    , items =
-        List.map (\weekday -> basicMenuItem { item = weekday, label = toPortugueseWeekday weekday }) displayedWeekDays
-    , selectedWeekday = selectedWeekday
-    }
-
-
-initHourList : Maybe ( Int, Int ) -> String -> HourList
-initHourList eventHour selectIdentifier =
-    let
-        hours =
-            computeTimeSlots (WeekTime Time.Mon 8 0) (WeekTime Time.Mon 20 0) []
-                |> List.map (\a -> ( a.hour, a.minute ))
-                |> List.reverse
-    in
-    { selectState =
-        Select.initState (Select.selectIdentifier selectIdentifier)
-    , items =
-        List.map (\( hour, minute ) -> basicMenuItem { item = ( hour, minute ), label = convertHourAndMinute hour minute }) hours
-    , selectedHour = eventHour
-    }
 
 
 initAbbrList : a -> List ( b, { c | abbr : String } ) -> String -> { selectState : State, items : List (MenuItem b), selectedItem : a }
@@ -135,25 +126,26 @@ type Msg
 
 
 update : Msg -> Model -> ( Model, Effect Msg )
-update msg (Model data ev weekdayList hourStartList hourEndList roomList lectList errorMsg isHidden) =
+update msg model =
+    -- update msg (Model data ev weekdayList hourStartList hourEndList roomList lectList errorMsg isHidden) =
     case msg of
         SubjectAbbrChange str ->
-            ( Model data { ev | subjectAbbr = str } weekdayList hourStartList hourEndList roomList lectList errorMsg isHidden, Effect.none )
+            ( setEventAbbr str model.event |> asEventIn model, Effect.none )
 
         SubjectChange str ->
-            ( Model data { ev | subject = str } weekdayList hourStartList hourEndList roomList lectList errorMsg isHidden, Effect.none )
+            ( setEventSubject str model.event |> asEventIn model, Effect.none )
 
         SelectWeekday selectMsg ->
             let
                 ( maybeAction, updatedSelectState, selectCmds ) =
-                    Select.update selectMsg weekdayList.selectState
+                    Select.update selectMsg model.weekdayList.selectState
 
                 newModel =
                     case maybeAction of
                         Just (Select weekday) ->
                             let
                                 newStart_time =
-                                    case ev.start_time of
+                                    case model.event.start_time of
                                         Just start ->
                                             { start | weekday = weekday }
 
@@ -161,20 +153,29 @@ update msg (Model data ev weekdayList hourStartList hourEndList roomList lectLis
                                             { weekday = weekday, hour = 8, minute = 0 }
 
                                 newEnd_time =
-                                    case ev.end_time of
+                                    case model.event.end_time of
                                         Just end ->
                                             { end | weekday = weekday }
 
                                         Nothing ->
                                             { weekday = weekday, hour = 9, minute = 0 }
                             in
-                            Model data { ev | start_time = Just newStart_time, end_time = Just newEnd_time } { weekdayList | selectedWeekday = Just weekday, selectState = updatedSelectState } { hourStartList | selectedHour = Just ( newStart_time.hour, newStart_time.minute ) } { hourEndList | selectedHour = Just ( newEnd_time.hour, newEnd_time.minute ) } roomList lectList errorMsg isHidden
+                            model
+                                |> setEvent (setEventStartTime (Just newStart_time) model.event |> setEventEndTime (Just newEnd_time))
+                                |> setWeekdayList (setWeekdaySelectState updatedSelectState model.weekdayList |> setWeekdayListSelect (Just weekday))
+                                |> setStartHourList (setHourListSelect (Just ( newStart_time.hour, newStart_time.minute )) model.hourStartList)
+                                |> setEndHourList (setHourListSelect (Just ( newEnd_time.hour, newEnd_time.minute )) model.hourEndList)
 
                         Just Clear ->
-                            Model data { ev | start_time = Nothing, end_time = Nothing } { weekdayList | selectedWeekday = Nothing, selectState = updatedSelectState } { hourStartList | selectedHour = Nothing } { hourEndList | selectedHour = Nothing } roomList lectList errorMsg isHidden
+                            model
+                                |> setEvent (setEventStartTime Nothing model.event |> setEventEndTime Nothing)
+                                |> setWeekdayList (setWeekdaySelectState updatedSelectState model.weekdayList |> setWeekdayListSelect Nothing)
+                                |> setStartHourList (setHourListSelect Nothing model.hourStartList)
+                                |> setEndHourList (setHourListSelect Nothing model.hourEndList)
 
                         _ ->
-                            Model data ev { weekdayList | selectState = updatedSelectState } hourStartList hourEndList roomList lectList errorMsg isHidden
+                            model
+                                |> setWeekdayList (setWeekdaySelectState updatedSelectState model.weekdayList)
             in
             ( newModel
             , Effect.sendCmd (Cmd.map SelectWeekday selectCmds)
@@ -183,24 +184,27 @@ update msg (Model data ev weekdayList hourStartList hourEndList roomList lectLis
         SelectStartHour selectMsg ->
             let
                 ( maybeAction, updatedSelectState, selectCmds ) =
-                    Select.update selectMsg hourStartList.selectState
+                    Select.update selectMsg model.hourStartList.selectState
 
                 newModel =
                     case maybeAction of
                         Just (Select ( hour, minute )) ->
                             let
                                 ( newStartTime, newEndTime ) =
-                                    case ev.start_time of
+                                    case model.event.start_time of
                                         Just start ->
-                                            ( Just { start | hour = hour, minute = minute }, ev.end_time )
+                                            ( Just { start | hour = hour, minute = minute }, model.event.end_time )
 
                                         Nothing ->
                                             ( Just (WeekTime Time.Mon hour minute), Just (WeekTime Time.Mon 19 30) )
                             in
-                            Model data { ev | start_time = newStartTime, end_time = newEndTime } weekdayList { hourStartList | selectState = updatedSelectState, selectedHour = Just ( hour, minute ) } hourEndList roomList lectList errorMsg isHidden
+                            model
+                                |> setEvent (setEventStartTime newStartTime model.event |> setEventEndTime newEndTime)
+                                |> setStartHourList (setHourListSelectState updatedSelectState model.hourStartList |> setHourListSelect (Just ( hour, minute )))
 
                         _ ->
-                            Model data ev weekdayList { hourStartList | selectState = updatedSelectState } hourEndList roomList lectList errorMsg isHidden
+                            model
+                                |> setStartHourList (setHourListSelectState updatedSelectState model.hourStartList)
             in
             ( newModel
             , Effect.sendCmd (Cmd.map SelectStartHour selectCmds)
@@ -209,69 +213,82 @@ update msg (Model data ev weekdayList hourStartList hourEndList roomList lectLis
         SelectEndHour selectMsg ->
             let
                 ( maybeAction, updatedSelectState, selectCmds ) =
-                    Select.update selectMsg hourEndList.selectState
+                    Select.update selectMsg model.hourEndList.selectState
 
                 newModel =
                     case maybeAction of
                         Just (Select ( hour, minute )) ->
                             let
                                 ( newStartTime, newEndTime ) =
-                                    case ev.end_time of
+                                    case model.event.end_time of
                                         Just end ->
-                                            ( ev.start_time, Just { end | hour = hour, minute = minute } )
+                                            ( model.event.start_time, Just { end | hour = hour, minute = minute } )
 
                                         Nothing ->
                                             ( Just (WeekTime Time.Mon 8 0), Just (WeekTime Time.Mon hour minute) )
                             in
-                            Model data { ev | start_time = newStartTime, end_time = newEndTime } weekdayList hourStartList { hourEndList | selectState = updatedSelectState, selectedHour = Just ( hour, minute ) } roomList lectList errorMsg isHidden
+                            model
+                                |> setEvent (setEventStartTime newStartTime model.event |> setEventEndTime newEndTime)
+                                |> setEndHourList (setHourListSelectState updatedSelectState model.hourEndList |> setHourListSelect (Just ( hour, minute )))
 
                         _ ->
-                            Model data ev weekdayList hourStartList { hourEndList | selectState = updatedSelectState } roomList lectList errorMsg isHidden
+                            model
+                                |> setEndHourList (setHourListSelectState updatedSelectState model.hourEndList)
             in
             ( newModel, Effect.sendCmd (Cmd.map SelectStartHour selectCmds) )
 
         SelectRoom selectMsg ->
             let
                 ( maybeAction, updatedSelectState, selectCmds ) =
-                    Select.update selectMsg roomList.selectState
+                    Select.update selectMsg model.roomList.selectState
 
                 newModel =
                     case maybeAction of
                         Just (Select roomID) ->
-                            Model data { ev | room = Just roomID } weekdayList hourStartList hourEndList { roomList | selectState = updatedSelectState, selectedItem = Just roomID } lectList errorMsg isHidden
+                            model
+                                |> setEvent (setEventRoom (Just roomID) model.event)
+                                |> setRoomList (setAbbrListSelectState updatedSelectState model.roomList |> setAbbrListSelect (Just roomID))
 
                         Just Clear ->
-                            Model data { ev | room = Nothing } weekdayList hourStartList hourEndList { roomList | selectState = updatedSelectState, selectedItem = Nothing } lectList errorMsg isHidden
+                            model
+                                |> setEvent (setEventRoom Nothing model.event)
+                                |> setRoomList (setAbbrListSelectState updatedSelectState model.roomList |> setAbbrListSelect Nothing)
 
                         _ ->
-                            Model data ev weekdayList hourStartList hourEndList { roomList | selectState = updatedSelectState } lectList errorMsg isHidden
+                            model
+                                |> setRoomList (setAbbrListSelectState updatedSelectState model.roomList)
             in
             ( newModel, Effect.sendCmd (Cmd.map SelectRoom selectCmds) )
 
         SelectLect selectMsg ->
             let
                 ( maybeAction, updatedSelectState, selectCmds ) =
-                    Select.update selectMsg lectList.selectState
+                    Select.update selectMsg model.lectList.selectState
 
                 newModel =
                     case maybeAction of
                         Just (Select lectID) ->
-                            Model data { ev | lecturer = Just lectID } weekdayList hourStartList hourEndList roomList { lectList | selectState = updatedSelectState, selectedItem = Just lectID } errorMsg isHidden
+                            model
+                                |> setEvent (setEventLecturer (Just lectID) model.event)
+                                |> setLectList (setAbbrListSelectState updatedSelectState model.lectList |> setAbbrListSelect (Just lectID))
 
                         Just Clear ->
-                            Model data { ev | lecturer = Nothing } weekdayList hourStartList hourEndList roomList { lectList | selectState = updatedSelectState, selectedItem = Nothing } errorMsg isHidden
+                            model
+                                |> setEvent (setEventLecturer Nothing model.event)
+                                |> setLectList (setAbbrListSelectState updatedSelectState model.lectList |> setAbbrListSelect Nothing)
 
                         _ ->
-                            Model data ev weekdayList hourStartList hourEndList roomList { lectList | selectState = updatedSelectState } errorMsg isHidden
+                            model
+                                |> setLectList (setAbbrListSelectState updatedSelectState model.lectList)
             in
             ( newModel, Effect.sendCmd (Cmd.map SelectRoom selectCmds) )
 
         UpdateEventRequest ->
-            ( Model data ev weekdayList hourStartList hourEndList roomList lectList errorMsg isHidden, Effect.sendCmd (updateEvent ev isHidden data.backendUrl data.token) )
+            ( model, Effect.sendCmd (updateEvent model.event model.isHidden model.data.backendUrl model.data.token) )
 
         UpdateEventResult result ->
             case result of
-                Ok ( id, updatedEv ) ->
+                Ok idAndEvent ->
                     let
                         route =
                             { path = Route.Path.Main
@@ -279,16 +296,16 @@ update msg (Model data ev weekdayList hourStartList hourEndList roomList lectLis
                             , hash = Nothing
                             }
                     in
-                    ( Model data ev weekdayList hourStartList hourEndList roomList lectList errorMsg isHidden, Effect.updateEvent ( id, updatedEv ) (Just route) )
+                    ( model, Effect.updateEvent idAndEvent (Just route) )
 
                 Err err ->
-                    ( Model data ev weekdayList hourStartList hourEndList roomList lectList (Decoders.errorToString err) isHidden, Effect.none )
+                    ( { model | errorMsg = Decoders.errorToString err }, Effect.none )
 
-        VisibilityChange visibilityChange ->
-            ( Model data ev weekdayList hourStartList hourEndList roomList lectList errorMsg visibilityChange, Effect.none )
+        VisibilityChange changeVisibility ->
+            ( { model | isHidden = changeVisibility }, Effect.none )
 
         Return ->
-            ( Model data ev weekdayList hourStartList hourEndList roomList lectList errorMsg isHidden, Effect.pushRoute { path = Route.Path.Main, query = Dict.empty, hash = Nothing } )
+            ( model, Effect.pushRoute { path = Route.Path.Main, query = Dict.empty, hash = Nothing } )
 
 
 
@@ -305,43 +322,22 @@ subscriptions model =
 
 
 view : Model -> View Msg
-view (Model data ev weekdayList hourStartList hourEndList roomList lectList errorMsg isHidden) =
+view model =
     { title = "Criar Cadeira"
     , body =
-        [ input [ class "input-box", style "width" "100%", value ev.subjectAbbr, onInput SubjectAbbrChange, Html.Attributes.placeholder "Abbreviatura" ] []
-        , input [ class "input-box", style "width" "100%", value ev.subject, onInput SubjectChange, Html.Attributes.placeholder "Nome Da Cadeira" ] []
-        , Html.map SelectWeekday (Html.Styled.toUnstyled <| renderWeekdaySelect weekdayList)
-        , Html.map SelectStartHour (Html.Styled.toUnstyled <| renderHourSelect hourStartList "Hora de Início")
-        , Html.map SelectEndHour (Html.Styled.toUnstyled <| renderHourSelect hourEndList "Hora de Fim")
-        , Html.map SelectRoom (Html.Styled.toUnstyled <| renderAbbrSelect roomList data.rooms "Sala")
-        , Html.map SelectLect (Html.Styled.toUnstyled <| renderAbbrSelect lectList data.lecturers "Docente")
-        , div [] [ input [ type_ "checkbox", checked isHidden, onCheck VisibilityChange ] [], label [] [ text "Esconder Cadeira" ] ]
+        [ input [ class "input-box", style "width" "100%", value model.event.subjectAbbr, onInput SubjectAbbrChange, Html.Attributes.placeholder "Abbreviatura" ] []
+        , input [ class "input-box", style "width" "100%", value model.event.subject, onInput SubjectChange, Html.Attributes.placeholder "Nome Da Cadeira" ] []
+        , Html.map SelectWeekday (Html.Styled.toUnstyled <| renderMaybeWeekdaySelect model.weekdayList)
+        , Html.map SelectStartHour (Html.Styled.toUnstyled <| renderMaybeHourSelect model.hourStartList "Hora de Início")
+        , Html.map SelectEndHour (Html.Styled.toUnstyled <| renderMaybeHourSelect model.hourEndList "Hora de Fim")
+        , Html.map SelectRoom (Html.Styled.toUnstyled <| renderAbbrSelect model.roomList model.data.rooms "Sala")
+        , Html.map SelectLect (Html.Styled.toUnstyled <| renderAbbrSelect model.lectList model.data.lecturers "Docente")
+        , div [] [ input [ type_ "checkbox", checked model.isHidden, onCheck VisibilityChange ] [], label [] [ text "Esconder Cadeira" ] ]
         , button [ style "margin-right" "2%", class "button", onClick Return ] [ text "Retornar" ]
         , button [ style "margin-left" "2%", class "button", onClick UpdateEventRequest ] [ text "Submeter" ]
-        , div [ style "width" "100%" ] [ text errorMsg ]
+        , div [ style "width" "100%" ] [ text model.errorMsg ]
         ]
     }
-
-
-renderWeekdaySelect : WeekDayList -> Html.Styled.Html (Select.Msg Time.Weekday)
-renderWeekdaySelect weekdayList =
-    Select.view
-        ((Select.single <| Maybe.map (\weekday -> basicMenuItem { item = weekday, label = toPortugueseWeekday weekday }) weekdayList.selectedWeekday)
-            |> Select.clearable True
-            |> Select.state weekdayList.selectState
-            |> Select.menuItems weekdayList.items
-            |> Select.placeholder "Dia da Semana"
-        )
-
-
-renderHourSelect : HourList -> String -> Html.Styled.Html (Select.Msg ( Int, Int ))
-renderHourSelect hourList placeholder =
-    Select.view
-        ((Select.single <| Maybe.map (\( hour, minute ) -> basicMenuItem { item = ( hour, minute ), label = convertHourAndMinute hour minute }) hourList.selectedHour)
-            |> Select.state hourList.selectState
-            |> Select.menuItems hourList.items
-            |> Select.placeholder placeholder
-        )
 
 
 getAbbr : comparable -> Dict comparable { a | abbr : String } -> String

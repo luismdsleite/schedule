@@ -1,6 +1,6 @@
 module Pages.AddRoom exposing (Model, Msg, page)
 
-import Decoders exposing (IsHidden)
+import Decoders
 import Dict
 import Effect exposing (Effect)
 import Encoders
@@ -8,13 +8,13 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onCheck, onClick, onInput)
 import Http
-import Json.Decode as JD
 import Maybe.Extra
 import Page exposing (Page)
 import Route exposing (Route)
 import Route.Path
 import ScheduleObjects.Data exposing (Data, Token)
-import ScheduleObjects.Room exposing (Room, RoomID)
+import ScheduleObjects.Hide exposing (IsHidden)
+import ScheduleObjects.Room exposing (Room, RoomID, asRoomIn, setRoom, setRoomAbbr, setRoomCapacity, setRoomName, setRoomNumber)
 import Shared
 import View exposing (View)
 
@@ -33,8 +33,13 @@ page shared route =
 -- INIT
 
 
-type Model
-    = Model Room String String String Bool
+type alias Model =
+    { room : Room
+    , backendUrl : String
+    , token : String
+    , errorMsg : String
+    , isHidden : Bool
+    }
 
 
 init : Data -> () -> ( Model, Effect Msg )
@@ -60,22 +65,23 @@ type Msg
 
 
 update : Msg -> Model -> ( Model, Effect Msg )
-update msg (Model room backendUrl token errorMsg isHidden) =
+update msg model =
+    -- update msg (Model room backendUrl token errorMsg isHidden) =
     case msg of
         AbbrChange str ->
-            ( Model { room | abbr = str } backendUrl token errorMsg isHidden, Effect.none )
+            ( setRoomAbbr str model.room |> asRoomIn model, Effect.none )
 
         NameChange str ->
-            ( Model { room | name = str } backendUrl token errorMsg isHidden, Effect.none )
+            ( setRoomName str model.room |> asRoomIn model, Effect.none )
 
         CapacityChange int ->
-            ( Model { room | capacity = int } backendUrl token errorMsg isHidden, Effect.none )
+            ( setRoomCapacity int model.room |> asRoomIn model, Effect.none )
 
         NumberChange str ->
-            ( Model { room | number = str } backendUrl token errorMsg isHidden, Effect.none )
+            ( setRoomNumber str model.room |> asRoomIn model, Effect.none )
 
         UpdateRoomRequest ->
-            ( Model room backendUrl token errorMsg isHidden, Effect.sendCmd (updateRoom room isHidden backendUrl token) )
+            ( model, Effect.sendCmd (updateRoom model.room model.isHidden model.backendUrl model.token) )
 
         UpdateRoomResult result ->
             case result of
@@ -87,16 +93,16 @@ update msg (Model room backendUrl token errorMsg isHidden) =
                             , hash = Nothing
                             }
                     in
-                    ( Model room backendUrl token errorMsg isHidden, Effect.updateRoom ( id, newRoom ) (Just route) )
+                    ( model, Effect.updateRoom ( id, newRoom ) (Just route) )
 
                 Err err ->
-                    ( Model room backendUrl token (Decoders.errorToString err) isHidden, Effect.none )
+                    ( { model | errorMsg = Decoders.errorToString err }, Effect.none )
 
         VisibilityChange newVisibility ->
-            ( Model room backendUrl token errorMsg newVisibility, Effect.none )
+            ( { model | isHidden = newVisibility }, Effect.none )
 
         Return ->
-            ( Model room backendUrl token errorMsg isHidden, Effect.pushRoute { path = Route.Path.Main, query = Dict.empty, hash = Nothing } )
+            ( model, Effect.pushRoute { path = Route.Path.Main, query = Dict.empty, hash = Nothing } )
 
 
 
@@ -113,17 +119,17 @@ subscriptions model =
 
 
 view : Model -> View Msg
-view (Model room backendUrl token errorMsg isHidden) =
+view model =
     { title = "Criar Sala"
     , body =
-        [ input [ class "input-box", style "width" "100%", value room.abbr, onInput AbbrChange, Html.Attributes.placeholder "Abbreviatura" ] []
-        , input [ class "input-box", style "width" "100%", value room.name, onInput NameChange, Html.Attributes.placeholder "Nome Da Sala" ] []
-        , input [ class "input-box", style "width" "100%", value <| String.fromInt room.capacity, onInput (CapacityChange << Maybe.Extra.withDefaultLazy (\() -> room.capacity) << String.toInt), Html.Attributes.placeholder "Capacidade" ] []
-        , input [ class "input-box", style "width" "100%", value room.number, onInput NumberChange, Html.Attributes.placeholder "Número" ] []
-        , div [] [ input [ type_ "checkbox", checked isHidden, onCheck VisibilityChange ] [], label [] [ text "Esconder Sala" ] ]
+        [ input [ class "input-box", style "width" "100%", value model.room.abbr, onInput AbbrChange, Html.Attributes.placeholder "Abbreviatura" ] []
+        , input [ class "input-box", style "width" "100%", value model.room.name, onInput NameChange, Html.Attributes.placeholder "Nome Da Sala" ] []
+        , input [ class "input-box", style "width" "100%", value <| String.fromInt model.room.capacity, onInput (CapacityChange << Maybe.Extra.withDefaultLazy (\() -> model.room.capacity) << String.toInt), Html.Attributes.placeholder "Capacidade" ] []
+        , input [ class "input-box", style "width" "100%", value model.room.number, onInput NumberChange, Html.Attributes.placeholder "Número" ] []
+        , div [] [ input [ type_ "checkbox", checked model.isHidden, onCheck VisibilityChange ] [], label [] [ text "Esconder Sala" ] ]
         , button [ style "margin-right" "2%", class "button", onClick Return ] [ text "Retornar" ]
         , button [ class "button", onClick UpdateRoomRequest ] [ text "Submeter" ]
-        , div [ style "width" "100%" ] [ text errorMsg ]
+        , div [ style "width" "100%" ] [ text model.errorMsg ]
         ]
     }
 

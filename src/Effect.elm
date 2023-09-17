@@ -19,13 +19,13 @@ module Effect exposing
 -}
 
 import Browser.Navigation
-import Decoders exposing (IsHidden)
 import Dict exposing (Dict)
 import Route exposing (Route)
 import Route.Path
 import ScheduleObjects.Block exposing (Block, BlockID)
 import ScheduleObjects.Data exposing (Data)
 import ScheduleObjects.Event exposing (Event, EventID)
+import ScheduleObjects.Hide exposing (IsHidden)
 import ScheduleObjects.Lecturer exposing (Lecturer, LecturerID)
 import ScheduleObjects.Occupation exposing (Occupation, OccupationID)
 import ScheduleObjects.Restriction exposing (Restriction, RestrictionID)

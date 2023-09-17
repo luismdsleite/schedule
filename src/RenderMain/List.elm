@@ -211,6 +211,8 @@ renderHiddenBlock ( id, block ) =
     li [ class "list-item", style "text-decoration" "line-through", attribute "title" block.name, onClick (EditMenu (EditBlock id)) ] [ div [ class "custom-scrollbar", class "list-text" ] [ text block.nameAbbr ] ]
 
 
+{-| Given a certain event, a list of all rooms and a list of all events, it returns what rooms are available to host that event.
+-}
 renderAvailableRooms : Maybe ( EventID, Event ) -> Dict RoomID Room -> List Event -> List Occupation -> Html Msg
 renderAvailableRooms maybe rooms events occupations =
     case maybe of
@@ -225,8 +227,6 @@ renderAvailableRooms maybe rooms events occupations =
             ul [ ariaLabel "Salas Livres", class "list custom-scrollbar" ] []
 
 
-{-| Given a certain event, a list of all rooms and a list of all events, it returns what rooms are available to host that event.
--}
 renderAvailableRooms_ : ( EventID, Event ) -> Dict RoomID Room -> List Event -> List Occupation -> Html Msg
 renderAvailableRooms_ ( eventId, event ) rooms events occupations =
     let

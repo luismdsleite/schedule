@@ -1,4 +1,4 @@
-module RenderMain.Model exposing (Model(..), init)
+module RenderMain.Model exposing (Model, init, setFilters, setSelectedBlock, setSelectedEvent, setSelectedItems, setSelectedLect, setSelectedRoom)
 
 -- import Dict
 
@@ -12,17 +12,22 @@ import ScheduleObjects.Lecturer exposing (Lecturer, LecturerID)
 import ScheduleObjects.Room exposing (Room, RoomID)
 
 
+type alias Model =
+    { data : Data
+    , filters : ScheduleFilter
+    , draggable : Draggable
+    , selectedItems : SelectedItemsInList
+    }
 
--- import ScheduleObjects.Block exposing (Block)
--- import ScheduleObjects.Event exposing (Event)
--- import ScheduleObjects.Lecturer exposing (Lecturer)
--- import ScheduleObjects.Room exposing (Room)
--- import ScheduleObjects.WeekTime exposing (WeekTime)
--- import Time
+
+setSelectedItems : SelectedItemsInList -> { b | selectedItems : SelectedItemsInList } -> { b | selectedItems : SelectedItemsInList }
+setSelectedItems selectedItems a =
+    { a | selectedItems = selectedItems }
 
 
-type Model
-    = Model Data ScheduleFilter Draggable SelectedItemsInList
+setFilters : ScheduleFilter -> { b | filters : ScheduleFilter } -> { b | filters : ScheduleFilter }
+setFilters filters a =
+    { a | filters = filters }
 
 
 {-| Item (can be either an ev, room, lecturer or a block) selected in the lists
@@ -33,6 +38,26 @@ type alias SelectedItemsInList =
     , event : Maybe ( EventID, Event )
     , block : Maybe ( BlockID, Block )
     }
+
+
+setSelectedRoom : Maybe ( RoomID, Room ) -> SelectedItemsInList -> SelectedItemsInList
+setSelectedRoom room selectedItems =
+    { selectedItems | room = room }
+
+
+setSelectedLect : Maybe ( LecturerID, Lecturer ) -> SelectedItemsInList -> SelectedItemsInList
+setSelectedLect lect selectedItems =
+    { selectedItems | lect = lect }
+
+
+setSelectedEvent : Maybe ( EventID, Event ) -> SelectedItemsInList -> SelectedItemsInList
+setSelectedEvent event selectedItems =
+    { selectedItems | event = event }
+
+
+setSelectedBlock : Maybe ( BlockID, Block ) -> SelectedItemsInList -> SelectedItemsInList
+setSelectedBlock block selectedItems =
+    { selectedItems | block = block }
 
 
 init : Data -> () -> ( Model, Effect Msg )
